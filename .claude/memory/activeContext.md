@@ -227,6 +227,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-12 08:42] `87f043b`: docs: note branch-protection context for the provenance-test fix commit
 - [2026-08-12 08:39] `7312640` (branch `fix/provenance-tests-after-first-commit`):
   fix: update provenance tests for this repo's now-real commit history —
   WHAT: fixed the 3 tests broken by commit `e20d9cc` itself existing (see
