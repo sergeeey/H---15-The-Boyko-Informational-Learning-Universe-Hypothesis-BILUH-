@@ -227,6 +227,16 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-12 08:39] `7312640` (branch `fix/provenance-tests-after-first-commit`):
+  fix: update provenance tests for this repo's now-real commit history —
+  WHAT: fixed the 3 tests broken by commit `e20d9cc` itself existing (see
+  that entry's "Side effect caught and fixed" note below). WHY: a
+  branch-protection hook blocked committing this directly to `master`
+  ("Direct commit to 'master' branch is not allowed"), so this landed on
+  a new feature branch instead — NOT yet merged into `master`, pending
+  user's call on whether/how to merge (this repo's branch-protection
+  policy wasn't previously known to this session, so merging wasn't
+  assumed without asking).
 - [2026-08-12 08:27] `e20d9cc`: feat: boyko-benchmark — falsification-first geometric-phase benchmark (Phases 0-10)
   — WHAT: first-ever commit to this repo (91 files, everything from Phase 0
   through the post-Phase-10 G5 closure), requested directly by the user
