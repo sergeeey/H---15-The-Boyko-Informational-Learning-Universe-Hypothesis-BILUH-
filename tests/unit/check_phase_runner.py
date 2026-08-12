@@ -21,7 +21,10 @@ def test_run_phase_on_smoke_config_produces_a_complete_result() -> None:
     assert isinstance(result, PhaseResult)
     assert result.verdict in set(StageOneVerdict)
     assert result.sizes == tuple(sorted(config.sizes))
-    assert result.provenance.git_commit_hash.startswith("UNKNOWN-")
+    # this repo has had a real commit since 2026-08-12 -- git_commit_hash
+    # is a real 40-char hash now, not the earlier UNKNOWN- fallback
+    # (see check_provenance.py's docstring for the full explanation)
+    assert len(result.provenance.git_commit_hash) == 40
     assert result.provenance.numpy_version
 
 

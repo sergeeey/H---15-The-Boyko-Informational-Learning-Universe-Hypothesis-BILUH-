@@ -225,3 +225,24 @@ abstract. If a future session finds a phase claimed "done" that doesn't
 actually pass its quality gates, that is a process violation of this
 project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
+
+## Auto-commit log
+- [2026-08-12 08:27] `e20d9cc`: feat: boyko-benchmark — falsification-first geometric-phase benchmark (Phases 0-10)
+  — WHAT: first-ever commit to this repo (91 files, everything from Phase 0
+  through the post-Phase-10 G5 closure), requested directly by the user
+  ("коммить всё в git"). WHY: brings version control in sync with a
+  project that had been fully built but never committed. Excluded from
+  staging: `.claude/state/*.json` and `.claude/memory/_auto/` — personal
+  hook-tooling bookkeeping (ACE reflector turn history, commit-test-gate
+  timestamps), not project content; added to `.gitignore` so this doesn't
+  recur. **Side effect caught and fixed same session:** committing changed
+  a real fact 3 tests had encoded as an environmental given ("this repo
+  has zero commits") — `check_provenance.py` and `check_phase_runner.py`
+  asserted `git_commit_hash.startswith("UNKNOWN-")`, which is what
+  `collect_git_commit_hash` correctly returns on a commit-less repo, but
+  is no longer true. Fixed by asserting the REAL commit hash instead
+  (cross-checked against `git rev-parse HEAD` directly, not hardcoded, so
+  it survives future commits too) — not a code bug, a test that had
+  correctly captured a now-superseded environmental fact. Full suite
+  re-verified green (178/178) after the fix; that fix itself will be a
+  second commit.
