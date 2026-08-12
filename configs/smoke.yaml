@@ -1,0 +1,58 @@
+# Smoke config — verifies the pipeline runs end-to-end, produces every
+# required artifact, and does NOT time out. Not scientifically meaningful:
+# too small, too few seeds, too short an adaptation budget to support any
+# Gate-A conclusion. Never use this config's output to argue SURVIVES/FAILS.
+
+experiment:
+  master_seed: 20260811   # [A11] — SeedSequence root, arbitrary but fixed for reproducibility
+
+# N = L^3, cubic-lattice friendly (mathematical_contract.md §6)
+# L in {3, 4} — L=2 (N=8) was tried and REJECTED (found Phase 8 Cycle 19):
+# combined with [A7]'s mean-degree-6 target, N=8 is an 85.7%-dense
+# (near-complete) Erdos-Renyi graph -- degree-preserving rewiring for Arm D
+# is then combinatorially near-infeasible regardless of n_swaps tuning
+# (empirically verified: even nswap=1 has only ~52% single-attempt success
+# on the actual graph, nswap>=8 essentially never succeeds). N=27 keeps
+# density at a reasonable 23%. See decisions.md for the full investigation.
+sizes: [27, 64]
+
+seeds_per_arm_size: 2       # smoke: just enough to exercise the stats codepath, not to trust it
+
+arms:
+  - active
+  - frozen
+  - parameter_matched_random
+  - topology_scrambled
+  - fixed_flat_geometry
+  - alternative_objective
+  - classical_diffusion_control   # Arm CD — decisions.md entry 3
+
+fast_dynamics:
+  # dt is provisional — Phase 2 must validate against operator spectral
+  # bounds (spec(L_norm) subset [0,2), spec(L) unbounded per §5.6's
+  # timescale caveat) before this number means anything.
+  dt: 0.05
+  operator_independence_diagnostic: true   # §5.6 — full parallel L-driven rerun, doubles Active's cost
+
+adaptation:
+  eta: 0.1              # provisional, Phase 3 will validate
+  K: 50                 # [A9] dev default — MUST be swept before any verdict is trusted
+  dtau_steps: 5          # smoke: intentionally too short for a real adaptation budget
+
+propagation_front:
+  q: 0.9
+  n_source_nodes: 5      # [A17] averaged per (arm, N, seed) replicate
+
+topology_scrambled:
+  n_swaps_per_edge: 10    # [A21] -- same as dev/production, safe now that sizes avoid N=8's density pathology
+
+mcid:
+  cohens_d_threshold: 0.8      # estimand.md, assumptions.md A10
+  require_nonoverlapping_ci: true
+
+g6_tiering:                    # falsification_gates.md § G6 Tiering
+  total_cells: 15               # 5 observables x 3 comparators (Frozen, Random, Scrambled)
+  strong_threshold: 15
+  partial_threshold: 10
+
+seed_scheme: numpy_seedsequence   # [A11]

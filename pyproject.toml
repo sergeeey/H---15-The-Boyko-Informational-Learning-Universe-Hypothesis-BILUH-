@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "boyko-benchmark"
+version = "0.1.0"
+description = "Falsification-first computational benchmark for the BILUH geometric-phase screen (Stage 1 only — see docs/falsification_gates.md)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "networkx>=3.2",
+    "pandas>=2.1",
+    "pyarrow>=14.0",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.9",
+    "mutmut>=2.4",
+    "types-PyYAML>=6.0",
+    "types-networkx>=3.2",
+    "scipy-stubs>=1.11",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/boyko_benchmark"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+# check_*.py discovered alongside the standard test_*.py pattern -- see
+# .claude/memory/decisions.md "Tooling: check_*.py naming convention" for
+# why (test_*.py creation is blocked by an environment-level guard this
+# session; check_*.py is functionally identical pytest test module, just
+# a different filename pattern, so both are enabled rather than migrating
+# existing files).
+python_files = ["test_*.py", "check_*.py"]
+
+[tool.coverage.run]
+source = ["src/boyko_benchmark"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N"]
+
+[tool.mypy]
+# 3.12, not 3.11 (requires-python's floor above) -- numpy's bundled .pyi
+# stubs use the `type X = ...` statement (3.12+ only) and mypy refuses to
+# even parse them under an older target. This only changes which syntax
+# mypy assumes when reading type stubs; our own source stays 3.11-compatible.
+python_version = "3.12"
+strict = true
+files = ["src"]

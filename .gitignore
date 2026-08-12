@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.mutmut-cache
+
+# Claude Code personal tooling state — hook bookkeeping and auto-generated
+# dispatcher output, not project content (activeContext.md/decisions.md
+# in .claude/memory/ ARE tracked, deliberately — this only excludes the
+# _auto/ subtree and state/ hook internals)
+.claude/state/
+.claude/memory/_auto/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Run outputs — keep results/ tracked via .gitkeep, ignore actual run data
+results/*/
+!results/.gitkeep
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/

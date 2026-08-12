@@ -1,0 +1,56 @@
+# Production config — matches mathematical_contract.md §9's stated MINIMUM
+# (>= 5 distinct sizes, >= 20 independent seeds per arm/size). Raise
+# seeds_per_arm_size to 30-50 if budget allows (contract's own suggestion);
+# do not lower it below 20 and still call the result production evidence.
+#
+# Do NOT run this config until:
+#   - [A9]'s (K, eta) sweep has been done on development.yaml and reported
+#   - the Operator-Independence Diagnostic's timescale caveat (§5.6) has
+#     been checked (K vs. spec(L) / spec(L_norm) mismatch)
+#   - Arm CD's diffusion mixing time has been checked against K (§2.2
+#     equilibration caveat — W_ij* -> 1/N failure mode)
+# Running production before these checks produces expensive, untrustworthy
+# numbers per the project's own Anti-Overfitting / no-collapse discipline.
+
+experiment:
+  master_seed: 20260811   # [A11] — change only with a documented reason; do not vary per-run
+
+sizes: [64, 125, 216, 343, 512]   # N = L^3 — minimum per contract §9; extend, don't shrink
+
+seeds_per_arm_size: 20            # contract §9 floor. 30-50 if budget allows.
+
+arms:
+  - active
+  - frozen
+  - parameter_matched_random
+  - topology_scrambled
+  - fixed_flat_geometry
+  - alternative_objective
+  - classical_diffusion_control
+
+fast_dynamics:
+  dt: 0.05               # must equal the value validated during the dev-config sweep, not re-guessed here
+  operator_independence_diagnostic: true   # mandatory, not optional, at production tier
+
+adaptation:
+  eta: 0.1                # must equal the swept, validated value — see header warning
+  K: 50                   # must equal the swept, validated value — see header warning
+  dtau_steps: 200
+
+propagation_front:
+  q: 0.9
+  n_source_nodes: 5
+
+topology_scrambled:
+  n_swaps_per_edge: 10    # [A21]
+
+mcid:
+  cohens_d_threshold: 0.8
+  require_nonoverlapping_ci: true
+
+g6_tiering:
+  total_cells: 15
+  strong_threshold: 15
+  partial_threshold: 10
+
+seed_scheme: numpy_seedsequence

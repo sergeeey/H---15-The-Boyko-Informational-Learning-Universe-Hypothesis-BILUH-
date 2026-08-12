@@ -1,0 +1,47 @@
+# Development config — the FSS grid from mathematical_contract.md §6,
+# reduced seed count for fast iteration. Enough structure to sanity-check
+# effect sizes and gate logic; still below the production seed floor
+# (>= 20/arm/size) required before any Stage-1 verdict is trusted.
+
+experiment:
+  master_seed: 20260811   # [A11]
+
+sizes: [64, 125, 216, 343, 512]   # N = L^3, L in {4,5,6,7,8} — dev grid, contract §6
+
+seeds_per_arm_size: 5             # below production floor (20) — iteration speed, not evidence
+
+arms:
+  - active
+  - frozen
+  - parameter_matched_random
+  - topology_scrambled
+  - fixed_flat_geometry
+  - alternative_objective
+  - classical_diffusion_control
+
+fast_dynamics:
+  dt: 0.05               # provisional, see smoke.yaml note
+  operator_independence_diagnostic: true
+
+adaptation:
+  eta: 0.1                # provisional
+  K: 50                   # [A9] — sweep required; this is the un-swept starting point
+  dtau_steps: 200          # provisional, Phase 3 will validate against §2.2's equilibration caveat for Arm CD
+
+propagation_front:
+  q: 0.9
+  n_source_nodes: 5
+
+topology_scrambled:
+  n_swaps_per_edge: 10    # [A21]
+
+mcid:
+  cohens_d_threshold: 0.8
+  require_nonoverlapping_ci: true
+
+g6_tiering:
+  total_cells: 15
+  strong_threshold: 15
+  partial_threshold: 10
+
+seed_scheme: numpy_seedsequence

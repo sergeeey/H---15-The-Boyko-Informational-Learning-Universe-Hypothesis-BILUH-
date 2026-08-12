@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+
+      - name: Type check (mypy --strict)
+        run: mypy src/ --strict
+
+      - name: Test with coverage
+        run: |
+          pytest tests/ -v --tb=short \
+            --cov=src/boyko_benchmark --cov-report=term-missing --cov-fail-under=90
+
+      - name: Terminology-lock canary
+        run: |
+          ! grep -RiE "PHYSICAL_SPACETIME_CONFIRMED|LIEB_ROBINSON_PROVEN|physical spacetime emerged|lorentz invariance (was |is )?proven|quantum gravity (was |is )?reproduced|hypothesis (was |is )?confirmed" \
+            src/ tests/ scripts/ 2>/dev/null | grep -v "docs/falsification_gates.md"
