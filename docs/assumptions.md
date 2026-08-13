@@ -1018,6 +1018,63 @@ without the range gate, a 6-point window `[1.8,3.5,4.5,5.0,3.5,1.5]`
 `converged=False` for the whole array. All 5 prior tests unchanged and
 still passing (200/200 total, was 199).
 
+**Second correction, found 2026-08-13 investigating whether widening
+`t_values` (past `[0.1,10]`) would reveal a real plateau for the N=64/
+N=125 curves the first correction above left unresolved.**
+
+Computed `d_s(t)` on a much wider/denser grid (`t ∈ [0.01, 1000]`, 30
+log-spaced points) for the SAME Active-arm graph at N=64, N=125, AND
+N=512 (the largest `development.yaml` size) to settle the question with
+real data instead of guessing:
+
+```
+N=64:  peak d_s≈3.32 near t≈3.9,  then falls to ~0 by t≈40
+N=125: peak d_s≈3.82 near t≈5.7,  then falls to ~0 by t≈60
+N=512: peak d_s≈5.00 near t≈8.5,  then falls to ~0 by t≈90
+```
+
+**Conclusion: this is NOT a `t_values`-range problem to tune away.**
+Every size shows the identical qualitative shape — a single peak, no
+flat region anywhere — and the peak VALUE grows with `N` (3.3→3.8→5.0)
+instead of converging to a fixed value as `N` grows, which is the
+opposite of what a genuine geometric dimension should do (a real
+geometric graph's calibration tests, e.g. cubic lattice, show `d_s≈3`
+regardless of `N`). This pattern (fast initial return-probability decay,
+peak height growing with `N`, no stable intermediate regime) is the
+textbook signature of an expander/small-world graph, not a graph with
+genuine low-dimensional geometric structure. At `dtau_steps=50` (this
+pilot config's budget), Active's mean edge weight is still `0.92-0.93`
+(initial weight was `1.0`) — the graph has barely adapted away from its
+Erdős–Rényi starting point, so what G1 is measuring here is essentially
+"what does an unadapted ER expander's `d_s(t)` look like," not yet
+evidence about whether Hebbian adaptation ever produces a genuine
+geometric-phase plateau. **The open question this leaves is whether a
+longer adaptation budget (`development.yaml`'s own `dtau_steps=200`, 4x
+this pilot's `50`) changes this shape — not resolved here, and not
+answerable by adjusting `t_values` alone.**
+
+**Third fix (found investigating the wide-range data above):** the
+range+slope gates alone are ALSO fooled by the trivial long-time tail —
+`P_return(t) → 1/N` (a constant) as `t → ∞` on any finite connected
+graph, so `d_s(t) → 0` for large enough `t` on every curve, universally,
+regardless of geometry. That decayed tail is genuinely flat (small
+slope, small range) and was accepted as a false-positive `d_s_hat≈0.003-
+0.03` "plateau" — not a real near-zero-dimensional finding, just the
+universal asymptote. Added `min_d_s_hat=0.5` (provisional, same
+uncalibrated status as the other two thresholds; chosen well under every
+real calibration target — ring~1, square~2, cubic~3 — but well above the
+observed decay-noise range).
+
+**Evidence (second correction):** [VERIFIED-pytest]
+`test_detect_plateau_rejects_a_trivially_decayed_zero_tail` — hand-
+derived decay tail, reproduces the exact false-positive
+(`d_s_hat=0.0297, converged=True` before the fix); rejected after. Full
+re-run of the wide-range N=64/125/512 investigation after the fix: ALL
+THREE now correctly report `converged=False` — consistent with the "no
+real plateau at this budget" conclusion above, not contradicting it.
+202/202 tests (was 201), all 6 prior `detect_plateau` tests unchanged
+and still passing.
+
 ### A31 — Correlation Shuffle secondary control (proposed 2026-08-13, external red-team review)
 
 **Ambiguity:** none of the seven primary arms isolate the specific

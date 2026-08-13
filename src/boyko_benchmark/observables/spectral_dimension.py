@@ -69,6 +69,7 @@ def detect_plateau(
     min_points: int = 3,
     slope_tolerance: float = 0.1,
     range_tolerance: float = 0.3,
+    min_d_s_hat: float = 0.5,
 ) -> PlateauResult:
     """Scans every contiguous window of at least `min_points` points and
     picks the one that qualifies (see below) with the most points
@@ -76,9 +77,10 @@ def detect_plateau(
     `[A30]` for why `|slope|` is one gate, not an R^2-of-the-flat-fit
     threshold.
 
-    A window qualifies only if BOTH:
+    A window qualifies only if ALL THREE:
     - `|slope of d_s vs log(t)| <= slope_tolerance`
     - `max(d_s in window) - min(d_s in window) <= range_tolerance`
+    - `mean(d_s in window) >= min_d_s_hat`
 
     The range check was added 2026-08-13 after running the `[A9]` sweep:
     a rise-then-fall "hump" in `d_s(t)` (a real shape this project's own
@@ -92,10 +94,21 @@ def detect_plateau(
     a false positive). Slope alone cannot distinguish "flat" from
     "symmetric hump" gone through the middle; range can.
 
-    `slope_tolerance`, `range_tolerance`, and `min_points` are provisional
-    defaults (`[A30]`) -- not calibrated against a larger corpus of real
-    Active-arm `d_s(t)` curves, since no production run exists yet to
-    calibrate against.
+    The `min_d_s_hat` floor was added the same day investigating G1's
+    `t_values` range: on ANY finite connected graph, `P_return(t) -> 1/N`
+    (a constant) as `t -> infinity`, so `d_s(t) -> 0` for large enough
+    `t` -- a trivial, universal long-time asymptote, not a real
+    "near-zero-dimensional geometry" finding. That decayed tail is
+    genuinely flat (small slope, small range) and was accepted as a
+    false-positive plateau with `d_s_hat` around 0.003-0.03. `0.5` is
+    well under every real calibration target (ring~1, square~2, cubic~3)
+    but well above observed numerical-decay noise -- a provisional,
+    uncalibrated floor, same status as `slope_tolerance`/`range_tolerance`.
+
+    `slope_tolerance`, `range_tolerance`, `min_d_s_hat`, and `min_points`
+    are provisional defaults (`[A30]`) -- not calibrated against a larger
+    corpus of real Active-arm `d_s(t)` curves, since no production run
+    exists yet to calibrate against.
     """
     n = len(t_values)
     log_t = np.log(t_values)
@@ -107,6 +120,9 @@ def detect_plateau(
         for end in range(start + min_points, n + 1):
             t_window = log_t[start:end]
             d_window = d_s_values[start:end]
+
+            if np.mean(d_window) < min_d_s_hat:
+                continue
             n_pts = end - start
             width = float(t_window[-1] - t_window[0])
 

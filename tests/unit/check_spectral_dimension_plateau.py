@@ -93,6 +93,29 @@ def test_detect_plateau_requires_minimum_points_below_which_it_cannot_converge()
     assert result.n_points == 0
 
 
+def test_detect_plateau_rejects_a_trivially_decayed_zero_tail() -> None:
+    """Regression for a real false positive found 2026-08-13 investigating
+    G1's t_values range: extending t_values far enough always eventually
+    reaches the finite-size asymptote where P_return(t) -> 1/N (a
+    constant), so d_s(t) -> 0 for large t on ANY finite connected graph
+    (mathematical_contract.md's normalized-Laplacian heat kernel). That
+    decayed-to-numerical-noise tail is technically flat (small slope,
+    small range) and was accepted as `converged=True` with `d_s_hat`
+    around 0.003-0.02 -- not a real "near-zero-dimensional geometry"
+    finding, just the trivial long-time saturation every finite graph
+    has. `min_d_s_hat` rejects windows whose mean falls below a floor
+    clearly under any real calibration target (ring~1, square~2,
+    cubic~3) but clearly above numerical-decay noise."""
+    t_values = np.array([0.1, 1.0, 10.0, 20.0, 30.0, 40.0, 60.0, 90.0, 130.0])
+    d_s_values = np.array([0.5, 2.0, 3.3, 0.16, 0.017, 0.0008, 0.0002, 0.0000, 0.0000])
+
+    result = detect_plateau(
+        t_values, d_s_values, min_points=3, slope_tolerance=0.1, range_tolerance=0.3
+    )
+
+    assert result.converged is False
+
+
 def test_detect_plateau_rejects_a_rise_then_fall_hump_with_near_zero_net_slope() -> None:
     """Regression for a real false positive found 2026-08-13 running the
     [A9] sweep: a genuine Active-arm d_s(t) curve rises toward a peak then
