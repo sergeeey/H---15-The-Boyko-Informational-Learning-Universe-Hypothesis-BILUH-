@@ -1,6 +1,81 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## Current Focus
+## Current Focus (2026-08-13, supersedes "ALL 10 PHASES CLOSED" below for defect status)
+
+**First-ever `development.yaml` full-grid run executed (5 sizes x 5
+seeds x 7 arms) — found and fixed 3 real defects that Phase 0-10's
+"zero known defects" claim below did not anticipate, because nothing had
+run the pipeline at this scale before today.** [VERIFIED-pytest, this
+session, actual command output shown at every step]
+
+**Fixed (strict RED->GREEN TDD each):**
+1. `normalized_laplacian` (`graphs/weights.py`): `1/sqrt(0)` -> NaN on a
+   zero-degree node (legal state, HebbianAdaptation's decay term can
+   isolate a node). Guard `d_inv_sqrt=0`. `[A28]`.
+2. `generate_erdos_renyi` (`graphs/generators.py`): no connectivity
+   guarantee -- `estimand.md` already specified connected-population
+   sampling, the generator hadn't implemented it. Retry-until-connected,
+   20 attempts, same pattern as `rewiring.py`. This IS selection bias
+   (`G ~ ER | connected`, not unconditional `ER`) -- named explicitly,
+   not swept under the fix. `[A29]`.
+3. `cohens_d` (`statistics/cell_statistics.py`): `ZeroDivisionError` on
+   zero pooled-std (surfaced after fix #4 below narrowed G5's fit
+   window). `d=0` for identical constants, `d=+-inf` (signed) for
+   differing constants -- not a workaround, the correct limiting value.
+
+**Also added, following an externally-supplied red-team review
+(independently tool-verified against actual code before accepting any
+claim, per `audit-verification-gate.md` -- 4 of 4 verified claims were
+accurate, 1 claim about `estimand.md` being silent on connectivity was
+independently found WRONG, `estimand.md` already had it right):**
+4. `detect_unsaturated_window` (`observables/propagation_front.py`): G5's
+   `fit_effective_velocity` now fits only the pre-plateau regime, per
+   `mathematical_contract.md:508`'s explicit requirement -- previously
+   fit the FULL trajectory (a real contract deviation, not just
+   "future work" as one docstring had characterized it).
+5. `detect_plateau` (`observables/spectral_dimension.py`, `[A30]`): real
+   G1 plateau detection (contiguous-window `|slope| <= tolerance`,
+   deliberately NOT an R^2-of-flat-fit gate -- reasoning in `[A30]`),
+   replacing the `d_s(t_last)` placeholder. `t_values` widened 3->12
+   points (log-spaced `[0.1,10]`, provisional) -- 3 points structurally
+   cannot support plateau detection. `CellObservableStatistics.
+   g1_converged_fraction` surfaces non-convergence instead of a silent
+   fallback.
+6. `CorrelationShuffleAdaptation` (`dynamics/adaptive.py`, `[A31]`): H0
+   secondary control (structured correlations vs. any same-distribution
+   reinforcement). Rule only, NOT wired as an 8th experimental arm yet
+   (`config.py` `Arm` enum / `arms_runner.py` / G1-G6 untouched) --
+   documented next step, not silently half-done.
+
+**Checkpoint: 198/198 tests passing (was 178), ruff clean, mypy --strict
+clean, 98.6% coverage.**
+
+**`development-v0` archived** at `results/development-v0/` (gitignored
+per `results/*/` policy, stays on disk not in git) with full
+`PROVENANCE.md`: verdict `FAILS_GEOMETRIC_PHASE_SCREEN`, 4292.47s, BUT
+computed with defects #1-2 fixed and #3-6 NOT YET fixed (they were
+written while this run was already executing in the background --
+Python doesn't hot-reload). G5/G1 numbers from that specific run are not
+informative; G2/G3/G4/G6 reflect only fixes #1-2.
+
+**Committed** as `0ae8442` on branch `fix/development-yaml-defects-g1-g5`
+(direct commit to `main` is blocked by branch protection, same as the
+prior `7312640`/`87f043b` episode) -- **not yet merged**, pending user's
+call on whether/how to merge, same as that prior episode.
+
+**Full session detail:** `.claude/memory/session-2026-08-13-report.md`.
+
+**[VERIFIED, this session] Explicitly NOT done** (see that report's own
+"What NOT done" section for the full list, not repeated here): merging
+this branch; `[A9]`'s `(K,eta)` sweep grid frozen but not run (~30h at
+`development.yaml` scale for all 25 points -- needs a cheaper sweep-only
+config, not created); `development-v1`/`v2`; wiring Correlation Shuffle
+as a real arm; raw-sample persistence artifacts (`mathematical_
+contract.md:622-626` still unmet); mutation testing.
+
+---
+
+## Phase 0-10 history (2026-08-11/12, historical — see Current Focus above for what has changed since)
 
 **ALL 10 PHASES CLOSED, ZERO KNOWN DEFECTS REMAIN** (2026-08-11 to
 2026-08-12, autonomous overnight from mid-Phase-4 through Phase 10's
@@ -227,6 +302,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 14:16] `0ae8442`: fix: close 3 defects surfaced by development.yaml's first full-grid run, add G1 plateau detection and Correlation Shuffle control
 - [2026-08-12 08:42] `87f043b`: docs: note branch-protection context for the provenance-test fix commit
 - [2026-08-12 08:39] `7312640` (branch `fix/provenance-tests-after-first-commit`):
   fix: update provenance tests for this repo's now-real commit history —
