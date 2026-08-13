@@ -25,8 +25,21 @@ def combinatorial_laplacian(graph: WeightedGraph) -> NDArray[np.floating]:
 
 
 def normalized_laplacian(graph: WeightedGraph) -> NDArray[np.floating]:
-    """L_norm = I - D^-1/2 W D^-1/2."""
+    """L_norm = I - D^-1/2 W D^-1/2.
+
+    A node whose weights have all decayed to zero (a legal state under
+    HebbianAdaptation's non-negativity floor, [A5]) has degree=0. The
+    standard convention for the normalized Laplacian on such a node is
+    d_inv_sqrt=0, not inf/nan -- row/column i is then all-zero in
+    scaled_weights, so L_norm's diagonal entry for that node stays 1 and
+    it does not couple to any neighbor. Found 2026-08-13: the development
+    config's longer adaptation budget (dtau_steps=200) reached this state
+    where smoke's short budget (dtau_steps=5) never did; the un-guarded
+    1/sqrt(0) produced NaN that corrupted downstream dynamics.
+    """
     degree = graph.weights.sum(axis=1)
-    d_inv_sqrt = 1.0 / np.sqrt(degree)
+    with np.errstate(divide="ignore"):
+        d_inv_sqrt = np.where(degree > 0, 1.0 / np.sqrt(degree), 0.0)
     scaled_weights = d_inv_sqrt[:, None] * graph.weights * d_inv_sqrt[None, :]
-    return np.eye(graph.n_nodes) - scaled_weights
+    result: NDArray[np.floating] = np.eye(graph.n_nodes) - scaled_weights
+    return result

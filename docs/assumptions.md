@@ -237,6 +237,41 @@ avoids reacting to instantaneous phase noise, consistent with treating
 must be swept as a robustness/no-collapse check (Perelman-audit style)
 before any Stage-1 verdict is trusted, not fixed once and forgotten.
 
+**Sweep grid, frozen 2026-08-13 (before any sweep data exists, per
+EstimandOps "threshold chosen after seeing results is invalid" and this
+project's own Falsification Ladder anti-fishing discipline):**
+
+```
+K   ∈ {10, 25, 50, 100, 200}
+eta ∈ {0.02, 0.05, 0.1, 0.2, 0.4}
+```
+
+25 combinations, log-ish spaced around the `development.yaml` default
+`(K=50, η=0.1)` — half/double steps in each direction, covering roughly
+a 20x range in each parameter. Not derived from a timescale-separation
+calculation (no closed-form relationship between `K`/`η` and `dt`/
+`dτ_steps` exists in `mathematical_contract.md` to derive one from) — an
+empirically reasonable bracket around the un-derived default, chosen
+before seeing any sweep output.
+
+**Cost constraint (found 2026-08-13):** `development.yaml`'s single
+`(K=50, η=0.1)` point took 4292s (~71.5 min) at full scale (5 sizes × 5
+seeds × 7 arms). Running this 25-point grid at that same scale would cost
+~30 hours — infeasible as a single session's work and not necessary for
+a robustness/no-collapse check, which only needs Active's own G1-G5
+stability across `(K, η)`, not full G6 cross-arm MCID comparison. A
+separate, cheaper sweep-only config (single smallest size, few seeds,
+Active + Frozen arms only) should be used for this sweep; only the
+surviving stable region, if any, needs a subsequent full-arm confirmation
+at `development.yaml` scale.
+
+**Decision rule (frozen, not to be relaxed after seeing results):** the
+sweep looks for a broad plateau of `(K, η)` where G1-G5 raw values are
+stable (low seed-to-seed variance, no divergence/NaN) — not for the
+single point that maximizes any gate's pass rate. A single "lucky pixel"
+surrounded by unstable neighbors is evidence AGAINST robustness, not a
+result to select.
+
 ### A10 — MCID / significance threshold for "meaningful separation" (G6)
 
 **Ambiguity:** ТЗ.txt §10 Gate A requires "statistically meaningful
@@ -691,6 +726,208 @@ the geometry changes substantially over the adaptation run, not just at
 the end), a future revision should add per-window graph capture to
 `AdaptiveRunResult` and implement the replay version — a strictly larger
 addition, not a redesign of what exists.
+
+### A28 — `normalized_laplacian` on a zero-degree (isolated) node (found 2026-08-13, first `development.yaml` full-grid run)
+
+**Ambiguity:** `HebbianAdaptation`'s Oja-normalized decay term (`[A3]`)
+can drive all of a node's incident weights to exactly zero over a long
+enough adaptation budget — a legal state under `[A5]`'s non-negativity
+floor (the mask/topology is untouched, only weights decay; `NoTopologyUpdate`
+governs Active). `mathematical_contract.md` §1.2 defines
+`normalized_laplacian` as `I - D^-1/2 W D^-1/2` but never specifies what
+`D^-1/2` means for a node with `degree=0` — the formula is undefined
+there (`1/sqrt(0)`), not just numerically unstable.
+
+**Default:** `d_inv_sqrt[i] = 0` for any node `i` with `degree(i) = 0`
+(`graphs/weights.py::normalized_laplacian`). Consequence: row/column `i`
+of the scaled-weight term is all-zero, so `L_norm`'s diagonal entry for
+node `i` stays `1` and it couples to no neighbor in the dynamics operator
+— an isolated node behaves as its own disconnected 1-node component for
+the purposes of the fast-dynamics Hamiltonian, consistent with the
+standard graph-Laplacian convention for isolated vertices (e.g. Chung
+1997's treatment of `L_norm` on graphs with isolated vertices).
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_normalized_laplacian_
+isolated_node.py` — a hand-constructed 3-node path graph with all weights
+decayed to `0.0` previously produced `NaN` throughout `L_norm` (confirmed
+via the actual `development.yaml` crash traceback:
+`ValueError: weights must be symmetric`, itself a downstream symptom —
+`NaN` is never `np.allclose`-equal to `NaN`, so the real defect surfaced
+as a spurious symmetry violation several call frames away from its cause).
+With the `d_inv_sqrt=0` guard, the same input produces a finite, symmetric
+`L_norm` (both regression tests pass).
+
+**If wrong:** if isolated-node behavior should instead mean something
+else physically (e.g. the node should be excluded from G1-G5 entirely
+for that replicate, or its emergence should itself be flagged as a
+Gate-A-relevant event — a node losing all weight IS a form of geometric
+degeneration, arguably interesting rather than a nuisance to suppress),
+this convention should be revisited once production runs show how often
+isolated nodes actually occur and whether their rate correlates with
+Active vs. negative-control arms. Not resolved here because no
+production-scale frequency data exists yet.
+
+### A29 — `generate_erdos_renyi` connectivity is enforced by rejection sampling, changing the realized population (found 2026-08-13, second `development.yaml` full-grid run; red-team addendum same day)
+
+**Ambiguity:** `nx.gnm_random_graph`'s exact edge-count draw has no
+connectivity guarantee. At `N=64`, mean degree 6 (`[A7]`, `n_edges=192`),
+a disconnected draw is empirically reachable (witness:
+`numpy.random.default_rng(18)` — brute-force search, not cherry-picked
+from the actual failing `development.yaml` seed, which was never
+captured). `estimand.md`'s Population field (§L1) and its ICE section
+*already* declared the intended design correctly — "restricted by design
+to connected graphs only (disconnected draws are rejection-sampled, not
+analyzed)" — before this fix existed. This entry closes a documentation-
+vs-implementation gap, not a documentation gap: `graphs/generators.py`
+did not yet implement what `estimand.md` already specified.
+`hop_distances_from_source` (`observables/propagation_front.py`)
+correctly refused to proceed on an unreachable node, which is how the
+gap first surfaced (`ValueError: hop_distances contains unreachable (-1)
+nodes`).
+
+**Default:** `generate_erdos_renyi` retries with a fresh `networkx` seed
+(same `n_nodes`/`n_edges`) up to 20 times if a draw is disconnected,
+raising `nx.NetworkXAlgorithmError` only if all 20 attempts fail — the
+same bounded-retry pattern `graphs/rewiring.py::scramble_preserving_
+degree_sequence` already uses for its own stochastic-failure case
+(`[A21]`'s `_MAX_RETRY_ATTEMPTS`).
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_erdos_renyi_
+connectivity.py` — `numpy_seed=18` deterministically produced a
+disconnected graph before this fix, connected after; edge count is
+preserved exactly across retries (both regression tests pass).
+
+**Why this matters beyond the crash (red-team point, 2026-08-13):**
+rejecting disconnected draws and resampling is **selection on the
+outcome**, not a cosmetic bug fix. The realized population is
+`G ~ ER(N, n_edges) | G is connected`, not the unconditional
+`G ~ ER(N, n_edges)`. Conditioning on connectivity can shift the degree
+distribution, low-Laplacian-eigenvalue structure, effective resistance,
+mixing time, and spectral dimension relative to the unconditional
+ensemble — precisely the quantities G1-G5 measure. This is not
+necessarily wrong (several observables, e.g. `resistance_diameter`, are
+undefined on a disconnected graph in the first place, so *some* form of
+connectivity conditioning is required for the benchmark to be well-posed
+at all) — `estimand.md` already made exactly this choice explicitly
+(§L1 Population, ICE section) before this fix existed. What was missing
+was only the implementation, now closed. Both the Active-lineage arms
+and Arm C (Parameter-Matched Random) already apply the identical
+connectivity rule by construction — `arms/shared_initialization.py` calls
+the same `generate_erdos_renyi` for both (line 38 for Active's shared
+init, line 52 for Arm C's independent draw) — so there was never a risk
+of the "matched" in "Parameter-Matched Random" silently diverging between
+arms; fixing the one function fixed both call sites identically.
+
+**If wrong (numerical residual):** if some `(N, mean_degree)` combination
+in the FSS grid has a much higher disconnection rate than the `N=64`
+witness (sparser large-N configurations are more at risk), 20 retries may
+not be enough and the `NetworkXAlgorithmError` would surface as a
+production-run failure rather than a silent bias — treated as a fail-loud
+outcome, not swept under a higher retry count without first checking
+whether that `(N, mean_degree)` pair is even a sound design choice.
+
+### A30 — G1 plateau-detection algorithm and thresholds (found 2026-08-13, after external red-team review of `development-v0`)
+
+**Ambiguity:** `mathematical_contract.md` §5.1 requires `d_s(t) ≈ const`
+"over an intermediate diffusion-time window" but does not specify how to
+locate that window algorithmically — no threshold, no minimum point
+count, no tiebreak rule for multiple candidate windows. The pre-2026-08-13
+implementation (`d_s(t_last)`) was a placeholder, self-disclosed as such
+in `cell_aggregation.py`'s own docstring and `activeContext.md`.
+
+**Default:** `observables/spectral_dimension.py::detect_plateau` scans
+every contiguous window of `t_values`/`d_s(t)` with `>= min_points=3`
+points; a window qualifies if `|slope of d_s vs log(t)| <= slope_
+tolerance=0.1` (linear regression). Among qualifying windows, prefer (1)
+most points, (2) widest log-t span as tiebreak. If no window qualifies,
+`converged=False` is returned along with a `d_s(t_last)` fallback value
+— callers must check `converged` before trusting the estimate
+(`cell_aggregation.CellObservableStatistics.g1_converged_fraction`
+surfaces this per-cell, across seeds).
+
+**Deliberately NOT used:** an R²-of-the-flat-fit threshold (proposed in
+the same external review). For a genuinely flat window, `R²` of a linear
+fit is close to meaningless — near-zero true slope makes `scipy.stats.
+linregress`'s `rvalue` numerically unstable (small denominators), so a
+"require high R²" gate would sometimes reject perfectly flat data purely
+from floating-point noise. `|slope| <= tolerance` tests the property that
+actually matters ("is `d_s` roughly constant here"); `R²` is still
+reported in `PlateauResult` as a secondary diagnostic, not used as a gate.
+
+**`t_values` grid:** widened from the previous 3-point `[0.5, 1.0, 2.0]`
+(hardcoded in `scripts/run_smoke.py`) to a 12-point log-spaced grid over
+`[0.1, 10.0]` (`np.geomspace`) — 3 points cannot support plateau
+detection at all (`min_points=3` forces the entire array into one
+window, with no ability to exclude a short-time rise or a finite-size
+tail). Still provisional: neither the `[0.1, 10.0]` range, the 12-point
+density, nor `slope_tolerance=0.1` have been calibrated against real
+Active-arm `d_s(t)` curves — no production run exists yet to calibrate
+against, and calibration should use the existing ring/lattice calibration
+tests (`test_cubic_lattice_has_ds_near_3` etc.) as a sanity floor before
+trusting it on Active's actual (non-lattice) geometry.
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_spectral_dimension_
+plateau.py` — 5 hand-derived synthetic cases (flat middle region,
+no-plateau monotonic data, all-constant data, point-count tiebreak,
+below-minimum-points), all numerically cross-checked via a Bash prototype
+against `scipy.stats.linregress` before the assertions were written (same
+discipline as every other observable in this project).
+
+**If wrong:** if `slope_tolerance=0.1` proves too loose (accepts a
+window that is not really flat, e.g. a slow monotonic drift across the
+whole grid) or too tight (never converges on real, noisier dynamics
+data), this should surface as a low `g1_converged_fraction` across many
+cells in `development-v2` — treated as a signal to recalibrate the
+threshold against real curves, not as evidence against the Stage-1 claim
+itself. Not resolved further here because no real Active-arm `d_s(t)`
+data exists yet to calibrate against.
+
+### A31 — Correlation Shuffle secondary control (proposed 2026-08-13, external red-team review)
+
+**Ambiguity:** none of the seven primary arms isolate the specific
+question "does it matter WHICH pair of nodes correlated, or does any
+reinforcement with the same correlation-magnitude distribution produce
+similar geometric organization?" Arm F (Alternative Objective) tests a
+different adaptation RULE; this tests the same rule with the
+correlation-to-edge ASSIGNMENT scrambled — a different, complementary
+axis (mechanism-of-organization vs. choice-of-rule).
+
+**Default:** `dynamics/adaptive.py::CorrelationShuffleAdaptation` — same
+Oja-normalized update as `HebbianAdaptation`, but the off-diagonal
+correlation values are permuted across the graph's existing edges each
+`update()` call (`_shuffle_edge_correlations`, fresh permutation per call
+from the injected `rng`, not fixed once at construction). `H1`:
+Active ≫ Frozen AND Active ≫ CorrelationShuffle → which specific pair
+correlated is causally load-bearing. `H0`: Active ≫ Frozen BUT
+Active ≈ CorrelationShuffle → adaptation matters, but the structured
+assignment of correlations to edges does not — a materially weaker
+causal story than the current framing implicitly assumes.
+
+**Scope cut (deliberate, matching `[A26]`'s own pattern):** implemented
+as a usable `AdaptationRule` only. NOT wired into `config.py`'s `Arm`
+enum, `arms_runner.py`, or the G1-G6 primary verdict — the external
+review's own caution against moving goalposts mid-flight applies here:
+this is registered as a secondary mechanism diagnostic to run AFTER
+`[A9]`'s sweep and G1 recalibration, not folded into the current 7-arm
+G6 MCID comparison. Full wiring (an 8th arm value, a runner function
+analogous to `run_arm_active`, a place in `mathematical_contract.md` §4,
+and a decision on whether it counts toward G6's 15-cell matrix or stays
+a separate report) is the documented next step, not done here.
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_correlation_shuffle.py`
+— 5 hand-derived cases (multiset preservation, exact permutation match
+against a Bash-prototype-verified `rng.permutation` call, non-edge/
+diagonal zeroing, divergence from `HebbianAdaptation` on identical input,
+graph-invariant preservation), all passing.
+
+**If wrong:** if `CorrelationShuffleAdaptation`'s per-call fresh
+permutation (rather than one fixed permutation for the whole run) turns
+out to average out any structural effect entirely by construction
+(shuffling every step could behave like uncorrelated noise regardless of
+whether H0 or H1 is true, making the control uninformative rather than a
+fair test) — this should be checked against a variant using ONE fixed
+permutation for the full adaptation run before trusting either verdict.
+Not resolved here because no run of either variant exists yet.
 
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 

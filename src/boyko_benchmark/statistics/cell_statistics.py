@@ -11,6 +11,7 @@ run. Enforcing that discipline is the caller's (experiment runner's)
 responsibility; this module only aggregates whatever array it is given.
 """
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -55,13 +56,24 @@ def cohens_d(sample_a: NDArray[np.floating], sample_b: NDArray[np.floating]) -> 
     """Standard pooled-standard-deviation Cohen's d:
     d = (mean_a - mean_b) / pooled_std,
     pooled_std = sqrt(((n_a-1)*var_a + (n_b-1)*var_b) / (n_a+n_b-2)).
+
+    `pooled_std == 0` is a legal degenerate input (both samples internally
+    constant, e.g. found 2026-08-13 once G5's v_eff started using an
+    auto-detected unsaturated fit window narrow enough to make some
+    replicate's fitted slope identical across seeds) -- not an error.
+    Identical constants -> zero effect (d=0). Differing constants -> a
+    perfectly separated pair, the limiting case of an arbitrarily large
+    effect (d=+-inf, signed by the direction of the mean difference).
     """
     n_a, n_b = len(sample_a), len(sample_b)
     mean_a, mean_b = float(np.mean(sample_a)), float(np.mean(sample_b))
     var_a, var_b = float(np.var(sample_a, ddof=1)), float(np.var(sample_b, ddof=1))
     pooled_variance = ((n_a - 1) * var_a + (n_b - 1) * var_b) / (n_a + n_b - 2)
     pooled_std = float(np.sqrt(pooled_variance))
-    return (mean_a - mean_b) / pooled_std
+    mean_diff = mean_a - mean_b
+    if pooled_std == 0.0:
+        return 0.0 if mean_diff == 0.0 else math.copysign(math.inf, mean_diff)
+    return mean_diff / pooled_std
 
 
 def mcid_gate(sample_active: NDArray[np.floating], sample_control: NDArray[np.floating]) -> bool:

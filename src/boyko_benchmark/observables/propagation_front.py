@@ -72,6 +72,30 @@ def propagation_front_trajectory(
     return radii
 
 
+def detect_unsaturated_window(radii: NDArray[np.int64]) -> tuple[int, int]:
+    """Finds the pre-plateau fit window `mathematical_contract.md:508`
+    requires ("Fit, over the unsaturated (pre-plateau) regime only") --
+    found 2026-08-13: every caller previously passed `fit_window=(0,
+    len(radii))`, the FULL trajectory, which contradicts this line.
+
+    Returns `(0, plateau_onset_index)`: `plateau_onset_index` is the first
+    index where `r_q(t)` stops strictly increasing (consistent with this
+    module's own "saturation_radius ... where r_q(t) plateaus" language).
+    Clamped to a minimum window of 2 points so `fit_effective_velocity`'s
+    `scipy.stats.linregress` always has enough data for a line -- an
+    immediate plateau (e.g. all-zero density spread) has no real
+    unsaturated regime to report, so the 2-point floor is a degenerate
+    fallback, not a meaningful velocity estimate.
+    """
+    n = len(radii)
+    plateau_onset = n
+    for i in range(1, n):
+        if radii[i] <= radii[i - 1]:
+            plateau_onset = i
+            break
+    return (0, max(plateau_onset, min(2, n)))
+
+
 @dataclass(frozen=True)
 class PropagationFrontFit:
     """Everything mathematical_contract.md Sec5.5 requires recorded per run."""

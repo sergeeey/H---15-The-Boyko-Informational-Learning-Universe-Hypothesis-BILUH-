@@ -99,6 +99,54 @@ class HebbianAdaptation:
         return WeightedGraph(mask=graph.mask, weights=new_weights)
 
 
+def _shuffle_edge_correlations(
+    correlation: NDArray[np.floating], mask: NDArray[np.bool_], rng: np.random.Generator
+) -> NDArray[np.floating]:
+    """H0 secondary-control helper (`[A31]`, docs/assumptions.md, proposed
+    2026-08-13 external red-team review): permutes the off-diagonal
+    correlation values across the graph's existing edges, preserving the
+    multiset of values but destroying the correspondence between "which
+    pair correlated" and "which edge gets it." Non-edge positions and the
+    diagonal are left at 0.0 -- density (the diagonal) is a per-node
+    quantity, deliberately not part of this edge-level shuffle."""
+    n_nodes = correlation.shape[0]
+    shuffled = np.zeros((n_nodes, n_nodes))
+    edge_i, edge_j = np.nonzero(np.triu(mask, k=1))
+    values = correlation[edge_i, edge_j]
+    permuted_values = rng.permutation(values)
+    shuffled[edge_i, edge_j] = permuted_values
+    shuffled[edge_j, edge_i] = permuted_values
+    return shuffled
+
+
+class CorrelationShuffleAdaptation:
+    """H0 secondary control (`[A31]`): identical Oja-normalized update to
+    `HebbianAdaptation`, except the off-diagonal correlation term is
+    shuffled across existing edges (`_shuffle_edge_correlations`) before
+    being applied. Tests H1 ("structured correlations cause geometric
+    organization") against H0 ("any reinforcement with the same
+    correlation-magnitude distribution suffices, regardless of which pair
+    correlated"). Not yet wired into `config.py`'s `Arm` enum as an 8th
+    experimental arm -- see `[A31]`'s entry in `assumptions.md` for the
+    documented next step.
+    """
+
+    def __init__(self, eta: float, rng: np.random.Generator) -> None:
+        self._eta = eta
+        self._rng = rng
+
+    def update(
+        self, graph: WeightedGraph, trajectory: StateTrajectory, dtau: float
+    ) -> WeightedGraph:
+        correlation = _time_averaged_correlation(trajectory)
+        shuffled_correlation = _shuffle_edge_correlations(correlation, graph.mask, self._rng)
+        density = np.diagonal(correlation)
+        decay_term = graph.weights * (density[:, None] + density[None, :]) / 2.0
+        raw_delta = self._eta * dtau * (shuffled_correlation - decay_term)
+        new_weights = _masked_nonnegative(graph.weights + raw_delta, graph.mask)
+        return WeightedGraph(mask=graph.mask, weights=new_weights)
+
+
 class AntiHebbianAdaptation:
     """[A3]: dW_ij/dtau = -eta * <Re(psi_i* psi_j)>_K -- deliberately no
     Oja term. Its own fixed point (decay toward the non-negativity floor)

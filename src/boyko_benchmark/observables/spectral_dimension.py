@@ -15,8 +15,11 @@ Swap in a stochastic estimator before production-scale runs if N grows
 past what exact eigendecomposition can handle in reasonable time.
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import NDArray
+from scipy import stats
 
 
 def heat_kernel_trace(laplacian: NDArray[np.floating], t: float) -> float:
@@ -41,3 +44,86 @@ def spectral_dimension(
     log_p = np.log(p_return)
     result: NDArray[np.floating] = -2.0 * np.gradient(log_p, log_t)
     return result
+
+
+@dataclass(frozen=True)
+class PlateauResult:
+    """Real plateau detection for G1 (`[A30]`, docs/assumptions.md),
+    replacing the provisional `d_s(t_last)` surrogate. `converged=False`
+    means no contiguous window met `slope_tolerance` -- callers must not
+    treat `d_s_hat` as meaningful in that case (it is a documented
+    fallback, not a plateau estimate)."""
+
+    d_s_hat: float
+    t_window: tuple[float, float]
+    log_width: float
+    slope: float
+    r_squared: float
+    n_points: int
+    converged: bool
+
+
+def detect_plateau(
+    t_values: NDArray[np.floating],
+    d_s_values: NDArray[np.floating],
+    min_points: int = 3,
+    slope_tolerance: float = 0.1,
+) -> PlateauResult:
+    """Scans every contiguous window of at least `min_points` points and
+    picks the one with `|slope of d_s vs log(t)| <= slope_tolerance`
+    that has the most points (log-t span as tiebreak) -- see this
+    module's own docstring and `[A30]` for why `|slope|` is the gate,
+    not an R^2-of-the-flat-fit threshold.
+
+    `slope_tolerance` and `min_points` are provisional defaults (`[A30]`)
+    -- not calibrated against real Active-arm `d_s(t)` curves, since no
+    production run exists yet to calibrate against.
+    """
+    n = len(t_values)
+    log_t = np.log(t_values)
+    best: tuple[int, float, int, int, float, float] | None = (
+        None  # (n_pts, width, start, end, slope, r2)
+    )
+
+    for start in range(n):
+        for end in range(start + min_points, n + 1):
+            t_window = log_t[start:end]
+            d_window = d_s_values[start:end]
+            n_pts = end - start
+            width = float(t_window[-1] - t_window[0])
+
+            if np.allclose(d_window, d_window[0]):
+                slope, r_squared = 0.0, 1.0
+            else:
+                regression = stats.linregress(t_window, d_window)
+                slope = float(regression.slope)
+                r_squared = float(regression.rvalue) ** 2
+
+            if abs(slope) > slope_tolerance:
+                continue
+
+            key = (n_pts, width)
+            if best is None or key > (best[0], best[1]):
+                best = (n_pts, width, start, end, slope, r_squared)
+
+    if best is None:
+        return PlateauResult(
+            d_s_hat=float(d_s_values[-1]),
+            t_window=(float(t_values[0]), float(t_values[-1])),
+            log_width=float(log_t[-1] - log_t[0]) if n > 1 else 0.0,
+            slope=float("nan"),
+            r_squared=float("nan"),
+            n_points=0,
+            converged=False,
+        )
+
+    n_pts, width, start, end, slope, r_squared = best
+    return PlateauResult(
+        d_s_hat=float(np.mean(d_s_values[start:end])),
+        t_window=(float(t_values[start]), float(t_values[end - 1])),
+        log_width=width,
+        slope=slope,
+        r_squared=r_squared,
+        n_points=n_pts,
+        converged=True,
+    )

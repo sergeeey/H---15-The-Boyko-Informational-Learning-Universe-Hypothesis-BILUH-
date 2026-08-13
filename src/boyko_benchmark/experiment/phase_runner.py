@@ -36,7 +36,10 @@ from boyko_benchmark.experiment.provenance import (
 )
 from boyko_benchmark.experiment.sweep import run_sweep
 from boyko_benchmark.graphs.weights import normalized_laplacian
-from boyko_benchmark.observables.propagation_front import fit_effective_velocity
+from boyko_benchmark.observables.propagation_front import (
+    detect_unsaturated_window,
+    fit_effective_velocity,
+)
 from boyko_benchmark.phase_gates import (
     ExponentGateResult,
     G1Result,
@@ -113,7 +116,8 @@ def run_phase(config: ExperimentConfig, t_values: NDArray[np.floating], q: float
         q=q,
     )
     g5_times = np.arange(len(g5_mean)) * dt
-    g5_fit = fit_effective_velocity(g5_times, g5_mean, fit_window=(0, len(g5_mean)))
+    g5_fit_window = detect_unsaturated_window(np.round(g5_mean).astype(np.int64))
+    g5_fit = fit_effective_velocity(g5_times, g5_mean, fit_window=g5_fit_window)
     g5 = evaluate_g5(g5_fit)
 
     g6_cells = build_g6_samples(sweep, dt, t_values, q)
