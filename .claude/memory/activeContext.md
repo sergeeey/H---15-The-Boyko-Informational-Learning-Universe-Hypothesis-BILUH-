@@ -1,6 +1,36 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## Current Focus (2026-08-13, continued — [A9] sweep executed)
+## Current Focus (2026-08-13, continued — G1 N=125 asymmetry resolved)
+
+**[VERIFIED, this session] The [A9] sweep's own G1 100%/0% (N=64/N=125)
+asymmetry was investigated and found to be a false-positive artifact,
+not a real N-dependent effect** (commit `0f34e5a`, branch
+`fix/g1-plateau-hump-false-positive`, not yet merged/pushed at time of
+writing).
+
+Real Active-arm `d_s(t)` rises toward a peak (~t=4.3 in the tested
+`[0.1,10]` grid) then declines -- not a plateau. A rise-then-fall window
+can have near-zero AGGREGATE linear-regression slope purely because the
+rise and fall cancel (N=64 witness: window `[1.97,2.60,3.14,3.27,2.61,
+2.03]`, slope=-0.032 within tolerance, but `R²=0.002` -- almost
+certainly not flat, range 1.3). `detect_plateau` now also requires
+`max(window)-min(window) <= range_tolerance=0.3`. Re-checked: **both
+N=64 and N=125 now correctly report `converged=False`** -- the
+asymmetry is gone because it was never real. Honest reading: neither
+size shows a genuine plateau within this pilot's `t_values=[0.1,10]`
+grid / `dtau_steps=50` budget -- an open question (wider `t_values` or
+longer adaptation budget needed), not resolved here. 200/200 tests
+(was 199), all 5 prior `detect_plateau` tests unchanged/still passing.
+
+**Not yet done:** merge `fix/g1-plateau-hump-false-positive` into `main`
+and push (same pattern as prior branches this session); decide whether
+to widen `t_values` past `t=10` and re-run the `[A9]` sweep a 3rd time
+to see if a real plateau emerges; G5's still-uniform-post-fix `v_eff`
+question also remains open.
+
+---
+
+## Focus (2026-08-13, earlier — [A9] sweep executed)
 
 **[A9]'s frozen 25-point `(K, η)` sweep executed twice** using the new
 `configs/kappa_eta_sweep.yaml` + `scripts/run_kappa_eta_sweep.py`
@@ -345,6 +375,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 16:17] `0f34e5a`: fix: detect_plateau accepted rise-then-fall humps as false-positive plateaus
 - [2026-08-13 16:04] `6a31127`: fix: detect_unsaturated_window ignored a real flat lead-in, ran the frozen [A9] sweep
 - [2026-08-13 14:20] `c999b38`: docs: auto-commit log entry (2)
 - [2026-08-13 14:20] `e84337f`: docs: auto-commit log entry
