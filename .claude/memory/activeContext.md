@@ -1,6 +1,46 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## Current Focus (2026-08-13, continued — G5 uniform-v_eff resolved)
+## Current Focus (2026-08-13, continued — G1 t_values investigated, MAJOR finding)
+
+**[VERIFIED, this session] Widened G1's t_values grid to [0.01,1000] (30
+points) to settle whether a real plateau exists for N=64/N=125 -- it
+does NOT, at any tested size** (commit `3656d49`, branch
+`fix/g1-trivial-decay-tail-and-t-values-finding`, not yet merged/pushed).
+
+**Not a t_values-tuning problem.** Computed `d_s(t)` for real Active-arm
+graphs at N=64, N=125, AND N=512 (largest `development.yaml` size):
+identical shape everywhere -- single peak (t≈4-8), no flat region, peak
+VALUE grows with N (3.3→3.8→5.0) instead of converging to a fixed value
+as a genuine geometric dimension should. Signature of an expander/small-
+world graph, not real geometric structure -- consistent with Active's
+mean edge weight still `0.92-0.93` (initial `1.0`) at this pilot's
+`dtau_steps=50`: barely adapted from its Erdős–Rényi start. **Open
+question, not resolved:** does `development.yaml`'s own `dtau_steps=200`
+(4x this budget) produce a different shape?
+
+**Separate real bug found and fixed:** `P_return(t)→1/N` universally for
+large `t` on any finite connected graph, so `d_s(t)→0` for large enough
+`t` -- trivially flat, was accepted as a false `d_s_hat≈0.003-0.03`
+"plateau." Added `min_d_s_hat=0.5` (provisional). Re-ran N=64/125/512
+after: all three correctly `converged=False` now. 202/202 tests (was
+201), all 6 prior tests unchanged/still passing.
+
+**Pattern note:** `detect_plateau` has now gained 3 independent gates
+(slope, range, min_d_s_hat) across 3 commits today -- each catching a
+distinct real false-positive found by actually running real data through
+it (not speculative), verified via `[locality-escalation]` self-check
+mid-session: legitimate incremental empirical discovery, not blind
+patch-chasing.
+
+**Not yet done:** merge this branch into `main` and push (same pattern as
+prior branches); decide whether to re-run `development.yaml`
+(`dtau_steps=200`) to check if a real plateau emerges at a longer
+adaptation budget; G5's resolution-limitation question (prior entry
+below) also remains open.
+
+---
+
+## Focus (2026-08-13, earlier — G5 uniform-v_eff resolved)
 
 **[VERIFIED, this session] Investigated why post-G1-fix `v_eff` was still
 uniform (~20.0) across all 25 `[A9]` sweep points -- resolved into TWO
@@ -409,6 +449,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 16:44] `3656d49`: fix: detect_plateau accepted the universal long-time zero-decay tail as a false plateau
 - [2026-08-13 16:29] `00c0b32`: fix: detect_unsaturated_window collapsed to 2 points on staircase data, mechanically forcing v_eff=1/dt
 - [2026-08-13 16:17] `0f34e5a`: fix: detect_plateau accepted rise-then-fall humps as false-positive plateaus
 - [2026-08-13 16:04] `6a31127`: fix: detect_unsaturated_window ignored a real flat lead-in, ran the frozen [A9] sweep
