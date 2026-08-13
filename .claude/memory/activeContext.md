@@ -302,6 +302,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 14:19] `2e0de34`: docs: update activeContext.md with 2026-08-13 session findings
 - [2026-08-13 14:16] `0ae8442`: fix: close 3 defects surfaced by development.yaml's first full-grid run, add G1 plateau detection and Correlation Shuffle control
 - [2026-08-12 08:42] `87f043b`: docs: note branch-protection context for the provenance-test fix commit
 - [2026-08-12 08:39] `7312640` (branch `fix/provenance-tests-after-first-commit`):
