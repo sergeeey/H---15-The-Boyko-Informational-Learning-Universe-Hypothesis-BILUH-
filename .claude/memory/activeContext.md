@@ -1,6 +1,40 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## Current Focus (2026-08-13, continued — G1 N=125 asymmetry resolved)
+## Current Focus (2026-08-13, continued — G5 uniform-v_eff resolved)
+
+**[VERIFIED, this session] Investigated why post-G1-fix `v_eff` was still
+uniform (~20.0) across all 25 `[A9]` sweep points -- resolved into TWO
+separate findings, not one** (commit `00c0b32`, branch
+`fix/g5-staircase-window-span`, not yet merged/pushed).
+
+1. **Third real algorithmic bug, fixed:** `detect_unsaturated_window`'s
+   "longest strictly-increasing run" always collapses to exactly 2 points
+   on real hop-count-quantized STAIRCASE data (each integer radius held
+   for many dt-steps). Confirmed: transition indices `[16,42,73]` were
+   bit-identical for K=10 vs K=200 (20x budget difference) -- both picked
+   the same single jump mechanically (`v_eff=1/dt=20.0` always). Fixed:
+   trim only the flat lead-in/trail, keep the whole rise. On real data:
+   `v_eff` 20.0 -> 0.573 (a genuine 59-point average). 201/201 tests
+   (was 200), all 4 prior tests unchanged/still passing.
+2. **`v_eff` is STILL bit-identical (`0.572764`) across K∈{10,25,50,100,
+   200} -- confirmed this time NOT a bug.** Directly compared final
+   adapted graph weights: K=10 vs K=200 genuinely differ (max abs diff
+   0.271) -- adaptation IS K-sensitive. G5's integer-hop-count/`q=0.9`
+   measurement is simply too COARSE to detect that real difference at
+   this N/budget -- a genuine RESOLUTION LIMITATION of G5's current
+   definition, documented in `assumptions.md` `[A9]` as a design
+   question for later (e.g. continuous front-crossing time instead of
+   integer hop threshold), not silently patched.
+
+**Not yet done:** merge `fix/g5-staircase-window-span` into `main` and
+push (same pattern as prior branches this session); decide whether G5
+needs a higher-resolution redesign before trusting it in
+`development-v2`; G1's `t_values` grid still needs widening past t=10
+before a real plateau can be found (from the prior focus entry below).
+
+---
+
+## Focus (2026-08-13, earlier — G1 N=125 asymmetry resolved)
 
 **[VERIFIED, this session] The [A9] sweep's own G1 100%/0% (N=64/N=125)
 asymmetry was investigated and found to be a false-positive artifact,
@@ -375,6 +409,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 16:29] `00c0b32`: fix: detect_unsaturated_window collapsed to 2 points on staircase data, mechanically forcing v_eff=1/dt
 - [2026-08-13 16:17] `0f34e5a`: fix: detect_plateau accepted rise-then-fall humps as false-positive plateaus
 - [2026-08-13 16:04] `6a31127`: fix: detect_unsaturated_window ignored a real flat lead-in, ran the frozen [A9] sweep
 - [2026-08-13 14:20] `c999b38`: docs: auto-commit log entry (2)
