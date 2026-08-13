@@ -1,6 +1,49 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## Current Focus (2026-08-13, supersedes "ALL 10 PHASES CLOSED" below for defect status)
+## Current Focus (2026-08-13, continued — [A9] sweep executed)
+
+**[A9]'s frozen 25-point `(K, η)` sweep executed twice** using the new
+`configs/kappa_eta_sweep.yaml` + `scripts/run_kappa_eta_sweep.py`
+(committed `6a31127`, branch `fix/g5-window-flat-lead-in`, not yet
+merged/pushed at time of writing).
+
+**[VERIFIED, this session] First run (25/25, ~27min): found a 4th real defect.** `v_eff=0.0` at
+EVERY point regardless of `K`/`η` (including points where
+`n_steps=dtau_steps·K` differed 20x) -- an impossible coincidence,
+correctly read as a measurement artifact (Substrate Gate discipline),
+not a finding. Root cause: `detect_unsaturated_window` only scanned a
+growth run starting at index 0; a real front's initial flat "quiet
+period" (radius stays 0 before the pulse spreads past the source) was
+mistaken for immediate saturation. Fixed: scan the whole array for its
+longest contiguous increasing run, wherever it occurs. Buggy run archived
+(not discarded) at `results/kappa_eta_sweep/raw_g5-window-bug_2026-08-13.
+jsonl`. 199/199 tests (was 198).
+
+**[VERIFIED, this session] Second run (25/25, ~31min), corrected:** `v_eff≈20.0` everywhere, finite
+and non-degenerate. **[A9] sweep results** (docs/assumptions.md, no
+"winning point" selected per the frozen decision rule):
+- `any_nonfinite`: 0/25 -- no divergence/NaN anywhere in the tested range.
+- G1-G4: broad stability plateau, values vary only in the 3rd-4th
+  significant figure across the full grid. Matches [A9]'s hoped-for
+  outcome.
+- **Follow-up finding 1 (not K/η-related):** G1 `g1_converged_fraction`
+  is deterministically 1.0 at N=64, 0.0 at N=125, in ALL 25 points --
+  a separate `[A30]` calibration issue at N=125, exposed BY this sweep.
+- **Follow-up finding 2:** post-fix `v_eff` is suspiciously uniform
+  (~20.0 everywhere) -- plausibly a real short-time spreading rate
+  independent of slow adaptation params, or a still-too-coarse detection
+  window. Not distinguished; needs a longer/denser G5 measurement window,
+  out of scope for this sweep.
+
+**Not yet done:** merge `fix/g5-window-flat-lead-in` into `main` and
+push (same pattern as `0ae8442`/`e2a18af` -- direct commit to `main` is
+blocked by branch protection); investigate/fix the N=125 G1 convergence
+issue; decide whether G5's uniform post-fix value needs a richer window
+before trusting it in `development-v2`.
+
+---
+
+## Focus (2026-08-13, earlier this session — [A28]-[A31] defects + docs)
 
 **First-ever `development.yaml` full-grid run executed (5 sizes x 5
 seeds x 7 arms) — found and fixed 3 real defects that Phase 0-10's
@@ -302,6 +345,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-13 16:04] `6a31127`: fix: detect_unsaturated_window ignored a real flat lead-in, ran the frozen [A9] sweep
 - [2026-08-13 14:20] `c999b38`: docs: auto-commit log entry (2)
 - [2026-08-13 14:20] `e84337f`: docs: auto-commit log entry
 - [2026-08-13 14:19] `2e0de34`: docs: update activeContext.md with 2026-08-13 session findings
