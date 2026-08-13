@@ -1075,6 +1075,42 @@ real plateau at this budget" conclusion above, not contradicting it.
 202/202 tests (was 201), all 6 prior `detect_plateau` tests unchanged
 and still passing.
 
+**`development-v1` (2026-08-13, full `development.yaml` scale,
+`dtau_steps=200` — the config's own default, no override needed):
+CONFIRMS the expander-not-geometry finding above at the full adaptation
+budget, not just the cheap pilot's `dtau_steps=50`.**
+
+```
+N=64:  d_s_hat=2.03  (0% seeds converged)
+N=125: d_s_hat=3.18  (0% seeds converged)
+N=216: d_s_hat=4.13  (100% seeds converged — see caveat below)
+N=343: d_s_hat=4.79  (0% seeds converged)
+N=512: d_s_hat=5.26  (0% seeds converged)
+```
+
+`d_s_hat` climbs monotonically with `N` — the same qualitative pattern
+found investigating `t_values` at the smaller pilot scale, now confirmed
+at 4x the adaptation budget. A real geometric dimension converges to a
+fixed value as `N` grows (calibration: cubic lattice always `d_s≈3`
+regardless of `N`); a value that keeps climbing is expander/small-world
+behavior, not genuine geometric structure. Full `PROVENANCE.md`:
+`results/development-v1/` (gitignored, on disk only).
+
+**Caveat, not yet resolved:** N=216's `100%` converged is the ONLY
+converging cell among the 5 sizes, all sharing the identical monotonic-
+growth shape above — very likely a fluke (an isolated window that
+happened to clear all 3 gates by chance at `n=5` seeds) rather than a
+real plateau specific to N=216, but not verified this session. First
+concrete follow-up for whoever picks this up next: inspect N=216's raw
+per-seed `d_s(t)` curves directly (same method as the wide-`t_values`
+investigation above) before trusting or dismissing this cell.
+
+Full verdict at this scale: `FAILS_GEOMETRIC_PHASE_SCREEN`
+(G1/G2/G3/G5/G6 FAIL, G4 PASS) — still only `seeds_per_arm_size=5`,
+below the production floor (≥20), so not a final Stage-1 falsification,
+but the expander-pattern finding is now supported at both tested
+adaptation budgets, not just the shorter one.
+
 ### A31 — Correlation Shuffle secondary control (proposed 2026-08-13, external red-team review)
 
 **Ambiguity:** none of the seven primary arms isolate the specific

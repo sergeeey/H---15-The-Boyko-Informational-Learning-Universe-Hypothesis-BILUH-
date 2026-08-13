@@ -1,5 +1,46 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
+## SESSION HANDOFF (2026-08-13, end of session — read this first)
+
+**Everything is committed, merged to `main`, and pushed to `origin/main`.
+Nothing in stash, no open branches with unmerged work, working tree
+clean.** Safe to `git pull` from any machine and continue.
+
+**`development-v1` completed** (`results/development-v1/`, gitignored,
+on disk only — see its `PROVENANCE.md`): full `development.yaml` scale
+(5 sizes, 5 seeds, 7 arms), `dtau_steps=200` (the config's own default).
+`VERDICT: FAILS_GEOMETRIC_PHASE_SCREEN`. **Confirms the expander-not-
+geometry finding from the smaller pilot investigation, now at the full
+adaptation budget:** `d_s_hat` climbs monotonically with N
+(2.03→3.18→4.13→4.79→5.26) instead of converging to a fixed value —
+still consistent with Active being expander-like, not geometric, even
+after 200 dτ steps of Hebbian adaptation. Documented in `assumptions.md`
+`[A30]`.
+
+**[VERIFIED, this session] Immediate next steps, in priority order (none started):**
+1. **Verify or dismiss N=216's "100% converged" cell** — the ONLY
+   converging size among 5, sharing the same monotonic-growth shape as
+   the other 4 (very likely a fluke at n=5 seeds, not investigated).
+   Method: same per-seed `d_s(t)` inspection used for the wide-`t_values`
+   investigation (`assumptions.md` `[A30]`).
+2. **`[A9]`'s `(K,η)` sweep was only tested at pilot scale** (N∈{64,125},
+   `dtau_steps=50`) — not yet re-run at `dtau_steps=200`/full FSS grid.
+3. **G5's resolution-limitation question** (coarse integer-hop-count
+   measurement, documented in `[A9]`) — still open, no redesign attempted.
+4. **Correlation Shuffle (`[A31]`) still not wired as a real 8th arm** —
+   rule exists and is tested, not connected to `config.py`/`arms_runner.py`.
+5. Given the expander-pattern finding now holds at BOTH tested adaptation
+   budgets, the next scientifically load-bearing question is probably:
+   does Active ever escape expander-like behavior at ANY `(K,η,dtau_steps)`
+   combination, or is this rule's ceiling genuinely reached? Worth a
+   direct conversation with the user before spending more compute.
+
+**Full session detail:** `.claude/memory/session-2026-08-13-report.md`
+(covers the first half of the session; this file's own history below
+covers the rest — G1/G5 investigation chain, `[A9]` sweep, `development-v1`).
+
+---
+
 ## Current Focus (2026-08-13, continued — G1 t_values investigated, MAJOR finding)
 
 **[VERIFIED, this session] Widened G1's t_values grid to [0.01,1000] (30
