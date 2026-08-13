@@ -78,22 +78,39 @@ def detect_unsaturated_window(radii: NDArray[np.int64]) -> tuple[int, int]:
     found 2026-08-13: every caller previously passed `fit_window=(0,
     len(radii))`, the FULL trajectory, which contradicts this line.
 
-    Returns `(0, plateau_onset_index)`: `plateau_onset_index` is the first
-    index where `r_q(t)` stops strictly increasing (consistent with this
-    module's own "saturation_radius ... where r_q(t) plateaus" language).
-    Clamped to a minimum window of 2 points so `fit_effective_velocity`'s
-    `scipy.stats.linregress` always has enough data for a line -- an
-    immediate plateau (e.g. all-zero density spread) has no real
+    Returns the LONGEST contiguous strictly-increasing run anywhere in
+    `radii`, not just a run starting at index 0. Revised 2026-08-13
+    (running the [A9] (K,eta) sweep): a real propagation front can stay
+    at radius 0 for several steps before the pulse spreads past the
+    source node -- a genuine "quiet period" before growth starts, not
+    saturation. The original from-index-0-only scan saw that initial
+    flat stretch as an immediate plateau and returned a degenerate
+    2-point window (v_eff=0.0 for every [A9] sweep point regardless of
+    K/eta -- a measurement artifact, not a real finding, caught by the
+    sweep's own no-collapse purpose). Scanning the whole array for its
+    longest increasing run finds the real growth phase wherever it
+    occurs, automatically skipping both a flat lead-in and a flat
+    (saturated) tail. Clamped to a minimum window of 2 points so
+    `fit_effective_velocity`'s `scipy.stats.linregress` always has enough
+    data for a line -- an entirely flat trajectory has no real
     unsaturated regime to report, so the 2-point floor is a degenerate
     fallback, not a meaningful velocity estimate.
     """
     n = len(radii)
-    plateau_onset = n
+    best_start, best_end, best_len = 0, min(2, n), 0
+    run_start = 0
     for i in range(1, n):
         if radii[i] <= radii[i - 1]:
-            plateau_onset = i
-            break
-    return (0, max(plateau_onset, min(2, n)))
+            run_len = i - run_start
+            if run_len > best_len:
+                best_start, best_end, best_len = run_start, i, run_len
+            run_start = i
+    final_run_len = n - run_start
+    if final_run_len > best_len:
+        best_start, best_end, best_len = run_start, n, final_run_len
+    if best_end - best_start < 2:
+        best_end = min(best_start + 2, n)
+    return (best_start, best_end)
 
 
 @dataclass(frozen=True)

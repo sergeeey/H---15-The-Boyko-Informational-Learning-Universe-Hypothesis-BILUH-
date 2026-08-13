@@ -291,6 +291,61 @@ single point that maximizes any gate's pass rate. A single "lucky pixel"
 surrounded by unstable neighbors is evidence AGAINST robustness, not a
 result to select.
 
+**Sweep executed 2026-08-13, all 25 points, `results/kappa_eta_sweep/
+raw.jsonl`.** Per the frozen decision rule above: reporting the stability
+landscape, not a winning point.
+
+- **`any_nonfinite` count: 0/25.** No divergence, no NaN, anywhere in the
+  tested `(K, η)` range.
+- **G1-G4 broad stability plateau**: `d_s_hat`, `γ`, `resistance_diameter`,
+  IPR `η` all vary only in the 3rd-4th significant figure across the
+  entire grid, at both sizes (N=64, N=125) — no visible dependence on
+  `(K, η)` in this range. Consistent with `[A9]`'s hoped-for outcome.
+- **G1 `g1_converged_fraction`: deterministically 1.0 at N=64, 0.0 at
+  N=125, in ALL 25 points** — independent of `(K, η)` entirely. This is
+  NOT a K/η-sensitivity finding; it is a separate, reproducible defect in
+  `[A30]`'s `detect_plateau` calibration at N=125 with the current
+  `t_values` grid/`slope_tolerance`, exposed BY this sweep rather than
+  answering the question the sweep was run for. Needs its own
+  investigation before trusting G1 at N≥125.
+- **G5 `v_eff` — real bug found and fixed mid-sweep, not just a result:**
+  the first full run of this sweep returned `v_eff=0.0` (std=0.0) at
+  every one of the 25 points regardless of `K`/`η`, including points
+  where `n_steps = dtau_steps·K` differed by 20× — an impossible
+  coincidence for real dynamics, correctly treated as a measurement
+  artifact rather than a finding (Substrate Gate discipline: "the
+  measurement couldn't see the effect" ≠ "there is no effect"). Root
+  cause: `detect_unsaturated_window` (`observables/propagation_front.py`)
+  only ever scanned a growth run starting at index 0, so a real front's
+  initial flat "quiet period" (radius stays 0 for several steps before
+  the pulse spreads past the source node) was mistaken for immediate
+  saturation. Fixed to scan the WHOLE array for its longest contiguous
+  increasing run, not just from index 0 (regression test:
+  `check_unsaturated_window.py::test_detect_unsaturated_window_skips_a_
+  flat_lead_in_before_growth_starts`). The buggy run is archived, not
+  discarded, at `results/kappa_eta_sweep/raw_g5-window-bug_2026-08-13.
+  jsonl` — re-run after the fix gives `v_eff≈20.0` (finite, non-degenerate)
+  at every point.
+- **G5 `v_eff` after the fix is ALSO nearly uniform (~20.0 ± floating
+  noise) across all 25 points** — worth a caveat, not a second bug
+  report: the detected window is consistently very narrow (a single
+  radius-0→1 jump), so this may reflect a real short-time spreading rate
+  that genuinely doesn't depend on the slow adaptation parameters (physically
+  plausible — a fresh quantum pulse's first hop is governed by local
+  graph structure near the source, not by how the graph was adapted) OR
+  it may mean the window-detector's "longest single run" criterion is
+  too coarse to capture a richer trend even where one exists. Not
+  resolved here — would need a longer/denser propagation-front
+  measurement window to distinguish the two, out of scope for this
+  robustness sweep.
+
+**Cost, actual (not the pre-run estimate):** 25 points took 1609.7s
+(~27 min) on the first (buggy) run and 1882.2s (~31 min) on the corrected
+re-run — both well inside the ~90-minute estimate, since per-process
+warmup cost amortizes across all 25 points run in one Python process
+(the ~215s single-run measurement that produced the 90-minute estimate
+paid a one-time cold-start cost the batch runner doesn't repeat).
+
 ### A10 — MCID / significance threshold for "meaningful separation" (G6)
 
 **Ambiguity:** ТЗ.txt §10 Gate A requires "statistically meaningful

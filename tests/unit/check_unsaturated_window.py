@@ -48,3 +48,24 @@ def test_detect_unsaturated_window_never_returns_fewer_than_two_points() -> None
     window = detect_unsaturated_window(radii)
 
     assert window[1] - window[0] >= 2
+
+
+def test_detect_unsaturated_window_skips_a_flat_lead_in_before_growth_starts() -> None:
+    """Regression for a real bug found 2026-08-13 running the [A9] (K,eta)
+    sweep: a real propagation front stays at radius 0 for several steps
+    before the pulse spreads past the source node (a genuine "quiet
+    period," not saturation) -- the original implementation only ever
+    scanned a run starting at index 0, so it saw radii[1]<=radii[0] (both
+    0) immediately and returned window=(0,2): two identical zeros, slope
+    trivially 0, v_eff=0.0 regardless of the REAL growth that happens
+    later in the array. The witness below is a simplified version of the
+    exact shape observed in the sweep's raw G5 array (real data had 16
+    leading zeros then 0->1->2->3; this test uses fewer points for a
+    hand-checkable window bound, same qualitative shape)."""
+    radii = np.array([0, 0, 0, 0, 1, 2, 3, 3, 3])
+
+    window = detect_unsaturated_window(radii)
+
+    # the real growth run is indices [3,7) (0->1->2->3, i.e. radii[3..6]);
+    # must NOT be the leading flat run (0,2) or (0,4).
+    assert window == (3, 7)
