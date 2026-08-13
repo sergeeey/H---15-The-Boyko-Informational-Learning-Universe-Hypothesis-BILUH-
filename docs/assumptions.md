@@ -956,6 +956,46 @@ threshold against real curves, not as evidence against the Stage-1 claim
 itself. Not resolved further here because no real Active-arm `d_s(t)`
 data exists yet to calibrate against.
 
+**Correction, found 2026-08-13 investigating the `[A9]` sweep's own
+100%-converged-at-N=64/0%-converged-at-N=125 asymmetry:** that asymmetry
+was itself a false-positive artifact, not a real N-dependent effect.
+Real Active-arm `d_s(t)` curves rise toward a peak (around
+`t≈4.3` in the tested `[0.1,10]` grid) then DECLINE at larger `t` — not a
+plateau at all. A rise-then-fall window can have a near-zero AGGREGATE
+linear-regression slope purely because the rise and fall cancel out
+(witness, N=64: window `[1.97, 2.60, 3.14, 3.27, 2.61, 2.03]`, slope
+`-0.032` — within tolerance — but `R²=0.002`, i.e. almost certainly NOT
+actually flat; range 1.3). Slope alone cannot distinguish "flat" from
+"symmetric hump," and this specific curve shape happened to fool the
+slope-only gate at N=64 but not at N=125 (different numbers, same
+underlying non-plateau shape) — that coincidence, not N-dependence,
+produced the 100%/0% split.
+
+**Fix:** added a second, independent gate: a qualifying window must also
+have `max(d_s in window) - min(d_s in window) <= range_tolerance=0.3`.
+Range directly tests the property slope-alone missed. Re-running the
+same N=64/N=125 comparison after the fix: **both now correctly report
+`converged=False`** — the asymmetry is gone, and the honest reading is
+that NEITHER size shows a genuine plateau within this pilot config's
+`t_values=[0.1,10]` grid and `dtau_steps=50` adaptation budget. This is
+not a regression — a false "yes" is worse than an honest "not enough
+data," per this project's own Substrate/Oracle Adequacy discipline. The
+real open question this surfaces: does `d_s(t)` ever genuinely plateau
+for Active within a longer/differently-ranged `t_values` grid, or does
+production's `dtau_steps=200`+ budget change the curve's shape entirely?
+Neither is answered here — needs a `t_values` grid extended well past
+`t=10` (or a longer adaptation budget) before G1 can be trusted on real
+Active data, separate from `[A9]`'s own `(K,η)` question.
+
+**Evidence (correction):** [VERIFIED-pytest]
+`check_spectral_dimension_plateau.py::test_detect_plateau_rejects_a_
+rise_then_fall_hump_with_near_zero_net_slope` — hand-derived hump
+(`[0.5,1.8,3.5,4.5,5.0,3.5,1.5]`), cross-checked via Bash prototype:
+without the range gate, a 6-point window `[1.8,3.5,4.5,5.0,3.5,1.5]`
+(slope=-0.035, range=3.5) would be accepted; with it, correctly rejected,
+`converged=False` for the whole array. All 5 prior tests unchanged and
+still passing (200/200 total, was 199).
+
 ### A31 — Correlation Shuffle secondary control (proposed 2026-08-13, external red-team review)
 
 **Ambiguity:** none of the seven primary arms isolate the specific

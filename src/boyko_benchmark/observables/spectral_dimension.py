@@ -68,16 +68,34 @@ def detect_plateau(
     d_s_values: NDArray[np.floating],
     min_points: int = 3,
     slope_tolerance: float = 0.1,
+    range_tolerance: float = 0.3,
 ) -> PlateauResult:
     """Scans every contiguous window of at least `min_points` points and
-    picks the one with `|slope of d_s vs log(t)| <= slope_tolerance`
-    that has the most points (log-t span as tiebreak) -- see this
-    module's own docstring and `[A30]` for why `|slope|` is the gate,
-    not an R^2-of-the-flat-fit threshold.
+    picks the one that qualifies (see below) with the most points
+    (log-t span as tiebreak) -- see this module's own docstring and
+    `[A30]` for why `|slope|` is one gate, not an R^2-of-the-flat-fit
+    threshold.
 
-    `slope_tolerance` and `min_points` are provisional defaults (`[A30]`)
-    -- not calibrated against real Active-arm `d_s(t)` curves, since no
-    production run exists yet to calibrate against.
+    A window qualifies only if BOTH:
+    - `|slope of d_s vs log(t)| <= slope_tolerance`
+    - `max(d_s in window) - min(d_s in window) <= range_tolerance`
+
+    The range check was added 2026-08-13 after running the `[A9]` sweep:
+    a rise-then-fall "hump" in `d_s(t)` (a real shape this project's own
+    curves show -- rises toward a peak, then declines at large t, not a
+    genuine plateau) can have a near-zero AGGREGATE linear-regression
+    slope purely because the rise and fall cancel out, while individual
+    points scatter across a wide range (witness: a real Active-arm curve
+    at N=64 was reported `converged=True` by the slope-only version with
+    `d_s_hat` averaged over points `[1.97, 2.60, 3.14, 3.27, 2.61, 2.03]`
+    -- range 1.3, `R^2=0.002` near zero, i.e. NOT actually a flat line,
+    a false positive). Slope alone cannot distinguish "flat" from
+    "symmetric hump" gone through the middle; range can.
+
+    `slope_tolerance`, `range_tolerance`, and `min_points` are provisional
+    defaults (`[A30]`) -- not calibrated against a larger corpus of real
+    Active-arm `d_s(t)` curves, since no production run exists yet to
+    calibrate against.
     """
     n = len(t_values)
     log_t = np.log(t_values)
@@ -99,7 +117,8 @@ def detect_plateau(
                 slope = float(regression.slope)
                 r_squared = float(regression.rvalue) ** 2
 
-            if abs(slope) > slope_tolerance:
+            window_range = float(np.max(d_window) - np.min(d_window))
+            if abs(slope) > slope_tolerance or window_range > range_tolerance:
                 continue
 
             key = (n_pts, width)

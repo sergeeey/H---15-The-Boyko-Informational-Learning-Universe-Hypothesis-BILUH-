@@ -91,3 +91,23 @@ def test_detect_plateau_requires_minimum_points_below_which_it_cannot_converge()
 
     assert result.converged is False
     assert result.n_points == 0
+
+
+def test_detect_plateau_rejects_a_rise_then_fall_hump_with_near_zero_net_slope() -> None:
+    """Regression for a real false positive found 2026-08-13 running the
+    [A9] sweep: a genuine Active-arm d_s(t) curve rises toward a peak then
+    falls (not a plateau at all), and the 6-point window spanning the peak
+    had aggregate slope=-0.035 (within slope_tolerance=0.1) purely because
+    the rise and fall cancel out -- while individual points scattered
+    across range 3.5 (values [1.8, 3.5, 4.5, 5.0, 3.5, 1.5], hand-derived
+    and cross-checked via Bash prototype before writing this assertion).
+    The old slope-only gate reported this as `converged=True`; the
+    range_tolerance gate must reject it."""
+    t_values = np.array([0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0])
+    d_s_values = np.array([0.5, 1.8, 3.5, 4.5, 5.0, 3.5, 1.5])
+
+    result = detect_plateau(
+        t_values, d_s_values, min_points=3, slope_tolerance=0.1, range_tolerance=0.3
+    )
+
+    assert result.converged is False
