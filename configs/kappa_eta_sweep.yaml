@@ -1,0 +1,72 @@
+# Cheap (K, eta) robustness/no-collapse sweep config -- [A9], docs/assumptions.md.
+#
+# Purpose: check whether Active's G1-G5 raw values are STABLE across the
+# frozen (K, eta) grid (docs/assumptions.md [A9] entry) -- not a Stage-1
+# verdict, not an MCID comparison. Single smallest size, few seeds, and
+# only the 4 arms `phase_runner.run_phase` actually needs (Active + all
+# three G6 comparator arms -- run_phase computes G6 unconditionally, and
+# `g6_wiring.build_g6_samples` raises KeyError on `replicate.arm_results`
+# if Frozen/Parameter-Matched-Random/Topology-Scrambled are missing, so
+# this is the true minimum, not an arbitrary trim). Fixed Flat Geometry,
+# Alternative Objective, and Classical Diffusion Control are dropped --
+# none of them are needed to check Active's own K/eta stability.
+#
+# Cost: MEASURED (not estimated) 2026-08-13 at this file's own default
+# point (K=50, eta=0.1): 215.04s. A pure N^3-dynamics-cost extrapolation
+# from development.yaml's 4292s predicted <1 minute -- the real number is
+# ~3.6 minutes, because fixed per-replicate overhead (BFS hop distances,
+# G1-G4 eigendecompositions, Python/orchestration overhead) doesn't scale
+# down with N^3 the way the dynamics integration does. 25 grid points at
+# this measured cost: ~215s * 25 ~= 5375s ~= 90 minutes -- feasible in one
+# sitting, versus development.yaml scale's ~30 hours for the same grid.
+#
+# This config's own (K, eta) values below are the FROZEN DEFAULT point
+# (matches development.yaml) -- the sweep itself means re-running with
+# adaptation.K/adaptation.eta overridden to each of the 25 frozen grid
+# values from assumptions.md [A9], not editing this file 25 times.
+
+experiment:
+  master_seed: 20260811   # [A11] -- same root as smoke/development, for comparability
+
+sizes: [64, 125]   # phase_runner.run_phase's G1 convergence check requires >= 2 distinct
+                    # sizes (check_finite_size_convergence raises otherwise, found running
+                    # this config with a single size 2026-08-13) -- two smallest FSS grid
+                    # points (mathematical_contract.md §6), still far cheaper than the full
+                    # 5-size development.yaml grid.
+
+seeds_per_arm_size: 3   # enough to see seed-to-seed variance, still far below production floor (>=20)
+
+arms:
+  - active
+  - frozen                     # G6 comparator + [A9]'s primary stability baseline
+  - parameter_matched_random   # G6 comparator
+  - topology_scrambled         # G6 comparator (needs Active's final graph, [A8])
+
+fast_dynamics:
+  dt: 0.05                     # same provisional value as smoke/development
+  operator_independence_diagnostic: true   # cheap at N=64, keep the same diagnostic coverage
+
+adaptation:
+  eta: 0.1     # [A9] frozen default -- OVERRIDE per sweep point, see assumptions.md [A9] grid
+  K: 50        # [A9] frozen default -- OVERRIDE per sweep point, see assumptions.md [A9] grid
+  dtau_steps: 50   # reduced from development.yaml's 200 -- enough adaptation to see
+                   # divergence/collapse, short enough to keep 25 points affordable;
+                   # provisional, not itself part of the [A9] grid being swept
+
+propagation_front:
+  q: 0.9
+  n_source_nodes: 5
+
+topology_scrambled:
+  n_swaps_per_edge: 10   # [A21], same as smoke/development
+
+mcid:
+  cohens_d_threshold: 0.8
+  require_nonoverlapping_ci: true
+
+g6_tiering:
+  total_cells: 15
+  strong_threshold: 15
+  partial_threshold: 10
+
+seed_scheme: numpy_seedsequence

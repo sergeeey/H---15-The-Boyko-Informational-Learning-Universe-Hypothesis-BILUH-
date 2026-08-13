@@ -259,11 +259,30 @@ before seeing any sweep output.
 seeds × 7 arms). Running this 25-point grid at that same scale would cost
 ~30 hours — infeasible as a single session's work and not necessary for
 a robustness/no-collapse check, which only needs Active's own G1-G5
-stability across `(K, η)`, not full G6 cross-arm MCID comparison. A
-separate, cheaper sweep-only config (single smallest size, few seeds,
-Active + Frozen arms only) should be used for this sweep; only the
-surviving stable region, if any, needs a subsequent full-arm confirmation
-at `development.yaml` scale.
+stability across `(K, η)`, not full G6 cross-arm MCID comparison.
+
+**`configs/kappa_eta_sweep.yaml`** (added 2026-08-13): 2 smallest sizes
+(`[64, 125]` — `run_phase`'s G1 convergence check requires ≥2 distinct
+sizes, found empirically when a 1-size version raised `ValueError`), 3
+seeds, and the 4 arms `run_phase` actually needs (Active + all three G6
+comparators — `g6_wiring.build_g6_samples` raises `KeyError` if Frozen/
+Parameter-Matched-Random/Topology-Scrambled are absent, so this is the
+true minimum, not an arbitrary trim; Fixed Flat Geometry, Alternative
+Objective, Classical Diffusion Control dropped). `dtau_steps=50`
+(vs. development's 200).
+
+**MEASURED cost** (not estimated) at this config's own default point:
+**215.04s**. A pure N³-dynamics-cost extrapolation from `development.
+yaml`'s 4292s predicted <1 minute for this config — the real number is
+~3.6× that, because fixed per-replicate overhead (BFS hop distances,
+G1-G4 eigendecompositions, orchestration) doesn't shrink with N³ the way
+the dynamics integration does; noted here so a future estimate from this
+project starts from a measured multiplier, not a re-derived guess. 25
+grid points at this measured cost: **~90 minutes total** — feasible in
+one sitting, and the config itself is committed
+(`configs/kappa_eta_sweep.yaml`); only the surviving stable region, if
+any, needs a subsequent full-arm confirmation at `development.yaml`
+scale.
 
 **Decision rule (frozen, not to be relaxed after seeing results):** the
 sweep looks for a broad plateau of `(K, η)` where G1-G5 raw values are
