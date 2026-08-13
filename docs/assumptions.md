@@ -326,18 +326,40 @@ landscape, not a winning point.
   discarded, at `results/kappa_eta_sweep/raw_g5-window-bug_2026-08-13.
   jsonl` — re-run after the fix gives `v_eff≈20.0` (finite, non-degenerate)
   at every point.
-- **G5 `v_eff` after the fix is ALSO nearly uniform (~20.0 ± floating
-  noise) across all 25 points** — worth a caveat, not a second bug
-  report: the detected window is consistently very narrow (a single
-  radius-0→1 jump), so this may reflect a real short-time spreading rate
-  that genuinely doesn't depend on the slow adaptation parameters (physically
-  plausible — a fresh quantum pulse's first hop is governed by local
-  graph structure near the source, not by how the graph was adapted) OR
-  it may mean the window-detector's "longest single run" criterion is
-  too coarse to capture a richer trend even where one exists. Not
-  resolved here — would need a longer/denser propagation-front
-  measurement window to distinguish the two, out of scope for this
-  robustness sweep.
+- **G5 `v_eff` after the fix was ALSO uniform (~20.0) across all 25
+  points — investigated 2026-08-13, resolved into two separate findings,
+  not one:**
+  1. **Second real algorithmic bug, fixed:** `detect_unsaturated_window`'s
+     "longest strictly-increasing run" degenerates to exactly 2 points on
+     real hop-count-quantized data, which is a STAIRCASE (each integer
+     radius held for many steps before the next jump) — no run of more
+     than 2 points is ever strictly increasing in a staircase. Confirmed:
+     transition indices `[16, 42, 73]` were bit-identical for K=10 and
+     K=200 (a 20x adaptation-budget difference), because both picked the
+     same single first jump mechanically (`v_eff = 1/dt = 20.0` always),
+     not because the real dynamics were identical. Fixed: trim only the
+     flat lead-in and flat trail, keep everything in between (every
+     intermediate plateau's timing) — `tests/unit/check_unsaturated_
+     window.py::test_detect_unsaturated_window_spans_a_whole_staircase_
+     not_just_one_jump`. Re-run on real data: `v_eff` changes from `20.0`
+     to `0.573` (a genuine average velocity across the full 59-point
+     rise, not a single hop) — 201/201 tests (was 200), all 5 prior
+     `detect_unsaturated_window` tests unchanged and still passing.
+  2. **After that fix, `v_eff` is STILL bit-identical (`0.572764`) for
+     K∈{10,25,50,100,200} at fixed η=0.1 — this time confirmed NOT a
+     window-detection artifact.** Directly compared the two arms' final
+     adapted graph WEIGHTS (not just G5's derived radius): K=10 vs K=200
+     final weights genuinely DIFFER (max abs diff 0.271, means 0.922 vs
+     0.925) — adaptation IS sensitive to K at the weight level. G5's
+     integer-hop-count/`q=0.9`-threshold measurement is simply too
+     COARSE a diagnostic to detect that real difference: a ~20-30% edge-
+     weight perturbation isn't enough to shift which discrete radius
+     crosses the density threshold at the tested `n_steps`. This is a
+     genuine RESOLUTION LIMITATION of G5 as currently defined, not a bug
+     to silently patch — a design question (e.g. a continuous/interpolated
+     front-crossing time instead of an integer hop threshold, or a
+     higher-resolution `q`) for whoever next revisits G5, out of scope
+     for this sweep.
 
 **Cost, actual (not the pre-run estimate):** 25 points took 1609.7s
 (~27 min) on the first (buggy) run and 1882.2s (~31 min) on the corrected

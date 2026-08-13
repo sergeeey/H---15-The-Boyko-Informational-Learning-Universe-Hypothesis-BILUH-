@@ -78,39 +78,52 @@ def detect_unsaturated_window(radii: NDArray[np.int64]) -> tuple[int, int]:
     found 2026-08-13: every caller previously passed `fit_window=(0,
     len(radii))`, the FULL trajectory, which contradicts this line.
 
-    Returns the LONGEST contiguous strictly-increasing run anywhere in
-    `radii`, not just a run starting at index 0. Revised 2026-08-13
-    (running the [A9] (K,eta) sweep): a real propagation front can stay
-    at radius 0 for several steps before the pulse spreads past the
-    source node -- a genuine "quiet period" before growth starts, not
-    saturation. The original from-index-0-only scan saw that initial
-    flat stretch as an immediate plateau and returned a degenerate
-    2-point window (v_eff=0.0 for every [A9] sweep point regardless of
-    K/eta -- a measurement artifact, not a real finding, caught by the
-    sweep's own no-collapse purpose). Scanning the whole array for its
-    longest increasing run finds the real growth phase wherever it
-    occurs, automatically skipping both a flat lead-in and a flat
-    (saturated) tail. Clamped to a minimum window of 2 points so
-    `fit_effective_velocity`'s `scipy.stats.linregress` always has enough
-    data for a line -- an entirely flat trajectory has no real
-    unsaturated regime to report, so the 2-point floor is a degenerate
-    fallback, not a meaningful velocity estimate.
+    Trims a flat LEAD-IN (radius stuck at its initial value -- a genuine
+    "quiet period" before the pulse spreads past the source node, not
+    saturation) and a flat TRAIL (radius stuck at its final/saturated
+    value) from the two ends of `radii`, returning everything in between
+    -- the actual rising regime, however it is shaped.
+
+    Revised 2026-08-13 (a second time, investigating the [A9] sweep's own
+    `v_eff` being suspiciously uniform ~20.0 across all 25 points): the
+    prior "longest strictly-increasing run" version degenerates to a
+    2-point window on real hop-count-quantized data, which is a
+    STAIRCASE (radius holds an integer value for many steps, then jumps)
+    -- no run of MORE than 2 points is ever strictly increasing in a
+    staircase, so that version always returned the single largest jump,
+    mechanically forcing `v_eff = 1/dt` regardless of the real spreading
+    rate (confirmed: transition indices `[16, 42, 73]` were bit-identical
+    for K=10 and K=200 -- a 20x difference in adaptation budget -- because
+    both runs picked the exact same single first jump, not because the
+    real dynamics were identical). Trimming lead-in/trail-out instead
+    keeps every intermediate plateau's timing information, which is
+    exactly what a staircase's average velocity needs.
+
+    Clamped to a minimum window of 2 points so `fit_effective_velocity`'s
+    `scipy.stats.linregress` always has enough data for a line -- an
+    entirely flat trajectory (`radii[0] == radii[-1]`) has no real
+    unsaturated regime to report, so the 2-point floor from index 0 is a
+    degenerate fallback, not a meaningful velocity estimate.
     """
     n = len(radii)
-    best_start, best_end, best_len = 0, min(2, n), 0
-    run_start = 0
-    for i in range(1, n):
-        if radii[i] <= radii[i - 1]:
-            run_len = i - run_start
-            if run_len > best_len:
-                best_start, best_end, best_len = run_start, i, run_len
-            run_start = i
-    final_run_len = n - run_start
-    if final_run_len > best_len:
-        best_start, best_end, best_len = run_start, n, final_run_len
-    if best_end - best_start < 2:
-        best_end = min(best_start + 2, n)
-    return (best_start, best_end)
+    if n < 2:
+        return (0, n)
+    if radii[0] == radii[-1]:
+        return (0, min(2, n))
+
+    lead_in_end = 0
+    while lead_in_end + 1 < n and radii[lead_in_end + 1] == radii[0]:
+        lead_in_end += 1
+    start = lead_in_end
+
+    trail_start = n - 1
+    while trail_start - 1 >= 0 and radii[trail_start - 1] == radii[-1]:
+        trail_start -= 1
+    end = trail_start + 1
+
+    if end - start < 2:
+        end = min(start + 2, n)
+    return (start, end)
 
 
 @dataclass(frozen=True)

@@ -69,3 +69,29 @@ def test_detect_unsaturated_window_skips_a_flat_lead_in_before_growth_starts() -
     # the real growth run is indices [3,7) (0->1->2->3, i.e. radii[3..6]);
     # must NOT be the leading flat run (0,2) or (0,4).
     assert window == (3, 7)
+
+
+def test_detect_unsaturated_window_spans_a_whole_staircase_not_just_one_jump() -> None:
+    """Regression for a second real bug found 2026-08-13, investigating
+    why the [A9] sweep's v_eff was suspiciously uniform (~20.0, exactly
+    1/dt) at every one of the 25 (K,eta) points: real hop-count-quantized
+    propagation data is a STAIRCASE (each integer radius held for many
+    steps before the next jump), so "longest strictly-increasing run"
+    (the previous version of this function) always finds exactly 2
+    points -- the single largest jump -- never capturing the full rise.
+    This witness reproduces the exact transition shape measured in the
+    real sweep data (radius 0 for 16 steps, then 1 for 26 steps, then 2
+    for 31 steps, then 3 for the rest -- transition indices [16,42,73]
+    were bit-identical for K=10 and K=200, confirming the OLD window was
+    always just the first jump, not real dynamics). The window must span
+    from the first jump to the last (trimming only the flat lead-in and
+    flat trail), not collapse to 2 points."""
+    radii = np.array([0] * 16 + [1] * 26 + [2] * 31 + [3] * 20)
+
+    window = detect_unsaturated_window(radii)
+
+    # index 15 = last point still at the initial value 0 (lead-in trim
+    # keeps this one anchor point); index 74 (exclusive) = one past index
+    # 73, the first point that reaches the final value 3.
+    assert window == (15, 74)
+    assert window[1] - window[0] == 59
