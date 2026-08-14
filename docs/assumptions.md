@@ -1234,6 +1234,65 @@ shows the lattice's peak DOES drift with more adaptation budget or
 different parameters, this conclusion reverses — not resolved here, this
 is a single cheap pilot point, not a swept confirmation.
 
+### A33 — ω_ref for dimensionless (γ, σ) parameterization, Phase 11 (open-system pilot ТЗ §9)
+
+**Ambiguity:** the Phase 11 ТЗ requires dissipation/noise be parameterized
+dimensionlessly relative to "a characteristic dynamical frequency
+`ω_ref`, e.g. via spectral scale of the used Hamiltonian" — but doesn't
+name the exact quantity. Several candidates exist: the current graph's
+actual spectral radius (precise but graph-/time-dependent, drifts as
+Active adapts), the mean nonzero eigenvalue, or the operator's a priori
+bound.
+
+**Default: `ω_ref = 2`** — the FIXED upper bound on `L_norm`'s spectrum,
+already established and proven in this project (`mathematical_
+contract.md` §2 / `[A1]`: "spectrum bounded in `[0, 2)` regardless of
+weight/degree magnitude"). `γ̃ = γ/ω_ref`, `σ̃` normalized the same way
+relative to state-vector scale (§9).
+
+**Why this default, not a graph-dependent one:** (1) it is already a
+PROVEN property of `H(W) = L_norm(W)`, not a new empirical estimate to
+justify or recompute; (2) it is graph- and adaptation-time-independent,
+so `(γ̃, σ̃)` mean the same physical thing at every point in the FSS grid
+and at every adaptation step — critical for the Phase 11 pilot's factorial
+design (§10) and `D_OC` open-vs-closed trajectory comparison (§12.2),
+both of which require a stable, comparable reference across cells; (3) it
+costs nothing to compute (no eigendecomposition needed just to fix the
+scale).
+
+**Evidence:** [VERIFIED] `L_norm`'s `[0,2)` bound is a standard spectral
+graph theory result for the normalized Laplacian (Chung 1997), already
+cited and relied upon elsewhere in this project (`mathematical_
+contract.md` §2, `[A1]`).
+
+**If wrong:** if `ω_ref=2` proves too coarse (e.g. most graphs in the FSS
+grid have real spectral radius well under 2, making `γ̃=1` correspond to
+wildly different ACTUAL damping strength relative to the graph's real
+dynamics), a graph-dependent `ω_ref` (e.g. `λ_max(L_norm)` recomputed per
+replicate at `τ=0`, held fixed for that replicate's whole run — not
+recomputed every adaptation step, to preserve within-replicate
+comparability) should be substituted. Not resolved further here — Phase
+11 Milestone 1's T1/T2/T8 regression tests do not depend on which
+`ω_ref` is chosen, so this can be revisited without invalidating them.
+
+### A34 — Noise model for PhenomenologicalOpenBackend (Phase 11 ТЗ §7 step C)
+
+**Ambiguity:** ТЗ §7/§8 requires "complex Gaussian/Rademacher noise
+according to a fixed model" but doesn't pick one.
+
+**Default:** complex standard normal — independent real and imaginary
+parts, each `N(0, 0.5)`, giving `E[|ζ|²]=1`. Standard convention for
+complex white noise (matches the `⟨ξ_i(t)ξ_j*(t')⟩` correlator form the
+`[UNKNOWN provenance]` v1.0-like document itself uses, §2.1).
+
+**Evidence:** [WEAK] — a conventional choice, not derived from this
+project's own contract (which doesn't specify a fast-dynamics noise term
+at all outside Phase 11).
+
+**If wrong:** T3 (Ornstein–Uhlenbeck variance convergence test, ТЗ §22)
+will directly catch a wrong normalization — the empirical variance won't
+match the analytic OU prediction if `E[|ζ|²]` is off by a constant factor.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
