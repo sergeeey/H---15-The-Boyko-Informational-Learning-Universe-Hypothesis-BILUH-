@@ -1,6 +1,38 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — [A35] RESOLVED, Milestone 3 pilot RUNNING)
+## SESSION HANDOFF (updated 2026-08-14, continued — Milestones 3-6 DONE, Milestone 7 needs user go-ahead)
+**Phase 11 Milestones 1-6 are all complete and pushed to `main`.**
+Sequence this session: `[A35]` resolved by explicit user choice (option
+c) -> Milestone 3 factorial pilot ran clean (N=512, 20/20 points,
+`c78f9d5`/`1035cc2`) -> Milestone 4 (Cσ vs H5 via conductance/modularity,
+`d3f55cc`) -> Milestone 5 (H0 shuffle-correlation control, triggered by
+Milestone 4's signal per the ТЗ's own gate, same commit) -> Milestone 6
+(Analysis Freeze doc, `3e544e1`, `docs/phase11_milestone6_analysis_freeze.md`).
+
+**The headline finding, Kill-Analysis'd not spun:** `Cσ`'s modularity
+increase is real (clears the raw-ER-graph negative-control floor,
+`d=7.73`) but is NOT specific to the real Hebbian correlation structure
+— a shuffled-correlation H0 control is statistically indistinguishable
+(`d=-0.735`, CI overlap). What survived: noise-driven reinforcement
+(structured or not) moves modularity off the random floor. What got
+killed: "the SPECIFIC correlations the dynamics builds matter" — full
+Kill Analysis with what-survived/what-didn't in `docs/assumptions.md
+[A37]`. G1 (spectral dimension) never converged for any of the 20 open-
+system Active pilot points — no Gate-A verdict is reachable from Phase
+11's data; this remains exploratory pilot work.
+
+**Deliberately stopped before Milestone 7 (extended FSS)**: that's a
+materially larger compute campaign (multiple N, more seeds, likely new
+`(γ̃,σ̃)` pairs for a real H0-vs-H1 power analysis — the `d=-0.735` null
+result is close enough to the `0.8` MCID threshold that 5 seeds may be
+underpowered, flagged explicitly in `[A37]`'s own "if wrong" clause) —
+needs the user's explicit scope/compute-budget go-ahead per `docs/
+phase11_milestone6_analysis_freeze.md`'s closing section, not a silent
+continuation. All work is committed, merged to `main`, and pushed
+(`git log` confirms `3e544e1` is `origin/main`'s HEAD).
+
+244/244 tests, ruff/mypy clean throughout (verified via `.venv/Scripts/
+python.exe`, not the bare `python` on PATH).
 **[A35] resolved by explicit user decision, not silently**: user chose
 option (c) -- proceed with γ̃=0.05 AS IS, treat near-zero D_W as itself
 informative (`OPEN_DYNAMICS_NO_EFFECT`), and run Milestone 3 at N=512
@@ -480,6 +512,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-14 18:32] `3e544e1`: docs(phase11): Milestone 6 Analysis Freeze вЂ” fixes the Milestone 1-5 interpretation
 - [2026-08-14 16:43] `6347801`: feat(phase11): open-system pilot config/script layer (TZ Section 21)
 [summarized] - [2026-08-14 16:33] `31b8c33`: feat: Phase 11 conductance/modularity observables (РўР— В§12.6-12.7)
   assumed without asking).
