@@ -1293,6 +1293,62 @@ at all outside Phase 11).
 will directly catch a wrong normalization — the empirical variance won't
 match the analytic OU prediction if `E[|ζ|²]` is off by a constant factor.
 
+### A35 — T7 / Milestone 2 result: open dynamics does not destroy lattice geometry, but γ=0.1 (γ̃=0.05) nearly freezes Hebbian weight movement (2026-08-14)
+
+**Question this answers:** ТЗ §22/§31's Milestone 2 gate — does at least
+one nonzero `(γ,σ)` regime leave `[A32]`'s lattice positive control
+intact? Repeated `[A32]`'s exact setup (N=64 lattice, K=50, η=0.1,
+`dtau_steps=50`) at all 4 factorial pilot cells (ТЗ §10) using
+`PhenomenologicalOpenBackend` via the new `experiment/open_pilot.py`.
+
+**Result — all 4 cells pass, none destroy the lattice signature:**
+
+```
+BEFORE (unadapted):        peak d_s ≈ 3.173
+C0    (γ=0,   σ=0):        peak d_s ≈ 3.169, weights std=0.109
+Cγ    (γ=0.1, σ=0):        peak d_s ≈ 3.173, weights std=0.007
+Cσ    (γ=0,   σ̃=0.05):     peak d_s ≈ 3.074, weights std=0.173
+Cγσ   (γ=0.1, σ̃=0.05):     peak d_s ≈ 3.173, weights std=0.010
+```
+
+(`γ̃=0.05` → `γ=γ̃·ω_ref=0.1` per `[A33]`.)
+
+**Mechanistic caveat — worth surfacing now, not silently absorbed by
+"the test passed":** `Cγ`'s weight std (0.007) is over an order of
+magnitude smaller than `C0`'s (0.109) — dissipation at this strength
+appears to nearly FREEZE Hebbian weight movement at this `K`/`dt`/
+`dtau_steps` budget, not merely protect existing geometry from
+disruption. `Cγσ` (both nonzero) looks dominated by the same freezing
+(std=0.010, close to `Cγ`'s), suggesting `γ=0.1` may already be strong
+enough to suppress noise's own effect too, at least at this scale.
+
+**Why this matters for Milestone 3 (not resolved here):** if `γ=0.1`
+freezes weight movement on a LATTICE (which already has the target
+structure, nothing to reorganize), it plausibly also freezes movement on
+Active's DISORDERED starting graph — meaning this specific `γ` value
+might trivially pass "doesn't destroy geometry" for a reason that has
+nothing to do with geometry: it may prevent the correlation-driven
+Hebbian signal from accumulating fast enough to move weights much at
+all, regardless of starting structure. `D_W` (ТЗ §12.1, weight
+trajectory magnitude) directly measures this and should be checked on
+Active BEFORE trusting any Milestone 3 factorial-pilot verdict at this
+`γ` value — a near-zero `D_W` on Active at the same `γ` would mean the
+pilot cell tests "does frozen-in-place count as geometric," not "does
+open dynamics enable organization."
+
+**Evidence:** [VERIFIED-pytest] `check_open_pilot.py::test_t7_open_
+dynamics_does_not_destroy_lattice_geometry` — numbers cross-checked via
+a background investigation script before writing the assertion
+(`peak_after` within `±1.0` of `peak_before` for all 4 cells; exact
+weight-std numbers recorded above are from that same run, not re-derived
+in the test assertion itself, which only checks the geometry-non-
+destruction gate).
+
+**If wrong:** if a wider `(K,η,dtau_steps)` grid shows `γ=0.1` does NOT
+freeze Active's weight movement (i.e. this freezing is lattice-specific,
+not a general property of this `γ`), the caveat above does not apply —
+not resolved here, needs the actual Milestone 3 Active-arm run to check.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
