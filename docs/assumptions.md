@@ -1176,6 +1176,64 @@ fair test) — this should be checked against a variant using ONE fixed
 permutation for the full adaptation run before trusting either verdict.
 Not resolved here because no run of either variant exists yet.
 
+### A32 — Cheapest differentiating test: does HebbianAdaptation destroy geometry that already exists? (2026-08-14, pre-registered before any open-system/dissipative-dynamics implementation work)
+
+**Question this answers:** the expander-not-geometry finding (`[A30]`) was
+found starting from a DISORDERED Erdős–Rényi graph under a CLOSED unitary
+system. Before investing in an open/dissipative-dynamics reimplementation
+(a real red-team-review-motivated next step, `boyko-minimal-experiment-
+v1.0.md`'s actual spec — provenance unconfirmed, see `decisions.md`), the
+cheapest possible test that could rule out one branch of explanation: is
+`HebbianAdaptation` itself anti-geometric (destroys structure wherever it
+finds it), or does it merely fail to CREATE structure from disorder
+(leaving already-existing geometry alone)? These predict opposite things
+about whether adding dissipation is worth trying.
+
+**Method:** applied the SAME `HebbianAdaptation` (not `NoAdaptation`, which
+is what Arm E / Fixed Flat Geometry actually uses per `mathematical_
+contract.md` §4 — "positive geometric calibration only, never an
+optimization target") to a periodic cubic lattice (N=64, side=4) instead
+of a disordered ER graph. Same pilot budget as `[A9]`'s sweep: K=50,
+η=0.1, `dtau_steps=50`.
+
+**Result:** `d_s(t)` before and after adaptation are near-identical:
+
+```
+before: [..., 3.107, 3.173, 2.537, 2.027]  (t=2.85..10)
+after:  [..., 3.105, 3.169, 2.534, 2.025]
+```
+
+Weights after adaptation: mean 0.933, std 0.109, range [0.51, 0.97] —
+mildly perturbed, not collapsed toward uniformity or driven to extremes.
+Wide-range check (`t∈[0.1,100]`) confirms the same peak-then-decay shape
+seen for Active, peak ≈3.25 near t≈6.6 — critically, the peak stays near
+the lattice's TRUE dimension (3), does NOT grow with adaptation the way
+Active's peak grows with N.
+
+**Interpretation:** `HebbianAdaptation` does NOT measurably destroy
+pre-existing geometric structure at this budget. This favors the
+"cannot create order from disorder under closed dynamics" explanation
+over "the rule is inherently anti-geometric" — meaningfully improves the
+prior for open/dissipative dynamics being worth trying, since a
+dissipative system's actual relaxation-to-equilibrium behavior (which a
+closed unitary system structurally lacks) is exactly the kind of thing
+that could complete the "create order from disorder" step this closed-
+system test shows doesn't happen on its own.
+
+**Caveats (explicit, not to be silently promoted past this evidence
+level):** n=1 seed, 1 `(K,η,dtau_steps)` point, N=64 only. Even the
+UNADAPTED raw lattice fails `[A30]`'s 3-gate `detect_plateau` on the
+standard `[0.1,10]` grid (`converged=False`) — the same grid-truncation
+sensitivity found investigating N=216 (`[A30]`) affects genuine geometry
+too, not just Active's expander-like curves; `detect_plateau`'s
+provisional thresholds are not yet calibrated on confirmed-geometric
+cases at small N, a real gap for whoever tightens `[A30]` next.
+
+**If wrong:** if a broader sweep (more seeds, more `(K,η)`, larger N)
+shows the lattice's peak DOES drift with more adaptation budget or
+different parameters, this conclusion reverses — not resolved here, this
+is a single cheap pilot point, not a swept confirmation.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
