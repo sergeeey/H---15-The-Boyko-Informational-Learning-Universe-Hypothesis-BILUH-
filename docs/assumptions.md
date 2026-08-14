@@ -1390,6 +1390,79 @@ homogenization (ТЗ's own H5 hypothesis, §3) rather than structured
 reorganization, and needs the modularity/conductance observables (§12.6-
 12.7, not yet implemented) to distinguish.
 
+### A36 — G1's resolving power is N-dependent: cannot distinguish 3D geometry from a random graph at N=64, but cleanly resolves it at N=512 (2026-08-14, Phase 11 ТЗ §13 calibration)
+
+**Question this answers:** ТЗ §13 requires recalibrating `detect_plateau`
+on 9 reference curves before trusting G1 in any open-system verdict —
+"the detector must pass known geometry and reject obvious false
+plateaus." Ran this calibration for real (not assumed) against actual
+computed `d_s(t)` for 1D ring, 2D square lattice, 3D cubic lattice, and
+an Erdős–Rényi random graph, at both N=64 (this project's cheap pilot
+scale) and N=512 (its largest tested size).
+
+**Result at N=64 — a genuine gap, not a detector bug:**
+
+```
+1D ring:   converged=True,  d_s_hat=1.10  (target 1)  -- OK
+2D square: converged=True,  d_s_hat=2.25  (target 2)  -- OK
+3D cubic:  converged=False                            -- FAILS to converge
+ER (N=64): converged=False                            -- ALSO fails
+```
+
+The 3D cubic lattice's raw `d_s(t)` curve at N=64 is numerically almost
+IDENTICAL to an Erdős–Rényi random graph's own curve at the same N and
+mean degree (both `[0.243, 0.304, ..., 3.107-3.27 peak, ..., 2.03-2.06]`,
+matching to 2-3 significant figures at every `t`). No threshold tuning
+of `detect_plateau` can make the lattice "pass" without also making the
+random graph "pass" — **the observable itself (G1, heat-kernel spectral
+dimension) has not yet separated geometric from non-geometric structure
+at N=64.** This is not a calibration failure to fix with better
+thresholds; the underlying signal doesn't exist yet at this scale.
+
+**Result at N=512 — the SAME comparison resolves cleanly:**
+
+```
+3D cubic (N=512): converged=True,  d_s_hat=3.53, R²=0.75  (target 3, real plateau)
+ER (N=512):        converged=False -- d_s(t) still CLIMBING at t=10
+                    (2.70 -> 3.49 -> 4.32 -> 5.01 -> 5.27, no peak reached)
+```
+
+At N=512, the lattice shows a genuine 3-point plateau (`t≈4.3-10`,
+`R²=0.75` — a real fit, not a near-zero-slope coincidence) near its true
+dimension, while the random graph shows the same "expander peak still
+growing with N, no plateau within range" signature already documented
+for Active (`[A30]`) — this time observed directly on a KNOWN non-
+geometric control, confirming that signature's interpretation.
+
+**Practical consequence — this reframes every earlier finding in this
+file, not silently:** the "expander-not-geometry" conclusion for Active
+(`[A30]`, `development-v0`/`development-v1`) rested heavily on pilot-
+scale (N≤125) and even the full FSS grid's smaller sizes, where G1 may
+not have resolving power AT ALL, independent of whether Active is
+geometric or not. **G1 verdicts at N<512 should be treated as
+uninformative-by-construction, not merely statistically weak** — this is
+stronger than the previously-recorded "below production seed floor"
+caveat, and applies even with production-floor seed counts. `[A30]`'s
+own N=512 result (`d_s_hat=5.26`, still no plateau, climbing) is
+therefore the ONE genuinely informative G1 data point collected so far
+across this whole project — and it already showed the expander
+signature at the one scale where G1 can actually tell the difference.
+
+**Evidence:** [VERIFIED-pytest] `check_detect_plateau_calibration.py` —
+4 tests: 1D/2D convergence near true dimension at N=64, 3D-vs-ER mutual
+non-convergence at N=64 (documents the gap, doesn't hide it), 3D-vs-ER
+clean resolution at N=512. All green; `detect_plateau`'s thresholds
+(`slope_tolerance=0.1`, `range_tolerance=0.3`, `min_d_s_hat=0.5`)
+unchanged from `[A30]`/`[A32]` — this calibration exercise did NOT
+require retuning them, it revealed an N-dependent property of the
+observable itself.
+
+**If wrong:** if a systematic sweep at intermediate N (216, 343, already
+in the FSS grid) shows resolving power emerges gradually rather than
+this sharply, the "G1 uninformative below N=512" framing should be
+softened to a specific N threshold — not resolved here, would need
+running this same lattice-vs-ER comparison at every FSS grid size.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
