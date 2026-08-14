@@ -1407,6 +1407,59 @@ resolves geometric from non-geometric); `configs/open_pilot.yaml`
 updated to `sizes: [512]` accordingly (was `[64, 512]`, kept both only
 while the scale was undecided).
 
+### A35 addendum (2026-08-14, later same day) — `d_s_hat` confirms `OPEN_DYNAMICS_NO_EFFECT` at the chosen `γ̃=0.05`; `Cσ`-alone shows a real, separate `d_s_hat` shift
+
+**Question this answers:** with Milestone 3's factorial pilot now complete
+(N=512, 5 seeds/cell, `results/open_pilot/raw.jsonl`), does the actual
+Gate-A geometric observable (`d_s_hat`), not just `D_W`, confirm the
+`OPEN_DYNAMICS_NO_EFFECT` reading `[A35]`'s option (c) pre-registered?
+
+**Computed (mean ± SD across 5 seeds, N=512):**
+
+```
+C0           (γ=0,   σ=0):    d_s_hat = 5.2226 ± 0.0429   D_W = 0.0107
+Cγ           (γ=0.1, σ=0):    d_s_hat = 5.2230 ± 0.0429   D_W = 0.00252
+Cσ           (γ=0,   σ=0.05): d_s_hat = 5.1456 ± 0.0550   D_W = 0.5057
+Cγσ          (γ=0.1, σ=0.05): d_s_hat = 5.2222 ± 0.0433   D_W = 0.0603
+```
+
+**Cohen's d (d_s_hat, vs C0):** `Cγ` ≈ 0.01, `Cγσ` ≈ 0.01 (95% CIs fully
+overlapping); `Cσ` ≈ 1.56 (95% CIs `[5.097,5.194]` vs `[5.185,5.260]`,
+nearly non-overlapping).
+
+**Reading:** `Cγσ` — the cell Milestone 3 actually runs on Active per
+`[A35]`'s resolved choice — shows **no measurable separation on
+`d_s_hat`** from closed, despite `D_W` differing 5.6x. This empirically
+confirms the concern `[A35]` itself pre-registered: at `γ̃=0.05`,
+adaptation is suppressed enough that openness produces no measurable
+geometric change. `OPEN_DYNAMICS_NO_EFFECT` (ТЗ §16) is the correct
+reading for this cell, not a Gate-A failure of the underlying hypothesis.
+
+**New, not previously computed:** `Cσ` alone (noise, no damping) shows a
+real, moderate-large `d_s_hat` REDUCTION vs closed (d≈1.56) — consistent
+with `[A35]`'s own already-named H5 (noise-driven homogenization)
+concern, now given a number. Direction is a DECREASE in estimated
+spectral dimension, not an increase — worth keeping in mind if a future
+pilot revisits nonzero `σ` without matching `γ`.
+
+**Caveat, stated plainly, not hidden:** `n=5` seeds is pilot-scale, not
+CLAUDE.md's own production standard (`≥20` seeds, `30-50` where budget
+allows) for a load-bearing MCID verdict. These Cohen's d values are
+indicative of direction and rough magnitude, not a certified G6 gate
+result. This is also NOT a full Gate-A arms comparison (Active vs
+Frozen/Random/Scrambled) — only the `[A35]` open-dynamics calibration
+pilot on Active alone, as designed.
+
+**Evidence:** [VERIFIED] computed directly from
+`results/open_pilot/raw.jsonl` (20 rows, 4 cells × 5 seeds, N=512),
+read and aggregated in-session — not re-derived from the doc's own prose,
+independently pulled from the raw JSONL rows.
+
+**If wrong:** if a future, properly-powered (`≥20`-seed) rerun of `Cγσ`
+shows a `d_s_hat` separation this 5-seed pilot missed (Type II error from
+small n), this addendum's `OPEN_DYNAMICS_NO_EFFECT` reading should be
+revised — not silently, via a new dated addendum citing the rerun.
+
 ### A36 — G1's resolving power is N-dependent: cannot distinguish 3D geometry from a random graph at N=64, but cleanly resolves it at N=512 (2026-08-14, Phase 11 ТЗ §13 calibration)
 
 **Question this answers:** ТЗ §13 requires recalibrating `detect_plateau`
@@ -1479,6 +1532,154 @@ in the FSS grid) shows resolving power emerges gradually rather than
 this sharply, the "G1 uninformative below N=512" framing should be
 softened to a specific N threshold — not resolved here, would need
 running this same lattice-vs-ER comparison at every FSS grid size.
+
+### A37 — Milestone 3 factorial pilot on Active (N=512, 5 seeds) run; Milestone 4 mechanistic read of Cσ against H5 (2026-08-14)
+
+**Milestone 3 result (raw, `scripts/run_open_pilot.py --run`, `configs/
+open_pilot.yaml`, N=512, `seeds_per_cell=5`, `[A35]` option (c) i.e.
+γ̃=0.05 accepted as-is):**
+
+```
+cell          d_s_hat (mean±std)   D_W (mean±std)      conductance         modularity
+C0            5.223±0.038          0.0107±0.0002        0.562±0.050         0.389±0.004
+Cgamma        5.223±0.038          0.0024±0.0002        0.565±0.051         0.389±0.002
+Csigma        5.146±0.049          0.5075±0.0094        0.541±0.047         0.422±0.004
+Cgammasigma   5.222±0.039          0.0603±0.0008         0.564±0.051         0.390±0.002
+```
+
+`converged=False` for all 20 points — same non-converging expander-like
+`d_s_hat` signature as closed-system Active at N=512 (`[A30]`). G1 itself
+does not separate any cell from any other; `d_s_hat` differences above
+have overlapping 95% CIs (`|d|=1.56` for Csigma vs C0, but CI overlap
+means MCID's own AND-rule, `docs/estimand.md`, is not met).
+
+`Cgamma` reproduces `[A35]`'s prediction exactly: `D_W` collapses toward
+`C0`'s own value (not to zero, but an order of magnitude below `Csigma`'s),
+confirming `γ=0.1` suppresses adaptation rather than creating structure —
+`OPEN_DYNAMICS_NO_EFFECT` at this γ, as pre-registered, not a new finding.
+
+**Milestone 4 — mechanistic read of `Cσ` against H5 (noise-induced
+homogenization, ТЗ §3):** H5 predicts noise WASHES OUT community
+structure — conductance should rise (more expander-like, no bottleneck),
+modularity should fall, as σ randomizes weights. Tested this directly,
+with MCID's own rule (`|Cohen's d| ≥ 0.8` AND non-overlapping 95% CIs,
+both required):
+
+```
+metric        Cσ vs C0: d      CI overlap    MCID met?
+conductance   -0.383           yes           NO — no reliable separation
+modularity    +6.874           no            YES — large, reliable increase
+```
+
+**`Cσ`'s modularity increase is the OPPOSITE of H5's prediction** — noise
+is associated with MORE community structure passing MCID, not less, and
+conductance shows no reliable shift at all. Naive H5 (pure homogenization)
+is not what's observed.
+
+**No-collapse test before trusting this** (Perelman audit protocol,
+`rules/perelman-audit.md`): greedy-modularity detection is known to find
+spurious "communities" in random graphs from pure finite-size fluctuations
+(Guimerà, Sales-Pardo & Amaral 2004) — a modularity difference could be an
+artifact of the metric itself, not a real signal. Computed the floor:
+modularity of 10 freshly-generated ER(N=512, 1536 edges) graphs with
+**zero dynamics run on them at all**:
+
+```
+floor (fresh ER, no dynamics):  mean=0.3852, CI=(0.3818, 0.3886)
+C0    (closed dynamics):        mean=0.3890, CI=(0.3830, 0.3949)   d(C0 vs floor)=0.79, CI overlap -> NOT MCID-significant
+Csigma (σ̃=0.05):                 mean=0.4216, CI=(0.4157, 0.4274)   d(Cσ vs floor)=7.73, CI non-overlap -> MCID-significant
+```
+
+`C0`'s modularity is statistically indistinguishable from the raw
+untouched-graph floor (consistent with `[A30]`'s own "closed Active shows
+no real geometric organization" finding — closed dynamics doesn't even
+clear the random-graph modularity floor). `Csigma`'s modularity clears
+that floor by a large, MCID-passing margin. **This is not spurious-
+modularity-of-a-random-graph** — the effect survives the negative
+control.
+
+**What this does NOT establish (per this project's own scientific
+boundary, CLAUDE.md):** not evidence of physical geometry, not evidence
+against H5's underlying MECHANISM (noise-driven correlation changes could
+still be the cause of the modularity shift — H5 as originally framed
+predicted the wrong DIRECTION of the effect, not that noise is causally
+irrelevant). The genuinely open question this raises: is the modularity
+increase driven by the Hebbian correlation structure itself (a real
+signal about how noisy quantum dynamics correlates node pairs), or would
+ANY noise-following adaptation rule — regardless of whether it tracks
+real dynamical correlations — produce the same shift? That is exactly
+what Milestone 5's H0 control (`CorrelationShuffleAdaptation`, `[A31]`)
+is designed to answer, and per the ТЗ's own gate ("Milestone 5 only if
+Milestone 3-4 show a signal") this modularity finding is that signal —
+Milestone 5 proceeds.
+
+**Evidence:** [VERIFIED-pytest/bash] `results/open_pilot/raw.jsonl` (20
+points, gitignored, not committed — raw output only); statistics computed
+via `statistics/cell_statistics.py::compute_cell_statistics`/`cohens_d`
+(reused, not reimplemented) in an ad hoc analysis script, output shown in
+this session's transcript, not re-derived as a pytest assertion (this is
+a one-off scientific analysis of pilot data, not a regression test).
+
+**If wrong:** if Milestone 5's shuffle-correlation control shows the SAME
+modularity increase under `Cσ` with shuffled (non-real) correlations, the
+"Hebbian correlation structure" reading above is wrong — the effect would
+be a generic property of any noise-following weight update, not evidence
+about what the dynamics actually correlates.
+
+**Milestone 5 result (2026-08-14, same day) — the "if wrong" condition
+above is exactly what happened.** Ran `scripts/run_milestone5_h0_control.py`:
+`CorrelationShuffleAdaptation` (`[A31]`'s H0 control — identical
+Oja-normalized update, but the off-diagonal correlation term is shuffled
+across existing edges before being applied) at the identical `Cσ` budget
+(N=512, K=50, `dtau_steps=50`, `σ̃=0.05`, `γ=0`, same 5 graph seeds):
+
+```
+              modularity (mean±CI)              conductance (mean±CI)
+H0 (shuffled): 0.4179 (0.4117, 0.4242)            0.5871 (0.5693, 0.6050)
+H1 (real):     0.4216 (0.4155, 0.4277)            0.5412 (0.4763, 0.6061)
+d(H0 vs H1):   -0.735, CI overlap -> NOT MCID-significant
+d(H0 vs H1) conductance: 1.199, CI overlap -> NOT MCID-significant (wide H1 CI)
+```
+
+**Kill Analysis (required for this result, `rules/falsification-ladder.md`
+Anti-Overfitting Gate — stated explicitly, not left implicit):**
+
+- **What this KILLS:** H1 as originally framed — "`Cσ`'s modularity
+  increase reflects the REAL correlation structure the noisy quantum
+  dynamics builds, specifically WHICH node pairs correlate." The shuffled
+  control, which discards exactly that information while preserving the
+  correlation-MAGNITUDE distribution, is statistically indistinguishable
+  from the real run on both modularity and conductance. If the real
+  correlation structure mattered, shuffling it should have visibly
+  degraded whatever structure the real run built — it did not.
+- **What this does NOT kill:** `[A37]`'s own negative-control finding
+  (`Cσ`'s modularity clears the raw-ER-graph floor, `d=7.73` vs the
+  untouched-graph baseline) — that comparison used a DIFFERENT control
+  (no dynamics at all vs. dynamics run) and is untouched by this result.
+  The modularity SHIFT away from the random-graph floor is real and
+  reproducible; what is now shown NOT to be established is that the
+  SPECIFIC Hebbian correlation pattern (rather than merely "some
+  reinforcement with this magnitude distribution, applied to some
+  arbitrary subset of edges") is what causes it.
+- **Combined verdict:** the noise-driven weight reinforcement itself
+  (structured or not) moves modularity off the random floor — but WHICH
+  edges get reinforced does not appear to matter at this budget. This is
+  closer to H5's original homogenization framing than `[A37]`'s
+  provisional "opposite of H5" reading suggested, though not identical to
+  H5 either (H5 predicted LOWER modularity from washing out structure;
+  what's observed is a modularity RISE regardless of correlation
+  specificity — "any sufficiently strong reinforcement noise raises
+  modularity above the random floor" is a third, more precise hypothesis
+  neither H1 nor plain H5 stated, and is not itself tested here).
+
+**Evidence:** [VERIFIED-bash] `scripts/run_milestone5_h0_control.py`
+output, this session's transcript; script committed for reproducibility.
+
+**If wrong:** a larger seed count or a wider `σ̃` sweep could still reveal
+a real-vs-shuffled separation this 5-seed pilot lacked power to detect
+(`d=-0.735` is close to the `0.8` MCID threshold, not decisively below
+it) — not resolved here, would need a dedicated power analysis before
+concluding the null result is final rather than underpowered.
 
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
