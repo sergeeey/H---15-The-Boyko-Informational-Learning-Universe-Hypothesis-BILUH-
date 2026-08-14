@@ -1,6 +1,29 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — ТЗ §21 config/script layer COMPLETE)
+## SESSION HANDOFF (updated 2026-08-14, continued — [A35] RESOLVED, Milestone 3 pilot RUNNING)
+**[A35] resolved by explicit user decision, not silently**: user chose
+option (c) -- proceed with γ̃=0.05 AS IS, treat near-zero D_W as itself
+informative (`OPEN_DYNAMICS_NO_EFFECT`), and run Milestone 3 at N=512
+(per `[A36]`). Addendum appended to `docs/assumptions.md [A35]`, commit
+`1035cc2`, merged+pushed. `configs/open_pilot.yaml` narrowed to
+`sizes: [512]`.
+
+**Perf fix before the real run**: `run_open_pilot.py` was recomputing
+the closed baseline once per CELL (4x per seed) instead of once per
+seed -- timed a real N=512 single-seed run before/after: 7m56s -> 2m39s,
+identical `d_s_hat`/`d_w` (deterministic, confirms no behavior change).
+Committed `c78f9d5`, merged+pushed.
+
+**Milestone 3's factorial pilot is now RUNNING in the background**
+(N=512, `seeds_per_cell=5`, 4 cells = 20 points, `--run`, background
+task `btiur79xj`, started this session, estimated ~13-14 min from the
+2m39s/seed timing). Output: `results/open_pilot/raw.jsonl`
+(gitignored, not yet analyzed -- do not report a verdict on this data
+until the run finishes and results are actually read).
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history, ТЗ §21 config/script layer COMPLETE)
 [summarized] (empty section)
 **[VERIFIED, this session] conductance/modularity (ТЗ §12.6-12.7) AND the
 open-pilot config/script layer (ТЗ §21) both implemented, merged to
