@@ -1,6 +1,33 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — Milestone 2 gate PASSED, real caveat found)
+## SESSION HANDOFF (updated 2026-08-14, continued — [A35] CONFIRMED on Active, blocking decision flagged)
+
+**[VERIFIED, 2026-08-14] `D_W`/`D_OC` (ТЗ §12.1-12.2) implemented and
+checked on ACTIVE (not just the lattice) at γ=0.1.** `[A35]`'s freezing
+concern is CONFIRMED, not lattice-specific: `Cγ`'s `D_W=0.0067` is ~12x
+smaller than closed `C0`'s `D_W=0.079` on Active too. Committed `b7333eb`,
+branch `feat/phase11-dw-doc-confirmed-on-active`, not yet merged/pushed.
+
+**Blocking decision flagged for the user, NOT resolved unilaterally**
+(picking a new γ now would be exactly the reactive parameter-fishing the
+ТЗ's own stop rules forbid): before Milestone 3, choose one of (a)
+smaller `γ̃` pilot grid reasoned from this `D_W` evidence, frozen before
+running, (b) longer `dtau_steps` so the same γ gets more windows to
+accumulate movement, (c) accept γ=0.1 and treat `OPEN_DYNAMICS_NO_EFFECT`
+there as itself informative. Full detail: `assumptions.md` `[A35]`.
+
+**Also noted:** `Cσ`'s `D_W=0.50` (noise alone moves weights MORE than
+closed baseline) — flags H5 (noise-induced homogenization) as a real
+confound needing modularity/conductance observables (not yet built)
+before Milestone 3 can distinguish structured reorganization from noise.
+
+217/217 tests (was 202 at session start), ruff/mypy clean. User instructed
+to keep executing the full ТЗ without stopping to ask at each step
+("продолжай пока все не выполнишь") — continuing directly to T4/T5/T6/T10.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **[VERIFIED, 2026-08-14] Milestone 2 gate met: T7 (lattice positive
 control repeated with open dynamics) passes on all 4 factorial pilot
@@ -624,6 +651,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 16:15] `b7333eb`: feat: D_W/D_OC observables, confirm [A35]'s freezing concern on Active
 - [2026-08-14 16:01] `301769b`: feat: Phase 11 Milestone 2 -- T7 lattice positive control passes with open dynamics, plus a real caveat
 - [2026-08-14 15:53] `11aecf9`: test: Phase 11 T3 (OU noise-variance convergence) and T9 (sigma distinguishability)
 - [2026-08-14 15:48] `872b4bd`: feat: Phase 11 Milestone 1 -- DynamicsBackend interface, both backends, T1/T2/T8
