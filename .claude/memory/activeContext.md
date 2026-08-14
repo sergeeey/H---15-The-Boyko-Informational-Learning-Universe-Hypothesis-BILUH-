@@ -1,6 +1,48 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — Phase 11 Milestone 1 started)
+## SESSION HANDOFF (updated 2026-08-14, continued — Milestone 2 gate PASSED, real caveat found)
+
+**[VERIFIED, 2026-08-14] Milestone 2 gate met: T7 (lattice positive
+control repeated with open dynamics) passes on all 4 factorial pilot
+cells.** New `experiment/open_pilot.py::run_adaptive_dynamics_open`
+mirrors `runner.py::run_adaptive_dynamics`'s loop with a swappable
+backend (existing `runner.py` untouched). Peak `d_s` stayed in
+`[2.97,3.17]` across `C0/Cγ/Cσ/Cγσ` vs the unadapted lattice's own 3.173
+— no cell destroyed the geometry. Committed `301769b`, branch
+`feat/phase11-t7-milestone2-lattice-open`, not yet merged/pushed.
+
+**[VERIFIED, this session] `[A35]` — real caveat surfaced, not hidden by the passing test:** at
+`γ=0.1` (`γ̃=0.05`), post-adaptation weight std is `~0.007`, over 10x
+smaller than closed `C0`'s `~0.109` — dissipation this strong appears to
+nearly FREEZE Hebbian weight movement at this `K`/`dt`/`dtau_steps`
+budget, not just protect geometry. **Risk for Milestone 3:** this `γ`
+might trivially pass "doesn't destroy geometry" on Active too, for a
+reason unrelated to genuine organization (nothing moves at all). `D_W`
+(ТЗ §12.1, not yet implemented) must be checked on Active at this `γ`
+before trusting any Milestone 3 verdict there.
+
+- 212/212 tests (was 202 at session start), ruff/mypy clean.
+- ADR for the `DynamicsBackend` architecture: `.claude/memory/decisions.md`.
+
+**Explicitly NOT done yet:** T4-T6, T10 (seed reproducibility across the
+other seed spaces, NaN checks across more pilot configs, symmetry
+invariants, full provenance tuple); Milestone 0 (v1.0 provenance — still
+`[UNKNOWN]`); Milestone 3 (`C0/Cγ/Cσ/Cγσ` factorial pilot ON ACTIVE, not
+just the lattice); `D_W`/`D_OC`/conductance/modularity observables (ТЗ
+§12) — none implemented yet, needed before Milestone 3's verdict can be
+trusted per `[A35]`'s own caveat; `detect_plateau` recalibration on the 9
+reference curves (ТЗ §13); `open_config.py`/`configs/open_pilot.yaml`/
+`scripts/run_open_pilot.py` (ТЗ §21's proposed file layout) — still only
+`open_dynamics.py`+`open_pilot.py` exist, no config/script layer yet.
+
+**Next concrete step:** implement `D_W` (ТЗ §12.1, weight-trajectory
+magnitude `‖W_t-W_0‖_F/‖W_0‖_F`) — cheap, and directly needed to check
+`[A35]`'s freezing concern on Active before Milestone 3 can start
+meaningfully.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **[VERIFIED, 2026-08-14] User provided a detailed Phase 11 ТЗ (open-system
 geometrogenesis pilot) and asked to execute it piece by piece. Started
@@ -582,6 +624,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 16:01] `301769b`: feat: Phase 11 Milestone 2 -- T7 lattice positive control passes with open dynamics, plus a real caveat
 - [2026-08-14 15:53] `11aecf9`: test: Phase 11 T3 (OU noise-variance convergence) and T9 (sigma distinguishability)
 - [2026-08-14 15:48] `872b4bd`: feat: Phase 11 Milestone 1 -- DynamicsBackend interface, both backends, T1/T2/T8
 - [2026-08-14 13:33] `c03f1ec`: docs: [A32] cheapest differentiating test -- Hebbian rule does not destroy pre-existing geometry
