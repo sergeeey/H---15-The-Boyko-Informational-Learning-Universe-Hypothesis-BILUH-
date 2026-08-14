@@ -1,6 +1,39 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — read this first)
+## SESSION HANDOFF (updated 2026-08-14, continued — see A32 below first)
+
+**[VERIFIED, 2026-08-14] `[A32]` — cheapest differentiating test run
+before any open-system work: does HebbianAdaptation destroy geometry
+that already exists, or just fail to create it from disorder?** Applied
+the same rule to a periodic cubic lattice (not `NoAdaptation`, which is
+what Arm E actually uses) at the pilot budget (K=50, η=0.1,
+`dtau_steps=50`, N=64). Result: `d_s(t)` before/after are near-identical,
+peak stays ~3.1-3.25 (close to the lattice's true dimension 3), weights
+only mildly perturbed. **Favors "can't create order from disorder"
+over "rule is anti-geometric"** — improves the case for trying open/
+dissipative dynamics next (see the `boyko-minimal-experiment-v1.0.md`
+provenance question below, still unresolved). n=1 seed/point, caveat:
+even the unadapted lattice fails `[A30]`'s gates on the standard grid.
+Committed `c03f1ec`, not yet merged/pushed at time of writing.
+
+**[UNKNOWN provenance] Also this session: the user supplied a document
+matching `boyko-minimal-experiment-v1.0.md`'s description (the primary
+spec the project was built without, per `assumptions.md`'s Gate 1) —
+user did not answer where it came from when asked.** Compared against our
+implementation regardless: found several MAJOR divergences (open/
+dissipative dynamics with noise vs our closed unitary system per `[A2]`;
+linear-λ-decay Hebbian vs our Oja-normalized decay per `[A3]`; dynamic
+per-τ-step Arm3/4 regeneration vs our static one-shot per `[A8]`/`[A12]`;
+5 arms vs our 7; N∈{128..2048} vs our development N∈{64..512}; KS-test
+PASS criteria vs our Cohen's-d/CI system). **Not yet resolved: whether
+to trust this document and revise the implementation accordingly** —
+blocked on the user confirming its source. If confirmed authentic, this
+would require a real dated addendum to most `[A#]` entries and likely a
+significant rework, not a small patch.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **Everything is committed, merged to `main`, and pushed to `origin/main`.
 Nothing in stash, no open branches with unmerged work, working tree
@@ -499,6 +532,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 13:33] `c03f1ec`: docs: [A32] cheapest differentiating test -- Hebbian rule does not destroy pre-existing geometry
 - [2026-08-13 16:44] `3656d49`: fix: detect_plateau accepted the universal long-time zero-decay tail as a false plateau
 - [2026-08-13 16:29] `00c0b32`: fix: detect_unsaturated_window collapsed to 2 points on staircase data, mechanically forcing v_eff=1/dt
 - [2026-08-13 16:17] `0f34e5a`: fix: detect_plateau accepted rise-then-fall humps as false-positive plateaus
