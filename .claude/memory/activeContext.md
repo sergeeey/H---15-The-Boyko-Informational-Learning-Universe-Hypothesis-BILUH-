@@ -10,7 +10,7 @@ not positive-control repeat, not the factorial pilot yet). Committed
 `872b4bd`, branch `feat/phase11-milestone1-open-backend`, not yet merged/
 pushed at time of writing. Full ADR: `.claude/memory/decisions.md`.
 
-**What exists now:**
+**[VERIFIED, this session] What exists now:**
 - `dynamics/backend.py`: `DynamicsBackend` Protocol, `ClosedUnitaryBackend`
   (pure adapter over unmodified `dynamics/fast.py`, rejects nonzero
   `gamma`/`sigma`).
@@ -20,28 +20,33 @@ pushed at time of writing. Full ADR: `.claude/memory/decisions.md`.
 - `[A33]`: `ω_ref=2` (proven `L_norm` spectral bound, `[A1]`) for
   dimensionless `(γ̃,σ̃)`.
 - `[A34]`: noise model = complex standard normal, provisional.
-- T1 (closed-limit match), T2 (analytic pure-damping decay), T8 (γ
-  doesn't vanish from normalization) — all green on first run.
-- 208/208 tests (was 202), ruff/mypy clean.
+- **T1, T2, T3, T8, T9 all green** — closed-limit match, analytic pure-
+  damping decay, OU stationary-variance convergence (~2-4% empirical
+  error vs `σ²dt/(1-damping²)`, 2000-component ensemble via `H=0`
+  decoupling, verified via prototype before asserting), γ-doesn't-
+  vanish-from-normalization, σ=0-vs-σ>0 distinguishability. Committed
+  `11aecf9`, branch `feat/phase11-t3-t9-noise-tests`, not yet merged/
+  pushed at time of writing.
+- 210/210 tests (was 202 at session start), ruff/mypy clean.
 
-**Explicitly NOT done yet (per the ТЗ's own 7-milestone structure,
-sections not attempted):** T3-T7, T9-T10 (noise variance/OU convergence,
-seed reproducibility, NaN checks, symmetry invariants, positive-control
-lattice repeat, full provenance tuple); Milestone 0 (v1.0 provenance —
-still `[UNKNOWN]`, blocks treating Phase 11 as "implementation of
-pre-existing hypothesis" vs "v1.1 post-null refinement," per ТЗ §4);
-Milestone 2 (repeat `[A32]`'s lattice positive-control WITH open
-dynamics); Milestone 3 (`C0/Cγ/Cσ/Cγσ` factorial pilot); conductance/
+**Explicitly NOT done yet:** T4-T7, T10 (seed reproducibility across the
+5 independent seed spaces ТЗ §8 requires, NaN checks across pilot
+configs, symmetry invariants, positive-control lattice repeat, full
+provenance tuple); Milestone 0 (v1.0 provenance — still `[UNKNOWN]`,
+blocks treating Phase 11 as "implementation of pre-existing hypothesis"
+vs "v1.1 post-null refinement," per ТЗ §4); Milestone 2 (repeat `[A32]`'s
+lattice positive-control WITH open dynamics — this is T7 too, same
+work); Milestone 3 (`C0/Cγ/Cσ/Cγσ` factorial pilot); conductance/
 modularity/trajectory-divergence observables (§12) — none implemented;
 `detect_plateau` recalibration on the 9 reference curves (§13) — not
 done; `open_config.py`/`open_pilot.py`/`open_controls.py`/`configs/
 open_pilot.yaml`/`scripts/run_open_pilot.py` (§21's proposed file layout)
 — none created yet, only the two backend modules + their tests exist.
 
-**Next concrete step:** T3 (OU noise-variance convergence) and T9 (σ=0
-vs σ>0 produce distinguishable trajectories) — the two remaining tests
-that specifically validate the noise sub-step, before moving to
-Milestone 2 (positive-control repeat).
+**Next concrete step:** T7 (positive-control lattice repeat with open
+dynamics — directly extends `[A32]`'s finding to nonzero `(γ,σ)`) is the
+natural next test since it doubles as Milestone 2's own gate ("at least
+one nonzero `(γ,σ)` regime must not destroy lattice geometry").
 
 ---
 
@@ -577,6 +582,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 15:53] `11aecf9`: test: Phase 11 T3 (OU noise-variance convergence) and T9 (sigma distinguishability)
 - [2026-08-14 15:48] `872b4bd`: feat: Phase 11 Milestone 1 -- DynamicsBackend interface, both backends, T1/T2/T8
 - [2026-08-14 13:33] `c03f1ec`: docs: [A32] cheapest differentiating test -- Hebbian rule does not destroy pre-existing geometry
 - [2026-08-13 16:44] `3656d49`: fix: detect_plateau accepted the universal long-time zero-decay tail as a false plateau
