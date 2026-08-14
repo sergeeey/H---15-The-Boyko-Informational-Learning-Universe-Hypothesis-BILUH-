@@ -1349,6 +1349,47 @@ freeze Active's weight movement (i.e. this freezing is lattice-specific,
 not a general property of this `γ`), the caveat above does not apply —
 not resolved here, needs the actual Milestone 3 Active-arm run to check.
 
+**CONFIRMED on Active 2026-08-14, `observables/trajectory_divergence.py`
+(`D_W`, `D_OC`, ТЗ §12.1-12.2), same pilot budget (N=64, K=50, η=0.1,
+`dtau_steps=50`):**
+
+```
+C0    (closed):            D_W = 0.079,   weight std = 0.0278
+Cγ    (γ=0.1):              D_W = 0.0067,  weight std = 0.0061   <- ~12x smaller than C0
+Cσ    (σ̃=0.05):             D_W = 0.500,   weight std = 0.1149
+Cγσ   (γ=0.1, σ̃=0.05):       D_W = 0.064,   weight std = 0.0120
+D_OC (Cγ vs C0):            0.081
+```
+
+**This is not a lattice-only artifact — γ=0.1 freezes Active's weight
+movement too, by roughly the same order of magnitude (~12x less D_W than
+closed baseline).** `[A35]`'s risk is realized, not hypothetical.
+**Consequence for Milestone 3, flagged rather than silently acted on:**
+`γ=0.1` is very likely the WRONG value to test "does dissipation enable
+organization" — at this `K`/`dt`/`dtau_steps` budget it mostly just
+suppresses adaptation itself. Per this project's own anti-parameter-
+fishing discipline (ТЗ §9: "no more than 2-3 nonzero levels... forbidden
+wide parameter fishing"; ТЗ §31: "no new parameters after viewing
+confirmatory data"), the fix is NOT to quietly pick a new `γ` and
+re-run — that would itself be exactly the kind of reactive parameter
+selection the ТЗ's stop rules exist to prevent. **This is instead a
+pre-registration decision the user should make explicitly before
+Milestone 3 starts**: either (a) choose a smaller `γ̃` pilot grid a
+priori (e.g. `γ̃∈{0.005,0.01,0.02}` instead of `{0.05}`, reasoned from
+this `D_W` evidence, frozen BEFORE running), or (b) increase `dtau_steps`
+so the same `γ` has more adaptation windows to accumulate movement in,
+or (c) proceed with `γ=0.1` anyway and treat `OPEN_DYNAMICS_NO_EFFECT`
+at this value as itself informative (ТЗ §16's own valid verdict). Noted
+here as a blocking decision point, not resolved unilaterally.
+
+**Csigma's `D_W=0.50`** (vs `C0`'s `0.079`) confirms noise alone moves
+weights substantially MORE than the closed baseline's own natural
+drift — worth keeping in mind for Milestone 3's interpretation: some of
+`Cσ`'s effect on any Gate-A observable could be pure noise-driven
+homogenization (ТЗ's own H5 hypothesis, §3) rather than structured
+reorganization, and needs the modularity/conductance observables (§12.6-
+12.7, not yet implemented) to distinguish.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
