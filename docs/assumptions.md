@@ -1096,14 +1096,32 @@ regardless of `N`); a value that keeps climbing is expander/small-world
 behavior, not genuine geometric structure. Full `PROVENANCE.md`:
 `results/development-v1/` (gitignored, on disk only).
 
-**Caveat, not yet resolved:** N=216's `100%` converged is the ONLY
-converging cell among the 5 sizes, all sharing the identical monotonic-
-growth shape above — very likely a fluke (an isolated window that
-happened to clear all 3 gates by chance at `n=5` seeds) rather than a
-real plateau specific to N=216, but not verified this session. First
-concrete follow-up for whoever picks this up next: inspect N=216's raw
-per-seed `d_s(t)` curves directly (same method as the wide-`t_values`
-investigation above) before trusting or dismissing this cell.
+**N=216's "100% converged" investigated 2026-08-14 — confirmed a fluke,
+not a real plateau, consistent with (not an exception to) the expander
+pattern above.**
+
+All 5 seeds' `d_s(t)` on the `[0.1,10]` grid are near-identical (not
+noise-driven): rise steadily to `≈4.1-4.24` near `t=4.3-6.6`, then dip
+slightly by `t=10` (`≈4.09-4.11`) — those last 3 points happen to clear
+`[A30]`'s 3 gates (`slope≈0.02-0.09`, `range≈0.15-0.2`, `mean≈4.1`) by
+coincidence of where the truncated `[0.1,10]` grid happens to end,
+relative to where this size's broader peak sits.
+
+Re-ran a single seed on a WIDER grid (`t ∈ [0.1,100]`, 20 points) to
+check whether the curve keeps declining past `t=10` the same way every
+other size's did: **it does** — `d_s(t)` continues `4.31 (peak) → 4.03 →
+2.68 → 1.06 → 0.22 → 0.023 → 0.001 → 0`, the identical expander-hump
+shape as N=64/125/343/512, just with a slightly broader/flatter peak
+region that the narrower `[0.1,10]` grid happened to catch inside
+tolerance. On the wider grid, `detect_plateau` correctly returns
+`converged=False` here too (rejected by `min_d_s_hat` once the tail
+decays, same as every other size).
+
+**Conclusion: N=216 is not an exception — it CONFIRMS the pattern.**
+Every tested size in `development-v1`'s FSS grid shows the same
+qualitative shape; N=216's apparent convergence was a grid-truncation
+artifact, not evidence of a real geometric-phase signal at that specific
+size.
 
 Full verdict at this scale: `FAILS_GEOMETRIC_PHASE_SCREEN`
 (G1/G2/G3/G5/G6 FAIL, G4 PASS) — still only `seeds_per_arm_size=5`,

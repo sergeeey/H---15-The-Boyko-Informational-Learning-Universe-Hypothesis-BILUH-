@@ -1,6 +1,6 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (2026-08-13, end of session — read this first)
+## SESSION HANDOFF (updated 2026-08-14 — read this first)
 
 **Everything is committed, merged to `main`, and pushed to `origin/main`.
 Nothing in stash, no open branches with unmerged work, working tree
@@ -17,27 +17,36 @@ still consistent with Active being expander-like, not geometric, even
 after 200 dτ steps of Hebbian adaptation. Documented in `assumptions.md`
 `[A30]`.
 
-**[VERIFIED, this session] Immediate next steps, in priority order (none started):**
-1. **Verify or dismiss N=216's "100% converged" cell** — the ONLY
-   converging size among 5, sharing the same monotonic-growth shape as
-   the other 4 (very likely a fluke at n=5 seeds, not investigated).
-   Method: same per-seed `d_s(t)` inspection used for the wide-`t_values`
-   investigation (`assumptions.md` `[A30]`).
-2. **`[A9]`'s `(K,η)` sweep was only tested at pilot scale** (N∈{64,125},
+**[VERIFIED, 2026-08-14] N=216's "100% converged" cell investigated and
+RESOLVED — confirmed a grid-truncation fluke, not an exception to the
+expander pattern.** All 5 seeds' `d_s(t)` on `[0.1,10]` are near-
+identical, rising to `≈4.1-4.24` then dipping slightly by `t=10` — those
+last 3 points coincidentally cleared all 3 `[A30]` gates because the
+grid happened to end right at this size's (broader) peak. Re-checked on
+a wider grid (`t∈[0.1,100]`): the curve continues declining exactly like
+every other size (`4.31→4.03→2.68→1.06→0.22→0.02→0.001→0`),
+`converged=False` there. **N=216 is not an exception — it confirms the
+pattern.** Documented in `assumptions.md` `[A30]`.
+
+**[VERIFIED, this session] Remaining next steps, in priority order (none started):**
+1. **`[A9]`'s `(K,η)` sweep was only tested at pilot scale** (N∈{64,125},
    `dtau_steps=50`) — not yet re-run at `dtau_steps=200`/full FSS grid.
-3. **G5's resolution-limitation question** (coarse integer-hop-count
+2. **G5's resolution-limitation question** (coarse integer-hop-count
    measurement, documented in `[A9]`) — still open, no redesign attempted.
-4. **Correlation Shuffle (`[A31]`) still not wired as a real 8th arm** —
+3. **Correlation Shuffle (`[A31]`) still not wired as a real 8th arm** —
    rule exists and is tested, not connected to `config.py`/`arms_runner.py`.
-5. Given the expander-pattern finding now holds at BOTH tested adaptation
-   budgets, the next scientifically load-bearing question is probably:
-   does Active ever escape expander-like behavior at ANY `(K,η,dtau_steps)`
-   combination, or is this rule's ceiling genuinely reached? Worth a
-   direct conversation with the user before spending more compute.
+4. **The expander-not-geometry finding now holds at every tested size AND
+   both tested adaptation budgets, with no exceptions found.** The next
+   scientifically load-bearing question is probably: does Active ever
+   escape expander-like behavior at ANY `(K,η,dtau_steps)` combination
+   this rule can reach, or has this rule's ceiling genuinely been found?
+   Worth a direct conversation with the user before spending more compute
+   chasing parameter variations of the same rule.
 
 **Full session detail:** `.claude/memory/session-2026-08-13-report.md`
-(covers the first half of the session; this file's own history below
-covers the rest — G1/G5 investigation chain, `[A9]` sweep, `development-v1`).
+(covers the first half of 2026-08-13; this file's own history below
+covers the rest — G1/G5 investigation chain, `[A9]` sweep,
+`development-v1`, N=216).
 
 ---
 
