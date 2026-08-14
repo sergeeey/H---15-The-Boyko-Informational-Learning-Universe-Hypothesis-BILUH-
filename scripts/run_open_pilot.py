@@ -8,18 +8,16 @@ session: G1 plateau (spectral_dimension.detect_plateau), D_W
 (trajectory_divergence.weight_trajectory_magnitude), D_OC
 (open_vs_closed_divergence), conductance, and modularity.
 
-BLOCKING STATUS ([A35], docs/assumptions.md): the pilot's own T7 test
-found that gamma_tilde=0.05 (the only nonzero level in
-configs/open_pilot.yaml) nearly freezes Hebbian weight movement. That is
-a scientific parameter-selection decision the ТЗ's own anti-fishing stop
-rules (Section 9, Section 31) require the user to make explicitly, not
-something this script may silently resolve by picking a different grid.
+RESOLVED STATUS ([A35], docs/assumptions.md, 2026-08-14): the pilot's own
+T7 test found that gamma_tilde=0.05 (the only nonzero level in
+configs/open_pilot.yaml) nearly freezes Hebbian weight movement. The user
+explicitly chose option (c): proceed with this gamma_tilde AS IS and
+treat a near-zero D_W / no-separation-from-C0 result as itself
+informative (OPEN_DYNAMICS_NO_EFFECT, ТЗ §16), not as a reason to
+re-parameterize after the fact.
 
 Default mode is --dry-run: prints the full cell/size/seed plan and the
-[A35] warning, runs nothing. Pass --run to actually execute -- doing so
-is an explicit acknowledgement that [A35]'s grid is being used AS IS,
-knowing it may show near-zero D_W by construction, not because openness
-has no effect.
+[A35] resolution note, runs nothing. Pass --run to actually execute.
 
 Writes each (size, seed, cell) result to
 results/open_pilot/raw.jsonl incrementally; re-running skips points
@@ -58,13 +56,13 @@ OUTPUT_DIR = Path("results/open_pilot")
 RAW_OUTPUT_PATH = OUTPUT_DIR / "raw.jsonl"
 
 _A35_WARNING = """
-[A35] BLOCKING NOTE (docs/assumptions.md): gamma_tilde=0.05 was found to
+[A35] RESOLVED (docs/assumptions.md, 2026-08-14): user chose option (c)
+-- proceed with gamma_tilde=0.05 AS IS. gamma_tilde=0.05 was found to
 nearly freeze Hebbian weight movement on both the lattice (T7) and
-Active. Running this pilot with that grid AS IS will very likely
-reproduce that freezing, which would look like "openness has no effect"
-without being able to distinguish that from "this gamma is simply too
-strong for this K/dt/dtau_steps budget". This is a pre-registration
-decision the user has not yet made among [A35]'s three named options.
+Active, so a near-zero D_W / no-separation-from-C0 result here is
+EXPECTED and must be read as "gamma=0.1 suppressed adaptation before
+openness could act" (OPEN_DYNAMICS_NO_EFFECT), not as "openness cannot
+create geometric organization" -- those are different claims.
 """.strip()
 
 

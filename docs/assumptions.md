@@ -1390,6 +1390,23 @@ homogenization (ТЗ's own H5 hypothesis, §3) rather than structured
 reorganization, and needs the modularity/conductance observables (§12.6-
 12.7, not yet implemented) to distinguish.
 
+**RESOLVED 2026-08-14 — user chose option (c) explicitly.** Milestone 3's
+factorial pilot proceeds with `γ̃=0.05` (γ=0.1) AS IS, treating a
+near-zero `D_W` at this level as itself an informative result
+(`OPEN_DYNAMICS_NO_EFFECT`, ТЗ §16) rather than as a reason to
+re-parameterize. This is a pre-registered choice, made BEFORE running
+Milestone 3 and before seeing any Active-arm Gate-A outcome (only the
+already-recorded `D_W`/lattice evidence above informed it) — consistent
+with ТЗ §9/§31's stop rules. **Consequence for interpreting Milestone 3:**
+if the factorial cells show no separation from `C0`, the correct reading
+is "γ=0.1 suppresses adaptation enough that openness had no chance to
+act," NOT "openness cannot create geometric organization" — those are
+different claims, and `[A35]`'s own D_W evidence is why. The user also
+chose N=512 for the pilot (per `[A36]`, the only scale where G1 actually
+resolves geometric from non-geometric); `configs/open_pilot.yaml`
+updated to `sizes: [512]` accordingly (was `[64, 512]`, kept both only
+while the scale was undecided).
+
 ### A36 — G1's resolving power is N-dependent: cannot distinguish 3D geometry from a random graph at N=64, but cleanly resolves it at N=512 (2026-08-14, Phase 11 ТЗ §13 calibration)
 
 **Question this answers:** ТЗ §13 requires recalibrating `detect_plateau`

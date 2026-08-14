@@ -1,24 +1,23 @@
 # Phase 11 open-system pilot config (TZ Section 21).
 #
-# STATUS: infrastructure only -- NOT yet approved for a Milestone 3 run.
-# [A35] (docs/assumptions.md): at gamma_tilde=0.05 (gamma=0.1, omega_ref=2),
-# Hebbian weight movement nearly freezes on BOTH the lattice and Active
-# (~10-12x smaller weight std than the closed C0 baseline). The
-# gamma_tilde_levels/sigma_tilde_levels below are the SAME pilot values
-# used in T7/Milestone 2's tests (tests/unit/check_open_pilot.py) -- kept
-# here only so this config is internally consistent with what has already
-# been validated, NOT as a silent resolution of [A35]. Do not run a real
-# Milestone 3 factorial pilot from this file until [A35]'s blocking
-# decision (smaller gamma_tilde grid / longer dtau_steps / accept
-# NO_EFFECT-at-this-level) has been made explicitly by the user.
+# STATUS: approved for Milestone 3 (user decision, 2026-08-14, [A35]
+# resolution addendum in docs/assumptions.md).
 #
-# [A36]: G1 has ~zero resolving power at N=64 (matches [A9]'s N=125/N=216
-# scale too) -- it only cleanly separates lattice from ER at N=512. sizes
-# below include 512 for that reason, but a real run at N=512 with
-# dtau_steps=50 is expensive; this file does not itself decide N for
-# Milestone 3, it documents the two candidate scales.
+# [A35]: at gamma_tilde=0.05 (gamma=0.1, omega_ref=2), Hebbian weight
+# movement nearly freezes on BOTH the lattice and Active (~10-12x smaller
+# weight std than the closed C0 baseline). User chose option (c):
+# proceed with this gamma_tilde AS IS and treat a near-zero D_W /
+# no-separation-from-C0 result as itself informative
+# (OPEN_DYNAMICS_NO_EFFECT, TZ Section 16) rather than re-parameterizing.
+# If the factorial cells show no separation, read this as "gamma=0.1
+# suppressed adaptation before openness could act", NOT as "openness
+# cannot create geometric organization" -- those are different claims.
+#
+# [A36]: G1 has ~zero resolving power at N=64 -- it only cleanly
+# separates lattice from ER at N=512. User chose N=512 for this reason
+# (sizes below was [64, 512] while the scale was undecided).
 
-sizes: [64, 512]
+sizes: [512]
 seeds_per_cell: 5
 
 open_dynamics:
