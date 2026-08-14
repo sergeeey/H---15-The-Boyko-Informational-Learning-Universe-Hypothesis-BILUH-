@@ -41,7 +41,7 @@ from boyko_benchmark.experiment.open_provenance import (
     collect_open_pilot_provenance,
     provenance_to_dict,
 )
-from boyko_benchmark.experiment.runner import localized_psi0
+from boyko_benchmark.experiment.runner import AdaptiveRunResult, localized_psi0
 from boyko_benchmark.graphs.generators import generate_erdos_renyi
 from boyko_benchmark.graphs.weights import normalized_laplacian
 from boyko_benchmark.observables.conductance import modularity, spectral_conductance
@@ -50,6 +50,7 @@ from boyko_benchmark.observables.trajectory_divergence import (
     open_vs_closed_divergence,
     weight_trajectory_magnitude,
 )
+from boyko_benchmark.types import WeightedGraph
 
 CONFIG_PATH = Path("configs/open_pilot.yaml")
 OUTPUT_DIR = Path("results/open_pilot")
@@ -90,22 +91,15 @@ def _load_completed_points() -> set[tuple[int, int, str]]:
     return completed
 
 
-def _run_one_point(
-    config: OpenPilotConfig,
-    size: int,
-    seed_index: int,
-    cell_name: str,
-    gamma: float,
-    sigma: float,
-    t_values: np.ndarray,
-) -> dict[str, object]:
-    graph_seed = 1000 * seed_index + size
-    rng = np.random.default_rng(graph_seed)
-    graph = generate_erdos_renyi(n_nodes=size, n_edges=3 * size, rng=rng)
-    psi0 = localized_psi0(size, source_node=0)
-    noise_seed = graph_seed if sigma > 0.0 else None
-
-    closed_result = run_adaptive_dynamics_open(
+def _closed_baseline(
+    config: OpenPilotConfig, graph: WeightedGraph, psi0: np.ndarray
+) -> AdaptiveRunResult:
+    """Runs ClosedUnitaryBackend once. C0's own cell reuses this result
+    directly; every other cell needs it only as the D_OC reference -- NOT
+    recomputed per cell (that was 4x redundant closed-dynamics compute
+    per seed before this fix, ~half the pilot's N=512 wall-clock cost per
+    the timing smoke test)."""
+    return run_adaptive_dynamics_open(
         graph,
         psi0,
         HebbianAdaptation(eta=config.pilot.eta),
@@ -117,6 +111,23 @@ def _run_one_point(
         sigma=0.0,
         noise_seed=None,
     )
+
+
+def _run_one_point(
+    config: OpenPilotConfig,
+    size: int,
+    seed_index: int,
+    cell_name: str,
+    gamma: float,
+    sigma: float,
+    t_values: np.ndarray,
+    graph: WeightedGraph,
+    psi0: np.ndarray,
+    closed_result: AdaptiveRunResult,
+) -> dict[str, object]:
+    graph_seed = 1000 * seed_index + size
+    noise_seed = graph_seed if sigma > 0.0 else None
+
     start = time.perf_counter()
     if gamma == 0.0 and sigma == 0.0:
         result = closed_result
@@ -201,25 +212,55 @@ def main() -> int:
     t_values = np.geomspace(0.1, 10.0, num=12)
     completed = _load_completed_points()
     remaining = [p for p in grid if p not in completed]
+    remaining_seeds = sorted({(size, seed_index) for size, seed_index, _ in remaining})
 
     print(f"executing: {len(remaining)} remaining of {len(grid)} total points")
+    point_counter = 0
     with open(RAW_OUTPUT_PATH, "a", encoding="utf-8") as f:
-        for i, (size, seed_index, cell_name) in enumerate(remaining, start=1):
-            gamma, sigma = cells[cell_name]
+        for size, seed_index in remaining_seeds:
+            seed_cells = [c for s, i, c in remaining if s == size and i == seed_index]
+            graph_seed = 1000 * seed_index + size
+            rng = np.random.default_rng(graph_seed)
+            graph = generate_erdos_renyi(n_nodes=size, n_edges=3 * size, rng=rng)
+            psi0 = localized_psi0(size, source_node=0)
+            closed_start = time.perf_counter()
+            closed_result = _closed_baseline(config, graph, psi0)
             print(
-                f"[{i}/{len(remaining)}] size={size} seed={seed_index} cell={cell_name} ...",
-                end=" ",
-                flush=True,
+                f"size={size} seed={seed_index}: closed baseline "
+                f"{time.perf_counter() - closed_start:.1f}s"
             )
-            record = _run_one_point(config, size, seed_index, cell_name, gamma, sigma, t_values)
-            f.write(json.dumps(record, default=str) + "\n")
-            f.flush()
-            elapsed_s, d_s_hat, d_w = record["elapsed_s"], record["d_s_hat"], record["d_w"]
-            print(f"{elapsed_s:.1f}s d_s_hat={d_s_hat:.3f} d_w={d_w:.4f}")
+
+            for cell_name in seed_cells:
+                point_counter += 1
+                gamma, sigma = cells[cell_name]
+                print(
+                    f"[{point_counter}/{len(remaining)}] size={size} seed={seed_index} "
+                    f"cell={cell_name} ...",
+                    end=" ",
+                    flush=True,
+                )
+                record = _run_one_point(
+                    config,
+                    size,
+                    seed_index,
+                    cell_name,
+                    gamma,
+                    sigma,
+                    t_values,
+                    graph,
+                    psi0,
+                    closed_result,
+                )
+                f.write(json.dumps(record, default=str) + "\n")
+                f.flush()
+                elapsed_s, d_s_hat, d_w = record["elapsed_s"], record["d_s_hat"], record["d_w"]
+                print(f"{elapsed_s:.1f}s d_s_hat={d_s_hat:.3f} d_w={d_w:.4f}")
 
     print()
     print(f"Full raw results: {RAW_OUTPUT_PATH}")
-    print("Reminder: this is [A35]-unresolved pilot data, not a frozen Milestone 3 result.")
+    print("Reminder: gamma=0.1 is expected to suppress D_W ([A35]) -- a near-zero")
+    print("separation from C0 means OPEN_DYNAMICS_NO_EFFECT at this gamma, not that")
+    print("openness cannot create geometric organization in general.")
     return 0
 
 
