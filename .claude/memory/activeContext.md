@@ -1,6 +1,18 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — [A35] CONFIRMED on Active, blocking decision flagged)
+## SESSION HANDOFF (updated 2026-08-14, continued — T4/T5/T6 done, only T10 left in Milestone 1's test suite)
+
+**[VERIFIED, this session] T4 (seed reproducibility), T5 (no NaN/Inf),
+T6 (symmetry invariants) all green, parametrized across all 4 factorial
+cells.** Committed `3ede9d9`, branch `feat/phase11-t4-t5-t6`, not yet
+merged/pushed. 229/229 tests (was 202 at session start). Only T10
+(provenance tuple) remains from the ТЗ §22 test list. User explicitly
+asked to keep executing without stopping to ask ("продолжай пока все не
+выполнишь") — proceeding directly to T10, then the config/script layer.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **[VERIFIED, 2026-08-14] `D_W`/`D_OC` (ТЗ §12.1-12.2) implemented and
 checked on ACTIVE (not just the lattice) at γ=0.1.** `[A35]`'s freezing
@@ -651,6 +663,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 16:19] `3ede9d9`: test: Phase 11 T4 (seed reproducibility), T5 (no NaN/Inf), T6 (symmetry invariants)
 - [2026-08-14 16:15] `b7333eb`: feat: D_W/D_OC observables, confirm [A35]'s freezing concern on Active
 - [2026-08-14 16:01] `301769b`: feat: Phase 11 Milestone 2 -- T7 lattice positive control passes with open dynamics, plus a real caveat
 - [2026-08-14 15:53] `11aecf9`: test: Phase 11 T3 (OU noise-variance convergence) and T9 (sigma distinguishability)
