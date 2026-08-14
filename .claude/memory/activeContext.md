@@ -1,6 +1,29 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — [A36] MAJOR: G1 is uninformative below N=512)
+## SESSION HANDOFF (updated 2026-08-14, continued — ТЗ §12 diagnostic package COMPLETE)
+
+**[VERIFIED, this session] `conductance`/`modularity` (ТЗ §12.6-12.7)
+implemented -- observables/conductance.py, 4 hand-derived tests (barbell
+graph, cross-checked via prototype), all green.** Committed `31b8c33`,
+branch `feat/phase11-conductance-modularity`, not yet merged/pushed.
+242/242 tests (was 202 at session start), ruff/mypy clean.
+
+**This closes ТЗ §12's full diagnostic package**: `D_W`, `D_OC`,
+`conductance`, `modularity` all implemented (G1-G5 already existed).
+Milestones 1 and 2 fully done, `[A36]`'s N-resolving-power finding
+documented. **Remaining before Milestone 3**: `open_config.py`/
+`configs/open_pilot.yaml`/`scripts/run_open_pilot.py` (ТЗ §21's file
+layout, not yet built -- everything so far has been direct
+function/script-level testing, no config-driven runner); the `[A35]`
+γ=0.1 blocking decision (still needs the user's explicit choice); and
+per `[A36]`, Milestone 3's factorial pilot should probably target N≥512
+rather than the cheap N=64 pilot scale used for Milestones 1-2's tests.
+
+User instructed to keep executing without stopping to ask at each step.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **[VERIFIED, 2026-08-14] ТЗ §13's mandatory detect_plateau recalibration
 done for real (not assumed) -- and it reframes every G1 finding in this
@@ -727,6 +750,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 16:33] `31b8c33`: feat: Phase 11 conductance/modularity observables (РўР— В§12.6-12.7)
 - [2026-08-14 16:28] `daf6796`: feat: [A36] -- G1's resolving power is N-dependent (Phase 11 РўР— В§13 calibration), major reframe
 - [2026-08-14 16:23] `d50cf7e`: feat: Phase 11 T10 -- full provenance tuple (РўР— В§22, В§26)
 - [2026-08-14 16:19] `3ede9d9`: test: Phase 11 T4 (seed reproducibility), T5 (no NaN/Inf), T6 (symmetry invariants)
