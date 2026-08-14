@@ -1,6 +1,46 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — Milestone 1's full T1-T10 suite DONE)
+## SESSION HANDOFF (updated 2026-08-14, continued — [A36] MAJOR: G1 is uninformative below N=512)
+
+**[VERIFIED, 2026-08-14] ТЗ §13's mandatory detect_plateau recalibration
+done for real (not assumed) -- and it reframes every G1 finding in this
+project so far, not just calibrates a threshold.** Computed `d_s(t)` for
+1D ring, 2D square, 3D cubic lattice, and Erdős–Rényi at N=64 AND N=512.
+Committed `daf6796`, branch `feat/phase11-a36-g1-resolving-power`, not
+yet merged/pushed.
+
+**At N=64: 3D cubic lattice's `d_s(t)` curve is numerically almost
+IDENTICAL to an Erdős–Rényi random graph's curve** (matched N/mean
+degree) — no `detect_plateau` threshold can pass one without the other.
+G1 (heat-kernel spectral dimension) has not yet separated geometric from
+non-geometric structure at this N. **At N=512, the SAME comparison
+resolves cleanly**: lattice converges (`d_s_hat=3.53, R²=0.75`, a real
+plateau), ER does not (still climbing at `t=10`, no peak reached — the
+same expander signature `[A30]` found for Active, now confirmed on a
+KNOWN non-geometric control).
+
+**Consequence, stated plainly: G1 verdicts at N<512 should be treated as
+uninformative-by-construction, not merely statistically weak.** `[A30]`'s
+own N=512 Active result (`d_s_hat=5.26`, still climbing, no plateau) is
+therefore the ONE genuinely informative G1 data point collected in this
+entire project so far — and it already showed the expander signature at
+the one scale where G1 can actually tell geometric from non-geometric.
+
+- 238/238 tests (was 202 at session start), ruff/mypy clean.
+- `detect_plateau`'s thresholds themselves were NOT changed — this
+  finding is about the observable's N-dependence, not the detector.
+
+**ТЗ §13 is done.** Remaining before Milestone 3: conductance/modularity
+observables (§12.6-12.7); the `[A35]` γ=0.1 blocking decision (still
+needs the user's explicit choice); and now ALSO worth factoring in --
+Milestone 3's factorial pilot cells should probably run at N≥512, not
+the cheap N=64 pilot scale used so far, given `[A36]`.
+
+User instructed to keep executing without stopping to ask at each step.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
 
 **[VERIFIED, this session] T10 (provenance tuple, ТЗ §22/§26) done —
 every mandatory regression test in ТЗ §22's list (T1-T10) is now
@@ -687,6 +727,7 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 ## Auto-commit log
+- [2026-08-14 16:28] `daf6796`: feat: [A36] -- G1's resolving power is N-dependent (Phase 11 РўР— В§13 calibration), major reframe
 - [2026-08-14 16:23] `d50cf7e`: feat: Phase 11 T10 -- full provenance tuple (РўР— В§22, В§26)
 - [2026-08-14 16:19] `3ede9d9`: test: Phase 11 T4 (seed reproducibility), T5 (no NaN/Inf), T6 (symmetry invariants)
 - [2026-08-14 16:15] `b7333eb`: feat: D_W/D_OC observables, confirm [A35]'s freezing concern on Active
