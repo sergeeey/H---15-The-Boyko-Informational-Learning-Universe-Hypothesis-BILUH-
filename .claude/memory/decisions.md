@@ -821,3 +821,37 @@ untested, `[A9]` sensitivity sweep not performed — all listed in
 
 **Reviewers:** primary + user (manual fix + two rounds of verification
 this entry documents).
+
+## Decision: Phase 11 DynamicsBackend Protocol (2026-08-14)
+
+**Context:** Phase 11 (open-system geometrogenesis pilot ТЗ) requires
+comparing closed-unitary vs open (dissipative/stochastic) fast dynamics
+on identical initial conditions, without risking regression of the
+existing, fully-tested closed-system pipeline.
+
+**Proposal:** `dynamics/backend.py::DynamicsBackend` (`typing.Protocol`)
+defines one `evolve(hamiltonian, psi0, dt, n_steps, gamma, sigma,
+noise_seed) -> trajectory` method. `ClosedUnitaryBackend` wraps the
+existing `dynamics/fast.py` UNCHANGED, rejecting nonzero `gamma`/`sigma`
+rather than ignoring them. `PhenomenologicalOpenBackend` (`open_dynamics.
+py`) implements the same interface via a split-step scheme (ТЗ §7):
+deterministic propagation → dissipation → noise, each sub-step separate,
+NEVER renormalized (ТЗ §5's explicit warning: renormalizing after
+uniform damping can silently cancel `gamma`).
+
+**Final decision:** Protocol-based backend swap, existing closed pipeline
+untouched, because: (1) the closed pipeline has 202 passing tests and a
+day of hard-won bug fixes behind it — any risk of regression there is
+unacceptable; (2) ТЗ §21 explicitly requires this; (3) it lets T1 (closed-
+limit regression) be a real, structural guarantee (both backends share
+`build_propagator`) rather than a hoped-for numerical coincidence.
+
+**Dissent / open questions:** `[A33]` (ω_ref=2, the proven `L_norm`
+spectral bound) and `[A34]` (noise model, complex standard normal) are
+both provisional, documented as such — not yet validated against a wider
+`(γ,σ)` grid. Not yet reviewed by skeptic (FL Step 8a) since no PROMOTE
+verdict has been reached — this is Milestone 1 of 7, not a completed
+claim.
+
+**Reviewers:** primary only (user requested direct, incremental
+execution of the Phase 11 ТЗ; no independent review pass run yet).
