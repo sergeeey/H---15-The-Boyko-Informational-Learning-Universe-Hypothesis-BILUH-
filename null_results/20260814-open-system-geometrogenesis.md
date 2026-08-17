@@ -71,8 +71,26 @@ moves `Cσ` *away* from the lattice value.
 | variant | assumption changed | everything else held |
 |---|---|---|
 | V1 | adaptation rule (e.g. anti-Hebbian) | same `(γ̃,σ̃)`, same N, same budget |
+| V1b | initial state (delocalized instead of localized `psi0`) | same rule, regime, N |
 | V2 | `(γ̃,σ̃)` regime | same rule, pre-register the grid before running |
 | V3 | `TopologyUpdateRule` active | same rule and regime |
+
+**Addendum 2026-08-14 (later same day), `[A46]` — V1/V1b now satisfy
+AOG-5 on independent grounds.** A measurement prompted by a parallel
+session's catch that `D_W` is unsigned found that **no weight in any
+cell ever rises above its initial value**: `Cσ`'s mean weight falls from
+1.0 to 0.503 with a maximum of 0.807, i.e. its headline `D_W ≈ 0.51` is
+a ~50% near-uniform *decay*. The implemented rule is net-decaying at
+this budget, because a localized `psi0` leaves the correlation term
+nearly inert while noise switches the decay term on globally.
+
+This changes the standing of V1/V1b from *motivated relaxation* (banned
+by AOG-5) to *independently motivated*: the reason to change the rule or
+the initial state is now a measured mechanical property of the
+apparatus — a rule that cannot strengthen anything above baseline cannot
+produce differential reinforcement — established without reference to
+whether the hypothesis is true. **V1b (delocalized initial state) is the
+cheapest such probe** and changes exactly one assumption.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the

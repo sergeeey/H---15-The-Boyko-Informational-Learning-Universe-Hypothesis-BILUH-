@@ -2237,6 +2237,79 @@ comparable.
 large (`d≈-2.9`) so underpowering is unlikely to explain it, but the
 mechanism claim above is untested speculation and is labelled as such.
 
+### A46 — the adaptation rule NEVER strengthens any weight above baseline: all "movement" is decay (2026-08-14, prompted by a parallel session's unsigned-`D_W` catch)
+
+**Provenance of the question, credited not absorbed:** a parallel working
+session running `/claim-decomposer` against its own earlier
+interpretation caught that `D_W = ‖W_t−W_0‖_F/‖W_0‖_F`
+(`observables/trajectory_divergence.py`) is **unsigned** — a large `D_W`
+is equally consistent with weights collapsing toward the
+`_masked_nonnegative` clip as with structural organization. It correctly
+downgraded its own claim to `[WEAKEN]` and left the direction question
+open. `[A42]` had measured only the *exactly-zero* endpoint (1 edge of
+1536); the drift direction was never measured. This entry measures it.
+
+**Result (N=512, 3 seeds, initial weight = 1.0 uniform for every edge,
+`[A19]`):**
+
+```
+cell           D_W      mean_w    w_min    w_max   % of weights below 1.0
+C0            0.0107    0.9903    0.9305   0.9974          100.0%
+Cgamma        0.0025    0.9996    0.9622   1.0000          100.0%
+Csigma        0.5077    0.5032    0.0751   0.8066          100.0%
+Cgammasigma   0.0606    0.9403    0.8892   0.9664          100.0%
+```
+
+**No weight in any cell ever exceeds its initial value.** `Cσ`'s maximum
+weight is 0.807 against a start of 1.0, and its mean has fallen to 0.503.
+The concern was not merely valid — it is the whole picture: `Cσ`'s
+headline `D_W ≈ 0.51` is a **~50% near-uniform decay**, not organization
+of any kind.
+
+**Mechanism (consistent with the implemented rule, `[A3]`):** the
+Oja-normalized update is `η·dτ·(correlation − W·(density_i+density_j)/2)`.
+With `psi0` localized on a single node (`localized_psi0`), density is
+concentrated and both terms are ≈0 for the vast majority of edges — hence
+`C0`'s tiny drift. Adding noise spreads amplitude across all nodes, which
+switches the **decay** term on globally while the correlation term stays
+noise-dominated and near zero on average. Net effect: global decay. `γ`
+suppresses the noise that would otherwise drive this, which is why
+`Cγ` barely moves and `Cγσ` sits between.
+
+**Why this matters beyond bookkeeping — it unifies the whole REJECT:**
+- `[A41]`'s "noise widens the weight distribution ~24×" is more
+  precisely *noise drives a large downward drift with spread*, and a
+  broader weight distribution mechanically raises achievable modularity
+  on a degenerate landscape. Same conclusion, now with a mechanism.
+- `[A45]`'s reversal (shuffled correlations beat real ones) is
+  unsurprising once the correlation term is known to be nearly inert
+  relative to the decay term: shuffling a term that contributes little
+  cannot hurt, and adds incoherent variance the curvature statistic
+  registers.
+- **Organization was never mechanically available at this budget.** A
+  rule that cannot strengthen anything above baseline cannot produce
+  differential reinforcement, which is what "organization" would require.
+
+**Consequence for the Relaxation Map (`null_results/20260814-open-system-
+geometrogenesis.md`): V1 (different adaptation rule) now has genuine
+independent motivation and satisfies AOG-5.** The reason to change the
+rule is no longer "the hypothesis failed, try something else" (motivated
+relaxation) but "the implemented rule is measured to be net-decaying at
+this budget, so it could not have produced the effect under test". That
+is an independent mechanical fact about the apparatus, established
+without reference to whether the hypothesis is true.
+
+**Evidence:** [VERIFIED-bash] direct measurement across 3 seeds × 4
+cells, this session's transcript. Cross-checks `[A42]`'s zero-count
+measurement (consistent: near-zero weights are approached but almost
+never reached).
+
+**If wrong:** measured at one `(K, dt, dtau_steps, η)` budget and one
+initial condition (localized `psi0`). A delocalized initial state would
+activate the correlation term far more broadly and could change the
+balance entirely — untested, and arguably the cheapest V1-adjacent probe
+available.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
