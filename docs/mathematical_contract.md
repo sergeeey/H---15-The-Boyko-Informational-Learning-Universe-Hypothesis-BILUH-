@@ -315,6 +315,20 @@ edge (`M_ij: 0 → 1`) as a side effect of weight adaptation or noise —
 tested explicitly (`test_missing_edges_do_not_appear_without_topology_
 rule`).
 
+**Addendum 2026-08-14 (`[A42]`, `[A50]`, `null_results/20260814-open-
+system-geometrogenesis.md` V3) — one additional exploratory rule,
+outside the Stage-1 arm table above:** `[A42]` found that
+`HebbianAdaptation`'s non-negativity clamp can drive a weight to exactly
+`0.0` under noise, which is already an EFFECTIVE topology change even
+though `NoTopologyUpdate` leaves `M` formally untouched. `PruneZeroWeight
+TopologyUpdate` (`dynamics/topology.py`) makes this explicit: after each
+adaptation window, any edge with `W_ij == 0.0` is removed from `M`
+(`M_ij: 1 → 0`). It is used **only** in the `null_results/2026...`
+Relaxation Map's V3 pilot, never as a replacement for any Stage-1 arm's
+`NoTopologyUpdate`, and it strictly obeys this section's no-edge-addition
+invariant — it only ever removes, matching `[A42]`'s own finding that
+edges are lost, never gained, by the existing clamp.
+
 ---
 
 ## 4. Required Experimental Arms
