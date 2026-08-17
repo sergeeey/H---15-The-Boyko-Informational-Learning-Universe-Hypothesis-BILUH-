@@ -1,6 +1,56 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — Milestone 7 APPROVED and RUNNING)
+## SESSION HANDOFF (updated 2026-08-14 — PHASE 12 EXECUTED, [A40]-[A43], Phase 11's headline finding overturned)
+
+**Phase 12 pre-registered (`docs/phase12_spec.md`, `e19657c`) and then
+executed in full. All merged+pushed to `main` (HEAD `8b3fa29`).
+257/257 tests, ruff/mypy clean.**
+
+**The headline outcome: Phase 11's `Cσ` modularity finding survives as a
+NUMBER but its interpretation is dead.**
+
+- `[A40]` **[VERIFIED-bash/pytest]** Stage 0 substrate gate: the community
+  partition is not a stable
+  object on this project's graphs. 1% weight perturbation → ARI 0.13 on
+  ER, 0.25 on the cubic lattice, but 0.997 on an SBM with planted
+  communities. The detector is sound (SBM positive control proves it);
+  the graphs have a degenerate modularity landscape (Good/de Montjoye/
+  Clauset 2010). Verdict PASSED, not BLOCKED → admissible evidence.
+  Named falsification condition (greedy-specific?) was TESTED with
+  Louvain: ER 0.138 / SBM 1.000, detector-independent.
+- `[A41]` Decisive weight-shuffle null model: structural excess
+  (Q_real − Q_shuffled) has a 95% CI containing zero in BOTH cells;
+  d(Cσ vs C0) on structural excess = 0.207 against 7.658 on raw Q and
+  40.751 on weight std. The entire effect is distributional — noise
+  widens the weight distribution ~24×, and Q is sensitive to that width
+  on a degenerate landscape. Full Kill Analysis in `[A41]`.
+- `[A42]` Found by investigating a divide-by-zero rather than patching
+  it: the non-negativity clamp can zero an edge weight, so
+  `NoTopologyUpdate` does NOT guarantee constant EFFECTIVE topology.
+  Rare (1/1536 edges, 1/5 seeds) so `[A41]` is unaffected, but the
+  inference "mask fixed ⇒ topology fixed" is invalid in general.
+  `[A41]`'s "If wrong" clause was explicitly CORRECTED, not silently
+  edited.
+- `[A43]` Stage 3 Forman-Ricci: the FIRST signal to survive the null
+  model (d=3.103 on structural excess). **Marked `[HYPOTHESIS]`, not a
+  finding** — it is 0.0158 against a lattice-to-random gap of 1.941
+  (~0.8% of the "geometry vs random" scale) and moves `Cσ` AWAY from the
+  lattice value. Leading mundane explanation NOT excluded: Forman's
+  `1/sqrt(w_e·w_neighbor)` is not permutation-invariant when weights
+  correlate with position, and the Hebbian decay term is node-based.
+
+**Single most valuable next step, named in `[A43]`:** a
+**node-strength-preserving null model**. If `[A43]`'s excess vanishes
+under it, the signal is entirely node-level with no geometric content,
+and Phase 12's Stop Rule fires. Not implemented.
+
+**Phase 12 stages 2a/2b/2c and 4 are moot**, not skipped: `[A40]` showed
+the quantity Stage 2 would measure does not exist as a stable object, and
+Stage 4 was gated on a Stage 2 signal.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — Milestone 7 approved and running)
 **User approved Milestone 7 scope explicitly**: N=512 AND N=1024,
 `seeds_per_cell=10`. Timed a single N=1024 seed before committing to the
 full grid (366s/seed vs N=512's 159s/seed -- closer to N^2 than N^3,
