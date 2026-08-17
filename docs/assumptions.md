@@ -2310,6 +2310,83 @@ activate the correlation term far more broadly and could change the
 balance entirely — untested, and arguably the cheapest V1-adjacent probe
 available.
 
+### A47 — THEOREM: `W = 1` is an absorbing upper barrier for the implemented rule; `[A46]` is structural, not budget-dependent (2026-08-14)
+
+**What this establishes:** `[A46]` measured that no weight ever exceeds
+its initial value and read that as a property of the tested budget. It
+is not. It follows from the rule's algebra and holds unconditionally.
+
+**Proof.** The implemented update (`adaptive.py`, `[A3]`) is
+
+```
+Δ_ij = η·dτ·( C_ij − W_ij·(ρ_i + ρ_j)/2 ),    ρ = diag(C)
+```
+
+where `C_ij = ⟨Re(ψ_i* ψ_j)⟩_t` and `ρ_i = ⟨|ψ_i|²⟩_t`. Then:
+
+1. `Re(ψ_i* ψ_j) ≤ |ψ_i||ψ_j|` pointwise, and time-averaging with
+   Cauchy–Schwarz gives `C_ij ≤ √(ρ_i ρ_j)`.
+2. AM–GM gives `√(ρ_i ρ_j) ≤ (ρ_i + ρ_j)/2`.
+3. Hence `Δ_ij ≤ η·dτ·(ρ_i + ρ_j)/2 · (1 − W_ij)`.
+4. So `W_ij ≥ 1 ⟹ Δ_ij ≤ 0`.
+
+Every edge starts at exactly `W = 1.0` (`[A19]`). **Therefore no weight
+can ever exceed 1.0 — for any initial state, any noise realization, any
+`(η, dτ, K, dtau_steps)`, any number of adaptation windows.**
+
+**Numerically verified** (the inequality, not just its consequence):
+`max(C_ij − (ρ_i+ρ_j)/2) = +0.000e+00` across three qualitatively
+different initial states (localized, uniform delocalized, random-phase
+delocalized). Zero rather than negative because the diagonal attains
+equality exactly (`C_ii = ρ_i`). Observed maximum final weights across
+the four cells: 0.998 / 0.99999 / 0.783 / 0.967 — the barrier is never
+crossed.
+
+**The rule's fixed point is structured, though:** `Δ_ij = 0` at
+`W*_ij = 2·C_ij / (ρ_i + ρ_j) ∈ [0, 1]` — the *normalized correlation*
+of the edge's endpoints. The dynamics is a contraction from the uniform
+initial condition **downward** toward `W*`. Organization is therefore
+possible in principle, but only ever as **differential decay**, never as
+differential growth.
+
+**This explains every cell without further assumptions:**
+- `Cσ`: noise decorrelates, so `C_ij → 0` off-diagonal ⇒ `W* → 0` ⇒
+  monotone decay (measured mean weight 0.503 and still falling).
+- `C0`: `psi0` is localized, so `ρ ≈ 0` on most of the graph ⇒ BOTH
+  terms vanish ⇒ weights stay pinned near 1.0 (`D_W = 0.011`).
+- `Cγ`: damping suppresses the spreading that would activate either
+  term ⇒ least movement of all (`D_W = 0.0025`).
+
+**CORRECTION to `[A46]` — recorded, not silently edited.** `[A46]`
+justified variant V1b (delocalized initial state) on the grounds that
+"the rule is net-decaying at this budget". That justification is
+**wrong**: net-decay is a theorem and no change of initial state can
+lift the ceiling. The correct justification for V1b is different and
+sharper: **a localized `psi0` leaves the correlation term inert across
+most of the graph, so the rule's own structured fixed point `W*` was
+never approached anywhere except near the source.** A delocalized state
+*without* noise makes `ρ_i > 0` everywhere while keeping `C_ij`
+coherent, which is the one regime in which `W*` carries real structure
+and the rule could actually differentiate edges. That regime has never
+been run.
+
+**What this does NOT license:** `W*` being structured is not evidence
+that it is *geometric*. It is the normalized correlation of a quantum
+walk on a random graph; whether that has any geometric content is
+exactly the open question, and every observable and null model built in
+Phase 12 remains required to answer it.
+
+**Evidence:** [VERIFIED-bash] inequality checked directly on three
+initial states; maximum-weight consequence checked on all four cells,
+this session's transcript. [DERIVED] the proof above is algebra over
+the implemented expression, not an empirical generalization.
+
+**If wrong:** the proof assumes `C` is a genuine time-averaged
+correlation matrix with `ρ = diag(C)` and that weights start at 1.0. A
+future rule with an additive source term, a different normalization, or
+non-uniform initial weights (`[A19]` changed) would break step 3 and the
+barrier with it — which is precisely what variant V1 would explore.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

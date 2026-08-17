@@ -87,10 +87,27 @@ nearly inert while noise switches the decay term on globally.
 This changes the standing of V1/V1b from *motivated relaxation* (banned
 by AOG-5) to *independently motivated*: the reason to change the rule or
 the initial state is now a measured mechanical property of the
-apparatus — a rule that cannot strengthen anything above baseline cannot
-produce differential reinforcement — established without reference to
-whether the hypothesis is true. **V1b (delocalized initial state) is the
-cheapest such probe** and changes exactly one assumption.
+apparatus, established without reference to whether the hypothesis is
+true.
+
+**Addendum 2 (same day), `[A47]` — the rationale above is CORRECTED.**
+The net-decay in `[A46]` is not a budget property but a **theorem**:
+`C_ij ≤ √(ρ_iρ_j) ≤ (ρ_i+ρ_j)/2` (Cauchy–Schwarz then AM–GM) forces
+`Δ_ij ≤ η·dτ·(ρ_i+ρ_j)/2·(1−W_ij)`, so `W = 1` is an absorbing upper
+barrier and, since all weights start at 1.0 (`[A19]`), no weight can
+ever exceed it under any initial state, noise, or budget. **V1b
+therefore cannot lift the ceiling, and "the rule is net-decaying" is the
+wrong reason to run it.**
+
+The correct rationale, which does survive: the rule's fixed point is
+`W*_ij = 2C_ij/(ρ_i+ρ_j) ∈ [0,1]`, the normalized endpoint correlation
+— structured, but reachable only by differential *decay*. A localized
+`psi0` leaves `ρ ≈ 0` across most of the graph, so both terms vanish and
+`W*` is never approached except near the source; noise drives `C_ij → 0`
+and hence `W* → 0`, pure decay. **The one untested regime is delocalized
+initial state WITHOUT noise**, where `ρ > 0` everywhere and `C` stays
+coherent, so `W*` carries real structure. That is what V1b should test,
+and it changes exactly one assumption.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the
