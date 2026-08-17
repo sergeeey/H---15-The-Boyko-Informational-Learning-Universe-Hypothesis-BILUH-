@@ -178,12 +178,31 @@ not only `W_ij==0`) would fire far more often and is the natural next
 variant — untested, and a genuinely new single-assumption change from
 this one, not a repeat.
 
-**Current state: V1 and V1b are decisively closed (real mechanism,
-real exercise, no effect). V3 as tested is inconclusive (real mechanism,
-negligible exercise).** No branch of the original Relaxation Map
-positively confirms structure; V3 alone leaves a genuine, honest gap —
-not evidence for the hypothesis, but not evidence against it either at
-the threshold actually tested.
+**Addendum 7 (same day), `[A52]` — V3b (`threshold=0.01`, `[A51]`'s own
+pre-registered next variant) RAN. Result: numerically identical to
+`[A51]`, verified not a bug.** The final weight distribution has zero
+mass in `(0, 0.01)` on all 5 seeds — weights sit at 0.05-0.14 or land
+exactly at 0.0 (`[A42]`'s clamp), nothing between. `threshold=0.01` is
+therefore mathematically equivalent to exact-zero pruning at this exact
+budget. A threshold near the observed minimums (~0.05-0.15) would prune
+much more, but that shifts the intervention from "formalize where the
+existing clamp already drives weights" to "artificially force-prune
+moderately-weighted edges" — a qualitatively different, less
+mechanistically-motivated manipulation not pursued without independent
+justification (would risk crossing into parameter-fishing).
+
+**Current state, final for this pre-registered exploration: V1 and V1b
+are decisively closed (real mechanism, real exercise, no effect). V3/V3b
+as tested are inconclusive (real mechanism, negligible exercise) — a
+genuine, honest gap, not evidence for the hypothesis or against it at
+the thresholds actually tested.** No branch of the original Relaxation
+Map positively confirms structure. **This closes the pre-registered
+exploration** — all three original branches have been tested at least
+once, each with an explicit, honest calibration of how conclusively it
+closed. Continuing further requires a genuinely new, independently-
+motivated assumption change (larger threshold with its own justification,
+different budget, or a direction outside this Relaxation Map entirely),
+not another tweak of an already-tested knob.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the

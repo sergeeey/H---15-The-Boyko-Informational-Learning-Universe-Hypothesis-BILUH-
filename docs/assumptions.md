@@ -2678,6 +2678,71 @@ this session's transcript; script and rule committed for reproducibility.
 show a genuinely different result — this is the natural next variant,
 not tested here to keep this entry's single-assumption discipline clean.
 
+### A52 — V3b ran (`PruneBelowThresholdTopologyUpdate(0.01)`): numerically identical to `[A51]` — not a bug, the weight distribution has no mass in the gap (2026-08-14)
+
+**Question this answers:** `[A51]`'s own "If wrong" clause pre-registered `threshold=0.01` as the natural next V3 variant. Does it produce a different, more informative result than exact-zero pruning?
+
+**Result:** numerically identical to `[A51]` to 5 decimal places —
+`1/7680` edges pruned (same single edge, same seed), global excess
+`+0.01763`, strength excess `+0.01013`, matching `[A51]` exactly.
+
+**Verified this is NOT a bug** (checked before writing anything up, per
+this project's "investigate, don't patch and move on" discipline):
+measured the actual weight distribution's lower tail across the same 5
+seeds with no pruning at all —
+
+```
+seed  w_min      exact_zero  below_0.01  in_gap_(0,0.01)
+0     0.051529   0           0           0
+1     0.108996   0           0           0
+2     0.064873   0           0           0
+3     0.000000   1           1           0
+4     0.138839   0           0           0
+```
+
+**There is no weight in `(0, 0.01)` on any seed.** Weights either sit
+comfortably above 0.01 (minimums 0.05–0.14) or land at exactly 0.0
+(seed 3, matching `[A42]`'s clamp mechanism exactly). `threshold=0.01`
+is therefore mathematically equivalent to `threshold=0.0` for this exact
+budget — not because the rule is broken, but because the weight
+distribution's lower tail is empty at this specific gap.
+
+**Consequence:** `[A51]`'s pre-registered next variant, though a
+different rule in principle, tests nothing new in practice at this
+budget. This is itself a valid, informative result — it closes off
+"modestly raise the threshold" as a way to get more pruning events,
+without needing a new run to discover it doesn't work.
+
+**What would actually differ:** a threshold near the observed weight
+minimums themselves (~0.05–0.15) would prune substantially more edges —
+but that changes the character of the intervention from "formalize
+where the existing clamp already drives weights" (`[A42]`'s original
+motivation) to "artificially force-prune moderately-weighted edges",
+which is a qualitatively different and less mechanistically-motivated
+manipulation, bordering on parameter-fishing if chosen without
+independent justification. Not pursued here for that reason.
+
+**Kill Analysis:** kills `threshold=0.01` specifically as an informative
+V3 variant at this budget. Does not kill V3 in general — a
+principled larger threshold, or a longer `dtau_steps` budget that gives
+weights more time to populate the gap, remain untested and would need
+their own independent motivation before running, per AOG-5.
+
+**This closes the Relaxation Map's pre-registered exploration.** All
+three original branches (V1, V1b, V3/V3b) have now been tested at least
+once with an honest calibration of how conclusively each closed. Further
+continuation requires a genuinely new, independently-motivated
+assumption change, not another tweak of an already-tested knob.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_v3b_threshold_pilot.py`
+output + the weight-distribution diagnostic, both this session's
+transcript; script committed for reproducibility.
+
+**If wrong:** a different budget (larger `η`, more `dtau_steps`, or a
+different `σ̃`) could populate the `(0,0.01)` gap and make `threshold=0.01`
+meaningfully different from exact-zero pruning — untested, and each
+would be its own new single-assumption variant, not a re-run of this one.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
