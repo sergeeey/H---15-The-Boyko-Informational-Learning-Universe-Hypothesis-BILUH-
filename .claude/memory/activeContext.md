@@ -1,6 +1,34 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14, continued — Milestones 3-6 DONE, Milestone 7 needs user go-ahead)
+## SESSION HANDOFF (updated 2026-08-14, continued — Milestone 7 APPROVED and RUNNING)
+**User approved Milestone 7 scope explicitly**: N=512 AND N=1024,
+`seeds_per_cell=10`. Timed a single N=1024 seed before committing to the
+full grid (366s/seed vs N=512's 159s/seed -- closer to N^2 than N^3,
+likely because the fast-dynamics loop does repeated matrix-vector
+propagation per k-step rather than one dense expm per window). Estimated
+total: ~87 min for the full 2-size x 10-seed x 4-cell = 80-point grid.
+`configs/open_pilot.yaml`/`tests/unit/check_open_config.py` updated,
+committed `d012ef7`, merged+pushed to `main`.
+
+**The real 80-point grid is now RUNNING in the background**
+(`scripts/run_open_pilot.py --run`, background task `b482waa4r`, started
+this session). Output: `results/open_pilot/raw.jsonl` (gitignored,
+overwrites/extends Milestone 3's earlier N=512-only 20-point file since
+resumability is keyed on (size, seed_index, cell) triples that don't
+collide with the old 5-seed run's indices... actually DO check this
+before trusting the file: Milestone 3's raw.jsonl was for seeds 0-4 at
+N=512 only; this run also targets seeds 0-9 at N=512, so seeds 0-4 at
+N=512 will be SKIPPED as already-completed by the resumability logic,
+reusing Milestone 3's numbers rather than re-running them -- this is
+correct/intended (same config, same graph_seed formula), not a bug, but
+worth being explicit about when reading the final file.
+
+Do not report any Milestone 7 verdict until the run finishes and results
+are actually read -- follow the same discipline as Milestone 3.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history, Milestones 3-6 DONE, Milestone 7 needed user go-ahead)
 **Phase 11 Milestones 1-6 are all complete and pushed to `main`.**
 Sequence this session: `[A35]` resolved by explicit user choice (option
 c) -> Milestone 3 factorial pilot ran clean (N=512, 20/20 points,
