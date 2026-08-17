@@ -2099,6 +2099,144 @@ would have been reported as "no signal" had the warning been ignored
 (`[A42]`) — a reminder that this result rests on 5 seeds at one budget
 and has not been replicated at N=1024 or under a stronger null.
 
+### A44 — `[A43]`'s curvature signal is NOT node-strength heterogeneity: it survives a strength-stratified null (2026-08-14)
+
+**Question this answers:** `[A43]` named node-strength heterogeneity as
+the leading mundane explanation for the curvature structural excess and
+marked the result `[HYPOTHESIS]` pending exactly this test. Phase 12's
+own handoff called it "the single most valuable next step". Run.
+
+**Method** (`scripts/run_phase12_strength_null.py`): bin edges into 20
+quantile bins by the product of their endpoints' node strengths, then
+permute weights **only within a bin**. This preserves the
+weight-position relationship that node strengths induce — which is what
+the Hebbian decay term (`density[i]+density[j]`, node-based) creates by
+construction — while destroying anything finer.
+
+**Result (N=512, 5 seeds):**
+
+```
+cell     global-shuffle excess   strength-stratified excess        retained
+C0       +0.00004                +0.00003  CI(+0.00002,+0.00004)   89.9%
+Csigma   +0.01577                +0.01074  CI(+0.00823,+0.01326)   68.1%
+
+d(Csigma vs C0) on strength-CONTROLLED excess = 7.473
+   ([A43]'s uncontrolled figure was 3.103 — the control REMOVED variance,
+    so the separation got cleaner, not weaker)
+```
+
+**The signal did not collapse.** Node strengths account for only ~32% of
+the `Cσ` excess; ~68% is edge-level structure that survives controlling
+for them, with a CI excluding zero. **`[A43]`'s named mundane
+explanation is therefore excluded** — this is genuine edge-level
+structure, not node-strength heterogeneity.
+
+**But the NEXT mundane explanation is immediately available, and is not
+excluded by this test:** `HebbianAdaptation` updates `w_ij` by the
+pairwise correlation `C_ij`, so it writes pairwise information into the
+weights **by construction**. Any shuffle destroys that pairing,
+guaranteeing a nonzero excess for reasons that have nothing to do with
+geometry. "Edge-level structure exists" is exactly what a pairwise
+update rule produces trivially; it is not evidence that the structure is
+geometric. Status therefore stays `[HYPOTHESIS]` — one candidate
+explanation was killed, not the class of them.
+
+**Scale unchanged and still decisive against over-reading:** the
+strength-controlled excess is 0.0107 against a lattice-to-random gap of
+1.941 — **0.55% of the "geometry vs random" scale** — and `Cσ` continues
+to move *away* from the lattice value, not toward it.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_phase12_strength_null.py`
+output, this session's transcript; script committed for reproducibility.
+
+**If wrong:** 20 quantile bins is a chosen resolution; too-coarse bins
+would under-control for strengths and inflate the retained fraction. Not
+swept — a bin-count sensitivity check would be the cheap robustness test.
+
+### A45 — DECISIVE: shuffled correlations produce MORE curvature structure than real ones; the effect is anti-correlated with the hypothesis (2026-08-14)
+
+**Question this answers:** `[A44]` excluded node strengths but named the
+remaining mundane explanation — `HebbianAdaptation` writes pairwise
+information into weights by construction, so "edge-level structure
+exists" is trivially guaranteed and says nothing about geometry. The
+discriminator is this project's own H0 control
+(`CorrelationShuffleAdaptation`, `[A31]`): identical Oja-normalized
+update, correlation term shuffled across edges — same magnitude
+distribution, wrong pairing.
+
+**Result (N=512, 5 seeds, both at `σ̃=0.05`, `γ=0`,
+`scripts/run_phase12_curvature_h0.py`):**
+
+```
+excess vs GLOBAL-shuffle null:
+  H1 (real correlations)      = +0.01577  CI (+0.00687, +0.02468)
+  H0 (shuffled correlations)  = +0.03263  CI (+0.02769, +0.03757)
+  d(H1 vs H0) = -2.907   CI overlap: NO   MCID met: YES
+
+excess vs STRENGTH-STRATIFIED null:
+  H1 (real correlations)      = +0.01074  CI (+0.00823, +0.01326)
+  H0 (shuffled correlations)  = +0.02108  CI (+0.01543, +0.02673)
+  d(H1 vs H0) = -2.936   CI overlap: NO   MCID met: YES
+```
+
+**The sign is the finding.** Real dynamical correlations produce roughly
+**half** the structural excess that randomly shuffled correlations do —
+a large, MCID-passing difference in the direction *opposite* to H1. This
+is not "no difference" (Milestone 5's ambiguous scalar null,
+`[A37]`, `d=-0.735` with CI overlap); it is a clear, reproducible
+difference that actively contradicts the hypothesis it was meant to test.
+
+Plausible mechanism (not itself tested): shuffling the correlation term
+scatters weight updates incoherently with respect to node-level density,
+producing more position-dependent weight variance for Forman-Ricci's
+nonlinear `1/sqrt(w_e·w_neighbor)` term to register. Real correlations,
+being smoother and partly aligned with node density, produce less. Under
+either mechanism the conclusion is the same: **the excess does not track
+what the dynamics actually correlates.**
+
+**KILL ANALYSIS.**
+
+*What this kills:* the entire "open-system dynamics organizes the graph
+via real dynamical correlations" line, at this budget, across every
+observable tried:
+- G1 (spectral dimension): never converged, 0/80 points (`[A39]`).
+- Modularity: whole effect reproduced by a structure-destroying null,
+  structural excess ≡ 0 (`[A41]`).
+- Conductance: no MCID-passing separation at any N (`[A39]`).
+- Forman-Ricci curvature: excess is real and survives node-strength
+  control (`[A44]`), but is *larger under shuffled correlations*, and is
+  ~0.5% of the lattice-to-random scale in the direction away from the
+  lattice (`[A43]`, this entry).
+
+*What this does NOT kill:*
+- Any measurement. Every number in `[A37]`/`[A39]`/`[A43]`/`[A44]`
+  stands as recorded; only interpretations collapsed.
+- The infrastructure: open/closed backends, T1–T10, seed discipline,
+  provenance, the null-model toolkit built here.
+- Other adaptation rules. `AntiHebbianAdaptation` and
+  `AlternativeObjective` exist and were never run in open-system mode.
+- Other `(γ̃,σ̃)` regimes — one point was ever tested, by design
+  (`[A35]`).
+- Any claim about geometry per se. No observable used here is a
+  validated geometry detector on non-converged data; "no geometric
+  organization found" is not "geometric organization is impossible".
+
+*Minimal Relaxation options, one assumption each (not pursued here):*
+(a) different adaptation rule, same everything else; (b) different
+`(γ̃,σ̃)` regime, same rule; (c) a topology-updating arm, since
+`NoTopologyUpdate` forbids the one kind of reorganization that could
+show up structurally (`[A42]` showed even the accidental zeroing route
+is negligible at this budget).
+
+**Evidence:** [VERIFIED-bash] `scripts/run_phase12_curvature_h0.py`
+output, this session's transcript; script committed. Both null models
+computed on the identical graphs and seeds, so H1/H0 are directly
+comparable.
+
+**If wrong:** 5 seeds at one budget, one graph size. The H0/H1 gap is
+large (`d≈-2.9`) so underpowering is unlikely to explain it, but the
+mechanism claim above is untested speculation and is labelled as such.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
