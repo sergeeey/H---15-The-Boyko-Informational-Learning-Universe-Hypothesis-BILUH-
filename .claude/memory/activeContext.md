@@ -1,6 +1,63 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — pre-registered Relaxation Map exploration CLOSED, [A52])
+## SESSION HANDOFF (updated 2026-08-14 — PROJECT FROZEN as a finished cycle; start here on a new machine)
+
+**Read `docs/final_knowledge_map.md` first if resuming this project.**
+That is the one-page summary this handoff points to — четыре блока
+(отвергнуто / установлено / неизвестно / что может изменить вывод).
+This entry is the pointer + sync confirmation, not a duplicate of it.
+
+**Repo state:** HEAD `f4fb2be` = `origin/main`. Working tree clean.
+266/266 tests, ruff clean, mypy `--strict` clean. `.venv/` exists locally
+(not committed, standard) — on a new machine, recreate via
+`pip install -e ".[dev]"` or equivalent from `pyproject.toml`, then use
+`.venv/Scripts/python.exe` for all gate checks (the bare `python` on
+PATH lacks `types-PyYAML`/`scipy-stubs` and gives false mypy errors —
+learned the hard way earlier this session).
+
+**What this session did, top to bottom:**
+1. Phase 11 (Milestones 1-7): open-system backend, T1-T10, factorial
+   grid at N=512+1024 — 80/80 points, `[A38]` connectivity bug found
+   and fixed.
+2. Phase 12 (pre-registered `docs/phase12_spec.md`): systematically
+   killed Phase 11's headline modularity finding (`[A40]`-`[A41]`),
+   found and explained a real infra edge case (`[A42]`), found a
+   curvature signal (`[A43]`) that survived one control (`[A44]`) but
+   reversed sign against the hypothesis on the decisive H0 test
+   (`[A45]`) → **REJECT**, recorded in `null_results/20260814-open-
+   system-geometrogenesis.md`.
+3. Post-REJECT Relaxation Map, AOG-5-compliant: `[A47]` proved a
+   theorem (`W=1` absorbing barrier) that gave V1/V1b independent
+   motivation; both ran and closed decisively (`[A49]`, `[A50]`). V3/V3b
+   (topology pruning) ran but stayed `UNDEREXPOSED` (`[A51]`, `[A52]`)
+   — the prune rule almost never fires at this budget, not disproven.
+4. `[A45]` disassembly (4 rounds, `[A53]`-`[A56]`): four cheap
+   mechanistic explanations for the H0-beats-H1 reversal, ALL refuted
+   (two empirically, one by exact algebra — Forman-Ricci is
+   scale-invariant, `[A55]`). Stopped per a pre-registered stop
+   condition rather than chase a 5th scalar. `[A45]` itself stands as a
+   real, reproducible, currently-unexplained anomaly — frozen as an
+   open problem, not resolved.
+5. Harvest (`docs/harvest_report.md`) + Final Knowledge Map
+   (`docs/final_knowledge_map.md`): the project is frozen as a finished
+   asset. Top reusable pieces: null-model toolkit (18/20), `null_results/`
+   protocol (17/20), resumable runners (16/20).
+
+**Explicit decision, not yet made: whether to open V4** (autonomous
+topology dynamics as its own state variable, separate from the
+correlation-driven weight). User-proposed Decision Gate (3 questions, all
+must be yes): genuinely new mechanism, not just a harsher threshold; an
+observable that distinguishes specific structural learning from generic
+pruning/rewiring; a pre-registered kill criterion. **Not started.** If
+resuming and V4 is wanted, start with a fresh EstimandOps L0 gate for
+V4's own claim — do not reuse Phase 11/12's framing.
+
+User explicitly said not to auto-start V4 this session — it is a new
+project, not a continuation.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — pre-registered Relaxation Map exploration CLOSED, [A52])
 
 **The pre-registered post-REJECT exploration is now closed.** HEAD
 `c55e908`, 266/266 tests, ruff/mypy clean.
@@ -730,6 +787,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-17 17:42] `f4fb2be`: chore: commit local permission allowlist for cross-machine continuity
 - [2026-08-14 18:32] `3e544e1`: docs(phase11): Milestone 6 Analysis Freeze вЂ” fixes the Milestone 1-5 interpretation
 - [2026-08-14 16:43] `6347801`: feat(phase11): open-system pilot config/script layer (TZ Section 21)
 [summarized] - [2026-08-14 16:33] `31b8c33`: feat: Phase 11 conductance/modularity observables (РўР— В§12.6-12.7)
