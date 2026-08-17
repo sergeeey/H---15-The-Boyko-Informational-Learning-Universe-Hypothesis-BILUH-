@@ -2902,6 +2902,85 @@ project's convention throughout, `curvature.py`'s own docstring) — a
 future node-weighted variant of Forman-Ricci would not necessarily share
 this invariance.
 
+### A56 — `[A45]` disassembly, round 4 (final for this thread): Jensen decomposition explains the RAW `F(H1)` vs `F(H0)` gap, but not the structural-excess asymmetry `[A45]` actually measured — stopping here per pre-registered stop condition (2026-08-14)
+
+**Question this answers:** `[A55]` proved Forman-Ricci is scale-invariant
+(depends only on ratios `√(w_e/w_neighbor)`, not absolute weight
+levels). The correctly-scaled follow-up: does the SIGNED log-ratio field
+`Δlog w = log(w_e) − log(w_neighbor)` (over adjacent-edge pairs) differ
+between `H1`/`H0` in location (mean) or dispersion (std)? By Jensen's
+inequality on the convex `exp(½Δlog w)` term inside `R_e = Σexp(½Δlog w)
+= 2 − F(e)`, dispersion alone (independent of mean) can shift `R_e`.
+
+**Result (same 5 seeds, excluding `[A42]`-clamped zero-weight edges):**
+
+```
+mean(Delta log w):  H1=+0.00044  H0=-0.00219  d=-0.487  CI overlap  NOT significant
+std(Delta log w):   H1=+0.31365  H0=+0.26189  d=-2.635  CI disjoint  MCID met
+```
+
+**Location is not the driver** (near zero and statistically
+indistinguishable in both — expected for a well-behaved signed field).
+**Dispersion IS different and MCID-significant: `H1`'s log-ratio field
+is MORE spread than `H0`'s**, consistent (via Jensen) with `H1`'s raw
+`F` being more negative than `H0`'s raw `F` — this is a real, coherent,
+mechanistically-grounded explanation of the RAW curvature gap between
+the two rules.
+
+**But this does NOT explain `[A45]`'s actual finding, and that
+distinction matters — stated precisely, not glossed over:** `[A45]`
+compared STRUCTURAL EXCESS (`F_real − F_null`, each already
+null-corrected within its own run's weight multiset), not raw `F`
+values. Dispersion of `Δlog w` over the WHOLE graph is a property of the
+raw distribution; it does not by itself describe how a run's real
+(topologically-informed) assignment compares to a random reassignment
+of that SAME run's own multiset — which is precisely what the excess
+measures. Round 4 explains a real, adjacent, MCID-confirmed fact (why
+raw `F(H1)` and `F(H0)` differ) without resolving the actual `[A45]`
+question (why `H0`'s excess over its own null is larger than `H1`'s
+excess over its own null). Conflating the two would misrepresent what
+was established.
+
+**Stopping the `[A45]` disassembly here, per a pre-registered stop
+condition from this same investigation (the user's own criterion,
+stated before this round ran):** "if even this decomposition explains
+nothing, cheap scalar summaries are exhausted, stop." This round is not
+literally empty — it produced a real, MCID-significant, mechanistically
+coherent result — but it answers an adjacent question, not the target
+one. Continuing to hunt for yet another scalar invariant that might
+happen to track the excess specifically would cross from decomposition
+into post-hoc fishing, which this project's own discipline (`[A9]`'s
+"report the landscape, never chase a winning statistic") exists to
+prevent.
+
+**Summary of the full `[A45]` disassembly (four rounds, `[A53]`-`[A56]`):**
+
+| round | hypothesis | result |
+|---|---|---|
+| `[A53]` | global weight heterogeneity | refuted — `H0` narrower, opposite direction |
+| `[A54]` | local absolute roughness | refuted — `H0` smoother, opposite direction |
+| `[A55]` | mean weight level | refuted by algebra — curvature is scale-invariant |
+| `[A56]` | log-ratio location vs dispersion | dispersion explains RAW `F`, not the EXCESS asymmetry `[A45]` measured |
+
+`[A45]`'s decisive finding itself stands, unaffected: real Hebbian
+correlations produce LESS curvature structural excess than shuffled
+ones. Four cheap scalar-summary explanations were tried and none fully
+account for it. The mechanism remains open; resolving it further would
+require genuine edge-level/conditional analysis (per-edge covariate
+regression of excess against local graph features), which is a new,
+larger investigative program, not another cheap test.
+
+**Evidence:** [VERIFIED-bash] Jensen decomposition, 5 seeds, this
+session's transcript.
+
+**If wrong:** an edge-level regression (excess contribution per edge
+against local features: degree, node strength, distance from the
+`psi0` source) could still find the mechanism cheaply if it turns out to
+be concentrated on a small, identifiable subset of edges rather than
+distributed globally — not tested, and would be a different kind of
+analysis (conditional, not another global scalar) from any of the four
+rounds run here.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
