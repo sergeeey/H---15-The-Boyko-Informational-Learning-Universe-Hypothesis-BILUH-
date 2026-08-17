@@ -2387,6 +2387,80 @@ future rule with an additive source term, a different normalization, or
 non-uniform initial weights (`[A19]` changed) would break step 3 and the
 barrier with it — which is precisely what variant V1 would explore.
 
+### A48 — cheapest differentiating test for V1b: `W*`'s edge-to-edge spread is measured directly (no adaptation run needed), and picks random-phase delocalization over uniform delocalization (2026-08-14)
+
+**Motivation:** `[A47]` named the untested regime for V1b as "delocalized
+initial state without noise" but did not distinguish between candidate
+delocalizations. `W* = C_ij / [(ρ_i+ρ_j)/2]` can be computed from a
+single closed trajectory — no adaptation loop, no seeds beyond the
+trajectory's own randomness — making "how much does `W*` actually vary
+across edges" the cheapest possible differentiating test (`~/.claude/
+rules/falsification-ladder.md`'s CDT protocol) before committing to a
+real V1b run.
+
+**A computational bug was found and fixed before any number below was
+trusted, recorded per this project's practice of investigating rather
+than silently patching.** An exploratory script computed
+`W* = 2·C_ij / [(ρ_i+ρ_j)/2]` — carrying the `/2` from `denom`'s own
+definition AND a spurious literal `2×`, doubling the true value. This
+produced apparent violations of `[A47]`'s own bound (`|W*|` up to 1.9999,
+1534/1536 edges "violating" `|W*|≤1`) that looked like a refutation of
+the just-established theorem. Diagnosis (checking the diagonal, which
+must equal exactly 1.0 at the true fixed point, and finding it computed
+as 2.0) isolated the error to this one exploratory script. **`[A47]`'s
+own theorem verification is unaffected** — it compared `C_ij` directly
+against `(ρ_i+ρ_j)/2` (no division, no factor-of-2 opportunity) and
+remains correct as recorded. This is a reminder that a numeric
+"falsification" of an algebraic proof is far more likely to be a
+computation bug than a wrong proof, and should be diagnosed as such
+before it is allowed to overturn a derivation checked by hand.
+
+**Result, corrected formula, 3 independent graphs (N=512):**
+
+```
+regime                      W* mean (range across seeds)   W* std (range across seeds)
+localized (current, [A19])  +0.26 (+0.25 .. +0.27)          0.41 (0.40 .. 0.41)
+uniform delocalized         +0.95 (+0.94 .. +0.95)          0.07 (0.07 .. 0.07)
+random-phase delocalized    +0.00 (-0.01 .. +0.01)          0.53 (0.52 .. 0.54)
+```
+
+**Uniform delocalization is a worse V1b candidate than the status quo,
+not a better one.** Its `W*` is tightly clustered just under the ceiling
+(mean 0.946, std 0.07) — nearly every edge gets pulled to nearly the same
+value, which is LESS edge-to-edge differentiation than the currently-used
+localized state already has (std 0.40). A rule contracting toward a
+nearly-constant target cannot produce structure; it can only produce a
+second, milder version of `[A46]`/`[A47]`'s uniform decay.
+
+**Random-phase delocalization is the better candidate**: `W*` centers
+near zero with the largest spread of the three (std ≈ 0.53, both signs
+represented) — genuine edge-to-edge differentiation is available for the
+rule to contract toward, unlike either of the other two regimes.
+
+**V1b is revised accordingly**: the untested regime worth running is
+random-phase delocalized `psi0`, `γ=σ=0`, not an arbitrary "delocalized"
+state. This is still one assumption changed from the baseline (initial
+state), consistent with the Relaxation Map.
+
+**What this does NOT establish:** a larger `W*` spread is a necessary
+condition for the rule to have something to differentiate, not a
+sufficient one for that differentiation to be geometric — `[A44]`/`[A45]`
+already showed that edge-level structure existing (curvature) does not
+imply it tracks real correlations. The same null-model discipline
+(global shuffle, strength-stratified shuffle, H0 correlation-shuffle
+control) applies to any V1b run exactly as it did to the original.
+
+**Evidence:** [VERIFIED-bash] `W*` computed directly via
+`_time_averaged_correlation`/`evolve_trajectory` (both reused, no new
+code), 3 graph seeds, this session's transcript.
+
+**If wrong:** `W*`'s spread is a property of ONE closed trajectory at
+K=50 steps; a full adaptive run has `dtau_steps=50` such windows with the
+graph itself updating between them, so the actual trajectory of `W`
+toward `W*` across many windows could behave differently from this
+single-window snapshot. This is a screening heuristic for which regime
+to run, not a substitute for actually running it.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

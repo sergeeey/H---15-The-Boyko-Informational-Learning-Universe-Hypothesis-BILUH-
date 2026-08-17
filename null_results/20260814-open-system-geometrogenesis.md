@@ -100,14 +100,33 @@ therefore cannot lift the ceiling, and "the rule is net-decaying" is the
 wrong reason to run it.**
 
 The correct rationale, which does survive: the rule's fixed point is
-`W*_ij = 2C_ij/(ρ_i+ρ_j) ∈ [0,1]`, the normalized endpoint correlation
-— structured, but reachable only by differential *decay*. A localized
-`psi0` leaves `ρ ≈ 0` across most of the graph, so both terms vanish and
-`W*` is never approached except near the source; noise drives `C_ij → 0`
-and hence `W* → 0`, pure decay. **The one untested regime is delocalized
-initial state WITHOUT noise**, where `ρ > 0` everywhere and `C` stays
-coherent, so `W*` carries real structure. That is what V1b should test,
-and it changes exactly one assumption.
+`W*_ij = C_ij/[(ρ_i+ρ_j)/2] ∈ [-1,1]`, the normalized endpoint
+correlation — structured, but reachable only by differential *decay*. A
+localized `psi0` leaves `ρ ≈ 0` across most of the graph, so both terms
+vanish and `W*` is never approached except near the source; noise drives
+`C_ij → 0` and hence `W* → 0`, pure decay. **The one untested regime is
+delocalized initial state WITHOUT noise**, where `ρ > 0` everywhere and
+`C` stays coherent, so `W*` carries real structure.
+
+**Addendum 3 (same day), `[A48]` — V1b narrowed to a specific
+delocalization, via the cheapest possible differentiating test.**
+`W*` is computable from one closed trajectory with no adaptation loop —
+computed it directly for three regimes across 3 graph seeds:
+
+```
+regime                     W* mean    W* std
+localized (current)        +0.26       0.41
+uniform delocalized        +0.95       0.07   <- WORSE: nearly no edge-to-edge spread
+random-phase delocalized   +0.00       0.53   <- BEST: most spread, both signs
+```
+
+Uniform delocalization (all amplitudes equal magnitude AND phase) turns
+out to be a *worse* V1b candidate than the status quo — its `W*` clusters
+tightly near the ceiling, meaning almost no edge is differentiated from
+any other. **V1b is narrowed to random-phase delocalized `psi0`**
+(`γ=σ=0`), which showed the largest `W*` spread of any regime tested and
+is therefore the one most likely to give the adaptation rule something
+real to differentiate. Still one assumption changed from baseline.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the
