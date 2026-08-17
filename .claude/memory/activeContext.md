@@ -1,6 +1,49 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — ALL THREE Relaxation Map branches tested, [A47]-[A51])
+## SESSION HANDOFF (updated 2026-08-14 — pre-registered Relaxation Map exploration CLOSED, [A52])
+
+**The pre-registered post-REJECT exploration is now closed.** HEAD
+`c55e908`, 266/266 tests, ruff/mypy clean.
+
+**`[A52]` V3b (`PruneBelowThresholdTopologyUpdate(threshold=0.01)`,
+`[A51]`'s own pre-registered next variant) RAN — result numerically
+identical to `[A51]` to 5 decimal places.** Suspicious enough to verify
+before writing up: measured the actual final weight distribution's
+lower tail across the same 5 seeds with NO pruning at all. Zero mass in
+`(0, 0.01)` on every seed — weights sit at 0.05-0.14 or land exactly at
+0.0 (`[A42]`'s clamp), nothing between. `threshold=0.01` is
+mathematically equivalent to exact-zero pruning at this exact budget —
+not a bug, the targeted gap is simply empty.
+
+**A larger threshold (~0.05-0.15, near the observed minimums) would
+prune much more, but was NOT run** — it would shift the intervention
+from "formalize where the existing clamp already drives weights"
+(`[A42]`'s original motivation) to "artificially force-prune
+moderately-weighted edges", a qualitatively different and less
+mechanistically-motivated manipulation that risks crossing into
+parameter-fishing without independent justification.
+
+**Final honest state of the pre-registered exploration:**
+
+| branch | closure |
+|---|---|
+| V1 (`AlternativeObjective`, `[A50]`) | decisive — real mechanism, real exercise, no effect |
+| V1b (delocalized `psi0`, `[A49]`) | decisive — real mechanism, real exercise, no effect |
+| V3 (exact-zero prune, `[A51]`) | inconclusive — negligible exercise |
+| V3b (threshold=0.01 prune, `[A52]`) | inconclusive — same reason, gap empty |
+
+No branch of the original Relaxation Map positively confirms structure.
+**This closes the pre-registered exploration** — continuing further
+requires a genuinely new, independently-motivated assumption change
+(a larger threshold with its own justification, a different budget, or
+a direction outside this Relaxation Map entirely), not another tweak of
+an already-tested knob. All findings recorded as dated addenda in
+`null_results/20260814-open-system-geometrogenesis.md`, which remains
+the authoritative REJECT verdict for the original Phase 11/12 claim.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — all three Relaxation Map branches tested, [A47]-[A51])
 
 **Post-REJECT revival exploration is complete for the original
 Relaxation Map.** HEAD `2738d24`, 263/263 tests, ruff/mypy clean.
