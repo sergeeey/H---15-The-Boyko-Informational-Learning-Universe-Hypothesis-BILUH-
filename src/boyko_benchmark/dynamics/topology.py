@@ -44,3 +44,28 @@ class PruneZeroWeightTopologyUpdate:
         new_mask = graph.mask & (graph.weights > 0.0)
         new_weights = np.where(new_mask, graph.weights, 0.0)
         return WeightedGraph(mask=new_mask, weights=new_weights)
+
+
+class PruneBelowThresholdTopologyUpdate:
+    """V3b pilot rule (`mathematical_contract.md` Sec3.3 addendum 2,
+    2026-08-14, `[A51]`'s own pre-registered "if wrong" next variant):
+    generalizes `PruneZeroWeightTopologyUpdate` to a configurable
+    threshold. Survival condition is `W_ij > threshold` (strict), so an
+    edge AT exactly the threshold is pruned along with everything below
+    it -- chosen specifically so `threshold=0.0` reduces to exactly
+    `PruneZeroWeightTopologyUpdate`'s own `W_ij > 0.0` survival rule
+    with no special-cased boundary (verified equal by test), rather than
+    inventing a second, subtly different rule at the threshold=0 corner.
+
+    Same invariants as `PruneZeroWeightTopologyUpdate`: only ever
+    removes edges, never adds one; idempotent once no surviving edge is
+    at or below threshold.
+    """
+
+    def __init__(self, threshold: float) -> None:
+        self._threshold = threshold
+
+    def update(self, graph: WeightedGraph, dtau: float) -> WeightedGraph:
+        new_mask = graph.mask & (graph.weights > self._threshold)
+        new_weights = np.where(new_mask, graph.weights, 0.0)
+        return WeightedGraph(mask=new_mask, weights=new_weights)

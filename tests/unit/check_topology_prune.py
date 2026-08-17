@@ -11,7 +11,10 @@ python_files setting) and this project's established workaround
 
 import numpy as np
 
-from boyko_benchmark.dynamics.topology import PruneZeroWeightTopologyUpdate
+from boyko_benchmark.dynamics.topology import (
+    PruneBelowThresholdTopologyUpdate,
+    PruneZeroWeightTopologyUpdate,
+)
 from boyko_benchmark.types import WeightedGraph
 
 
@@ -70,3 +73,47 @@ def test_prune_zero_weight_preserves_weights_on_surviving_edges() -> None:
     updated = PruneZeroWeightTopologyUpdate().update(graph, dtau=1.0)
 
     assert updated.weights[0, 1] == 0.7391
+
+
+def test_prune_below_threshold_removes_edges_at_or_below_threshold() -> None:
+    """`[A51]`'s pre-registered next variant: generalizes zero-weight
+    pruning to a configurable threshold. Survival requires weight
+    STRICTLY greater than threshold (matching the zero-weight rule's own
+    `W_ij > 0.0` survival condition) -- 0.5 survives, 0.005 (below 0.01)
+    is pruned, and 0.01 itself (AT threshold, not strictly above) is
+    ALSO pruned, consistent with the zero-weight rule pruning weight
+    exactly 0.0 rather than treating the boundary as safe."""
+    mask = np.array([[False, True, True], [True, False, True], [True, True, False]])
+    weights = np.array([[0.0, 0.005, 0.5], [0.005, 0.0, 0.01], [0.5, 0.01, 0.0]])
+    graph = WeightedGraph(mask=mask, weights=weights)
+
+    updated = PruneBelowThresholdTopologyUpdate(threshold=0.01).update(graph, dtau=1.0)
+
+    expected_mask = np.array([[False, False, True], [False, False, False], [True, False, False]])
+    expected_weights = np.array([[0.0, 0.0, 0.5], [0.0, 0.0, 0.0], [0.5, 0.0, 0.0]])
+    np.testing.assert_array_equal(updated.mask, expected_mask)
+    np.testing.assert_array_equal(updated.weights, expected_weights)
+
+
+def test_prune_below_threshold_at_zero_matches_prune_zero_weight() -> None:
+    """threshold=0.0 must reduce to PruneZeroWeightTopologyUpdate's exact
+    behavior -- the zero-weight rule is the threshold=0.0 special case,
+    not a separately-maintained parallel implementation that could drift."""
+    mask = np.array([[False, True, True], [True, False, True], [True, True, False]])
+    weights = np.array([[0.0, 0.0, 0.5], [0.0, 0.0, 1.0], [0.5, 1.0, 0.0]])
+    graph = WeightedGraph(mask=mask, weights=weights)
+
+    via_threshold = PruneBelowThresholdTopologyUpdate(threshold=0.0).update(graph, dtau=1.0)
+    via_zero_rule = PruneZeroWeightTopologyUpdate().update(graph, dtau=1.0)
+
+    np.testing.assert_array_equal(via_threshold.mask, via_zero_rule.mask)
+
+
+def test_prune_below_threshold_never_adds_an_edge() -> None:
+    mask = np.array([[False, True], [True, False]])
+    weights = np.array([[0.0, 1.0], [1.0, 0.0]])
+    graph = WeightedGraph(mask=mask, weights=weights)
+
+    updated = PruneBelowThresholdTopologyUpdate(threshold=0.01).update(graph, dtau=1.0)
+
+    np.testing.assert_array_equal(updated.mask, mask)

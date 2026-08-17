@@ -329,6 +329,18 @@ Relaxation Map's V3 pilot, never as a replacement for any Stage-1 arm's
 invariant — it only ever removes, matching `[A42]`'s own finding that
 edges are lost, never gained, by the existing clamp.
 
+**Addendum 2 (2026-08-14, same day) — `[A51]`'s own text pre-registered
+the next variant before running it:** `PruneZeroWeightTopologyUpdate`
+fired only once across 7680 edge-run opportunities (`[A51]`), an
+inconclusive test rather than a decisive one. `[A51]`'s own "If wrong"
+clause named `PruneBelowThresholdTopologyUpdate` at `W_ij<0.01` as the
+natural next variant, before any threshold-run data existed.
+`PruneBelowThresholdTopologyUpdate` (`dynamics/topology.py`) generalizes
+the zero-weight rule to a configurable threshold; `threshold=0.01` is
+used because it is the exact value `[A51]` pre-committed to, not a value
+chosen after seeing threshold-run results. Same scope restriction and
+same no-edge-addition invariant as the zero-weight rule above.
+
 ---
 
 ## 4. Required Experimental Arms
