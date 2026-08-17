@@ -1957,6 +1957,148 @@ change during a run and there is no topological organization available
 to miss. This caveat would matter only for a future arm with an active
 `TopologyUpdateRule`.
 
+**CORRECTION, same day, see `[A42]`:** the sentence above ("topology
+cannot change during a run") is **not strictly true** and is corrected
+here rather than silently edited. The non-negativity clamp can drive an
+edge weight to exactly zero, which is an *effective* topology change —
+the mask still records the edge but it carries no coupling. Observed
+rate is very low (1 edge of 1536, on 1 of 5 seeds, `Cσ` only), so
+`[A41]`'s conclusion is unaffected in practice: the weight-shuffle null
+preserves the number of zeroed edges (it permutes the multiset, zeros
+included), and a single zeroed edge cannot account for a `d=7.7` effect.
+But the general claim "no topological organization is available to miss"
+is too strong as written and should read "topological change is possible
+via weight-zeroing, but is far too rare at this budget to carry the
+observed effect."
+
+### A42 — the non-negativity clamp can zero an edge, so `NoTopologyUpdate` does not guarantee constant EFFECTIVE topology (2026-08-14)
+
+**Question this answers:** why did Phase 12's first Stage-3 curvature run
+return `nan` for the `Cσ` cell?
+
+**Root cause, found by investigating rather than patching:** Forman-Ricci
+divides by `sqrt(w_e · w_neighbor)`. The first run produced
+`RuntimeWarning: divide by zero`, so some final weight was exactly 0.0.
+Measured directly across 5 seeds × 2 cells:
+
+```
+seed  cell     n_zero-weight edges / 1536   w_min
+0-2   C0                    0               ~0.93
+0-2   Csigma                0               5.2e-2 .. 1.1e-1
+3     C0                    0                0.91
+3     Csigma                1               0.0      <- the culprit
+4     C0                    0                0.93
+4     Csigma                0               1.4e-1
+```
+
+`HebbianAdaptation`'s `_masked_nonnegative` clamp floors negative weights
+at zero. Under noise (`Cσ`), a weight can be pushed below zero and
+clamped to exactly 0.0. Rate at this budget: 1 edge in 7680 edge-runs.
+
+**Two consequences, both recorded rather than one silently fixed:**
+
+1. **Numerical (fixed):** `observables/curvature.py` now excludes
+   zero-weight edges from the effective graph — as focal edges and as
+   incident neighbours — rather than adding an epsilon, which would
+   invent a coupling the dynamics had removed. A zero-weight edge carries
+   no coupling and is dynamically absent. Regression test:
+   `check_curvature.py::test_zero_weight_edges_are_excluded_not_infinite`
+   (RED before the fix, GREEN after).
+2. **Scientific (open, not fixed):** `[A8]`/`[A14]`'s `NoTopologyUpdate`
+   guarantees the *mask* never changes, and this project has repeatedly
+   reasoned as if that means the topology is constant. It does not: a
+   clamped-to-zero weight is an effective edge deletion. At the observed
+   rate this changes no conclusion (see the `[A41]` correction above),
+   but the reasoning step "mask fixed ⇒ topology fixed" is invalid in
+   general and should not be reused without checking the zero count.
+
+**Why this was worth investigating rather than epsilon-patching:** the
+`nan` was a symptom; treating it as a formatting nuisance would have
+hidden a real (if small) violation of a structural assumption the
+project has relied on in several places.
+
+**Evidence:** [VERIFIED-bash] zero-count measurement across seeds 0-4,
+this session's transcript; [VERIFIED-pytest] `check_curvature.py` (6
+tests, incl. the lattice positive control at exactly F=-8).
+
+**If wrong:** if a longer run, larger `η`, or stronger `σ̃` raised the
+zeroing rate substantially, the "too rare to matter" judgement in the
+`[A41]` correction would need revisiting — the rate is budget-dependent
+and was measured only at this one budget.
+
+### A43 — Phase 12 Stage 3: Forman-Ricci curvature DOES carry a structural signal that survives the null model — but it is ~0.8% of the geometry scale, with a mundane explanation not yet excluded (2026-08-14)
+
+**Question this answers:** `phase12_spec.md` Stage 3 — G1 never converges
+(`[A39]`), so is there geometry-like structure that a plateau-free
+observable can see? Forman-Ricci needs no fitting or convergence
+criterion. Per `[A41]`'s lesson, the weight-shuffle null model was
+applied **from the start**, not retrofitted.
+
+**Result (N=512, 5 seeds, `observables/curvature.py`):**
+
+```
+cell     mean F      95% CI              structural excess (F_real - F_shuffled)
+C0       -9.9414   (-10.071, -9.812)     +0.00004  CI (+0.00003,+0.00004)  excludes 0
+Csigma  -10.0883   (-10.210, -9.967)     +0.01577  CI (+0.00687,+0.02468)  excludes 0
+
+d(Csigma vs C0) on raw mean curvature = -1.449
+d(Csigma vs C0) on STRUCTURAL excess  = +3.103   <- passes MCID (|d| >= 0.8)
+```
+
+**This is the first Phase 12 signal that survives the weight-shuffle null
+model.** Modularity's structural excess was zero in both cells
+(`[A41]`); curvature's is nonzero in both, and ~400× larger under `Cσ`
+than under `C0`.
+
+**Scale, stated before any interpretation** (the number is meaningless
+without it):
+
+```
+periodic cubic lattice (real geometry):   F = -8.000  (exact, uniform)
+ER C0:                                    F = -9.941
+ER Csigma:                                F = -10.088
+
+lattice -> ER gap ("geometry vs random"):        1.941   <- the scale that means something
+C0 -> Csigma raw gap:                            0.147   (7.6% of that scale)
+   ...of which structural (survives the null):   0.0158  (0.81% of that scale)
+```
+
+The structural signal is **~120× smaller than the gap between a lattice
+and a random graph**. It is statistically robust and practically tiny.
+Curvature moves `Cσ` slightly *further from* the lattice value, not
+toward it.
+
+**The mundane explanation, named because it is the leading candidate and
+is NOT excluded:** Forman-Ricci contains `1/sqrt(w_e · w_neighbor)`, a
+nonlinear function of *pairs* of weights, so its expectation is not
+permutation-invariant whenever weights are correlated with position.
+`HebbianAdaptation`'s decay term is node-based (`density[i]+density[j]`),
+which by construction correlates the weights of all edges sharing a node.
+That node-level correlation alone would produce a nonzero structural
+excess with no geometric content whatever. **The needed control is a
+node-strength-preserving null** (randomize which edges carry which
+weights while preserving each node's total strength); if the excess
+vanishes under it, the signal is entirely node-level. Not implemented —
+this is the single most valuable next step for Phase 12.
+
+**Status therefore: `[HYPOTHESIS]`, not a finding.** A structural signal
+exists and is reproducible; whether it reflects anything geometric is
+unknown and has a plausible trivial explanation pending test.
+
+**What this does NOT mean:** not evidence of emergent geometry (scale
+alone forbids that reading, and the direction is *away* from the lattice
+value); not a Gate-A result; not a BILUH claim. The
+`docs/falsification_gates.md` grep canary applies unchanged.
+
+**Evidence:** [VERIFIED-bash] Stage 3 rerun output (after the `[A42]`
+zero-weight fix), this session's transcript; [VERIFIED-pytest]
+`check_curvature.py`, 6 tests including the exact `F=-8` lattice control.
+
+**If wrong:** the first run of this same experiment returned `nan` and
+would have been reported as "no signal" had the warning been ignored
+(`[A42]`) — a reminder that this result rests on 5 seeds at one budget
+and has not been replicated at N=1024 or under a stronger null.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
