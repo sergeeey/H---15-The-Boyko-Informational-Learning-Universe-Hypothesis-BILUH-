@@ -124,3 +124,40 @@ genuine FSS grid at this cost per point is a multi-hour-to-multi-day
 undertaking, not something to launch silently. **This freeze
 deliberately stops here** — Milestone 7 needs the user's explicit go/no-go
 on scope and compute budget before any further pilot work begins.
+
+## Addendum (2026-08-14, later same day) — Milestone 7 ran (N=512+1024, 10 seeds); this freeze's conclusions hold, one strengthened, one new caveat added
+
+Per Checkpoint Fidelity discipline (`~/.claude/rules/memory-protocol.md`),
+this is a dated addendum, not a silent rewrite of the freeze above.
+
+User approved Milestone 7's scope explicitly: N=512 AND N=1024,
+`seeds_per_cell=10` (80-point grid, `[A39]` full detail). Along the way,
+hit and fixed a real infrastructure bug (`[A38]`): mean degree 6 falls
+below Erdős–Rényi's connectivity threshold at N=1024, so the graph
+generator's retry cap (sized for N≤512) needed raising from 20 to 150 —
+fixed via TDD (regression test on the exact failing seed), not by
+changing the scientific mean-degree parameter.
+
+**What held:** G1 is still fully uninformative for open-system Active at
+both N — `converged=False` for all 80 points, same non-plateauing
+expander signature as before, just shifted higher with N (as it already
+did for the closed system, `[A30]`). No Gate-A verdict is reachable from
+this data either; the "exploratory pilot work, not a Gate-A run" framing
+above still stands.
+
+**What strengthened:** `Cσ`'s modularity effect (Milestone 4/`[A37]`)
+replicated at both N with MORE seeds, and grew rather than shrank
+(`d=7.66` at N=512 → `d=13.9` at N=1024, both MCID-passing) — the
+negative control (raw-ER-graph floor) was re-checked at N=1024 too and
+`C0` still doesn't clear it. This argues against the effect being a
+finite-size or underpowered artifact.
+
+**What's new and NOT resolved:** Milestone 5's H0-vs-H1
+correlation-specificity question (`CorrelationShuffleAdaptation` vs real
+Hebbian, `d=-0.735` at 5 seeds) was **not** re-run with more power in
+Milestone 7 — the approved scope was the 4-cell factorial grid, not the
+H0 control. The "if wrong: a larger seed count... could reveal a
+real-vs-shuffled separation" caveat in `[A37]` therefore remains exactly
+as open as it was before Milestone 7. Anyone reading only the modularity
+replication above should not conclude the correlation-specificity
+question was also answered — it wasn't touched.

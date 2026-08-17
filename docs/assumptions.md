@@ -1730,6 +1730,73 @@ need more than 150 attempts should trigger revisiting this as a formula
 (e.g. attempts scaling with the connectivity gap) rather than another
 one-off constant bump.
 
+### A39 — Milestone 7 (extended FSS: N=512 AND N=1024, seeds_per_cell=10) result — the Cσ modularity effect replicates and strengthens with N; G1 still uninformative at both scales (2026-08-14)
+
+**Question this answers:** does `[A37]`'s modularity finding (found at
+N=512, 5 seeds) survive more seeds and a larger N, or was it a
+finite-size/underpowered artifact? User-approved scope: N=512 AND
+N=1024, `seeds_per_cell=10` (80 points total, `configs/open_pilot.yaml`).
+
+**Result (full 80-point grid, `results/open_pilot/raw.jsonl`,
+gitignored raw output):**
+
+```
+N=512   C0            d_s_hat=5.233±0.042 conv=0/10  D_W=0.0107±0.0002  cond=0.526±0.091  mod=0.387±0.005
+N=512   Cgamma        d_s_hat=5.233±0.042 conv=0/10  D_W=0.0025±0.0002  cond=0.549±0.047  mod=0.388±0.003
+N=512   Csigma        d_s_hat=5.160±0.052 conv=0/10  D_W=0.5068±0.0107  cond=0.548±0.038  mod=0.421±0.004
+N=512   Cgammasigma   d_s_hat=5.233±0.042 conv=0/10  D_W=0.0601±0.0008  cond=0.550±0.045  mod=0.388±0.003
+N=1024  C0            d_s_hat=5.832±0.025 conv=0/10  D_W=0.0064±0.0019  cond=0.579±0.023  mod=0.390±0.001
+N=1024  Cgamma        d_s_hat=5.832±0.025 conv=0/10  D_W=0.0018±0.0002  cond=0.579±0.023  mod=0.388±0.004
+N=1024  Csigma        d_s_hat=5.715±0.036 conv=0/10  D_W=0.5034±0.0078  cond=0.587±0.051  mod=0.427±0.004
+N=1024  Cgammasigma   d_s_hat=5.832±0.026 conv=0/10  D_W=0.0597±0.0007  cond=0.580±0.024  mod=0.393±0.005
+```
+
+**G1 remains fully uninformative at both scales** — `converged=False`
+for all 80 points; the expander-peak signature simply climbs with N
+(`d_s_hat`≈5.2 at N=512 → ≈5.8 at N=1024, same direction as `[A30]`'s
+closed-system trend), never plateauing. Larger N did not give G1
+resolving power for open-system Active.
+
+**`Cσ`'s modularity effect (`[A37]`) replicates AND strengthens** — MCID
+check (`|d|≥0.8` AND non-overlapping 95% CI, `docs/estimand.md`):
+
+```
+metric        N=512 d(Cσ vs C0)   MCID    N=1024 d(Cσ vs C0)   MCID
+modularity    7.658               YES     13.897               YES
+conductance   0.308               no      0.190                no
+d_s_hat       -1.550              YES     -3.825               YES
+```
+
+Re-ran `[A37]`'s negative control at N=1024 too: `C0`'s modularity vs 10
+fresh untouched-ER(1024,3072) graphs, `d=-0.29`, CI overlap — same
+"closed dynamics doesn't clear the random floor" pattern as N=512. The
+effect size growing with N (not shrinking) argues against a finite-size
+artifact explanation.
+
+**New wrinkle, not in `[A37]`'s 5-seed data:** with 10 seeds, `d_s_hat`'s
+`Cσ` vs `C0` separation now ALSO passes MCID at both N (it did not at 5
+seeds — CI overlapped). **This is not a meaningful geometric-dimension
+claim** — `converged=False` for every point in the comparison, so
+`d_s_hat` is a raw non-plateaued value, not a dimension estimate;
+"MCID-significant difference between two uninterpretable numbers" is
+noted for completeness, not promoted as a finding.
+
+**What Milestone 7 did NOT do:** re-run Milestone 5's H0
+(`CorrelationShuffleAdaptation`) control at the larger seed count/N —
+the user's approved scope was the factorial grid only. The correlation-
+specificity question `[A37]`'s Milestone 5 left open (`d=-0.735`, CI
+overlap at 5 seeds, "if wrong: a larger seed count... could still reveal
+a real-vs-shuffled separation") is STILL open — this run added power to
+the `Cσ`-vs-`C0` comparison, not to the H0-vs-H1 comparison, which is a
+different pair of arms entirely.
+
+**Evidence:** [VERIFIED-bash] `results/open_pilot/raw.jsonl` (80 points);
+statistics via `statistics/cell_statistics.py` (reused), ad hoc analysis
+script output in this session's transcript.
+
+**If wrong:** a still-larger N, or the H0 control repeated at N=1024/10
+seeds, could change either conclusion — not resolved here.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
