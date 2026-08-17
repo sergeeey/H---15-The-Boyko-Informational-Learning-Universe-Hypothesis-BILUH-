@@ -2743,6 +2743,99 @@ different `σ̃`) could populate the `(0,0.01)` gap and make `threshold=0.01`
 meaningfully different from exact-zero pruning — untested, and each
 would be its own new single-assumption variant, not a re-run of this one.
 
+### A53 — `[A45]` disassembly, round 1: the "global heterogeneity" explanation is REFUTED, cleanly and in the opposite direction (2026-08-14)
+
+**Question this answers:** post-REJECT `[A45]` follow-up (per the user's
+own proposed plan). Does `[A45]`'s reversal (shuffled correlations give
+more curvature structural excess than real ones) reduce to `[A41]`'s
+already-known mechanism — global weight heterogeneity inflating a
+degenerate-landscape metric, regardless of position?
+
+**Hypothesis tested:** `std(final weights)` under H0 (shuffled) should
+be WIDER than under H1 (real), since real `C_ij` correlates with
+topology (which nodes are adjacent) while shuffling breaks that link and
+could scatter large correlation values onto structurally mismatched
+edges.
+
+**Result — refuted, and in the opposite direction:**
+
+```
+H1 (real) weight std:      mean=0.10518  CI=(0.10118, 0.10919)
+H0 (shuffled) weight std:  mean=0.08893  CI=(0.08375, 0.09411)
+d(H0 vs H1) = -4.360, CI disjoint, MCID met
+```
+
+`H0` has a NARROWER global weight distribution than `H1`, not a wider
+one — the opposite of the hypothesis. Yet `[A45]` already established
+`H0` produces roughly double the curvature structural excess. **Global
+weight heterogeneity does not explain `[A45]`** — whatever drives the
+curvature difference, it is not simply "more spread in the weight
+values."
+
+**Consequence:** Forman-Ricci's `1/√(w_e·w_neighbor)` term is sensitive
+to LOCAL differences between adjacent edges (edges sharing a node), not
+just the global marginal distribution's spread. A narrower global
+distribution can still have rougher local structure if adjacent-edge
+correlation is disrupted. Real Hebbian correlations may produce
+spatially smoother weights (neighboring edges share similar values,
+since nearby nodes have correlated density under a localized `psi0`);
+shuffling could roughen adjacent-edge differences specifically, even
+while narrowing the overall distribution. This sharper hypothesis is
+tested directly in `[A54]`.
+
+**Evidence:** [VERIFIED-bash] direct measurement, 5 seeds, this
+session's transcript.
+
+**If wrong:** 5 seeds, one budget. The refutation direction (`H0`
+narrower, not wider) is large (`d=-4.36`) so underpowering is an
+unlikely explanation, but not measured at other budgets.
+
+### A54 — `[A45]` disassembly, round 2: local edge-to-edge roughness ALSO refuted, same direction, larger effect (2026-08-14)
+
+**Question this answers:** `[A53]`'s sharper hypothesis — Forman-Ricci's
+`1/√(w_e·w_neighbor)` term is sensitive to LOCAL adjacent-edge
+differences, not global spread, so `H0` might be locally rougher even
+with a narrower global distribution.
+
+**Method:** mean `|w_e - w_f|` over pairs of edges sharing a node
+(direct proxy for the pairwise term Forman-Ricci's neighbor-sum is
+built from), same 5 seeds, same H1/H0 configuration as `[A45]`/`[A53]`.
+
+**Result — refuted again, same direction, even larger effect:**
+
+```
+H1 (real) local roughness:     mean=0.11058  CI=(0.10493, 0.11624)
+H0 (shuffled) local roughness: mean=0.08725  CI=(0.08289, 0.09162)
+d(H0 vs H1) = -5.733, CI disjoint, MCID met
+```
+
+`H0` is SMOOTHER locally too — not rougher. Both natural
+"distribution shape" hypotheses (global spread `[A53]`, local
+adjacent-edge roughness `[A54]`) point the SAME wrong direction, and
+`[A54]`'s effect is even larger than `[A53]`'s. **The "weight
+distribution shape" family of explanations is now excluded twice, not
+once.**
+
+**Sharper hypothesis for the next round, not yet tested:**
+Forman-Ricci sums RECIPROCALS (`1/√(w_e·w_neighbor)`), which blow up
+disproportionately for SMALL weights specifically — a formula built this
+way is far more sensitive to the distribution's LEFT TAIL (how many
+weights sit near-zero) than to its overall spread or local smoothness.
+`H0`'s narrower/smoother bulk distribution could still coexist with (or
+even be a byproduct of) a heavier left tail if `CorrelationShuffleAdaptation`'s
+un-shuffled decay term interacting with shuffled small numerator values
+pushes a subset of weights toward the reciprocal-blowup regime more than
+`HebbianAdaptation` does. Testable directly: compare the minimum weight
+and the count of weights below a low percentile (e.g. 1st percentile)
+between H1 and H0, same seeds.
+
+**Evidence:** [VERIFIED-bash] direct measurement, 5 seeds, this
+session's transcript.
+
+**If wrong:** 5 seeds, one budget. Both refutations are large-effect
+(`d=-4.36`, `d=-5.73`), so underpowering is unlikely, but neither was
+tested at other N or other `σ̃`.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
