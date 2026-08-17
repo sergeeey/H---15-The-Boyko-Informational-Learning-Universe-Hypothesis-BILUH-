@@ -140,8 +140,28 @@ on the original graph before any adaptation, and 50 iterated
 contractions on a graph whose weights (and hence density redistribution)
 change every window can converge somewhere that single-window screening
 does not anticipate. **V1b is now tested and closed, not merely
-untested.** Of the original Relaxation Map, only V1 (a different
-adaptation rule) and V3 (active topology updates) remain open.
+untested.**
+
+**Addendum 5 (same day), `[A50]` — V1 RAN too (`AlternativeObjective`).
+Result: zero structural excess. Closed.**
+`scripts/run_v1_alternative_objective.py`: pure density-driven growth
+rule, no decay term, no correlation/phase information — mechanistically
+opposite to Hebbian, and structurally free of `[A47]`'s ceiling theorem
+(no upper bound at all, only a floor at zero). Sanity-checked for
+numerical safety first (finite, modest growth over 50 windows). Result:
+`global excess +0.00003`, `strat excess +0.00003` — numerically
+indistinguishable from Hebbian `C0`'s own noise-floor excess
+(`+0.00004`/`+0.00003`). `AntiHebbianAdaptation` was not run: its own
+docstring already documents it as a pre-characterized decay pathology,
+so running it would not have tested anything new.
+
+**Of the original three-branch Relaxation Map, V1 and V1b are both now
+tested and closed. Only V3 (active topology updates) remains
+untested** — and it is qualitatively different from the other two: it
+requires implementing a `TopologyUpdateRule`, which `NoTopologyUpdate`
+(`[A8]`/`[A14]`) currently forbids almost everywhere in this project, and
+would need a dated addendum to `mathematical_contract.md`, not just a
+new script. It is the only remaining branch, and it is the expensive one.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the

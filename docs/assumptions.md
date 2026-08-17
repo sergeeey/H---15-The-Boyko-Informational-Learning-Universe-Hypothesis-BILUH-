@@ -2536,6 +2536,74 @@ this session's transcript; script committed for reproducibility.
 of the single-window `W*` structure `[A48]` measured — not tested; would
 be a new, separately-motivated variant, not a re-run of this one.
 
+### A50 — V1 ran (`AlternativeObjective`): zero structural excess, same null pattern as every prior rule/regime (2026-08-14)
+
+**Question this answers:** does a mechanistically OPPOSITE adaptation
+rule — pure density-driven growth, no decay term, no correlation/phase
+information at all — produce organization where correlation-driven
+`HebbianAdaptation` did not?
+
+**Rule choice, stated not silent:** two alternative rules already exist
+in the codebase. `AntiHebbianAdaptation`'s own docstring already
+documents it as "decay toward the non-negativity floor... a different,
+already-bounded pathology" — running it would reproduce a
+pre-characterized decay pathology, not test anything new, so it was
+skipped. `AlternativeObjective` (`[A4]`) was run instead:
+`dW_ij/dτ = η·(ρ_i+ρ_j)/2`. `_masked_nonnegative` only floors at zero —
+there is no ceiling analogous to `[A47]`'s theorem, so this rule can in
+principle differentiate edges by GROWTH, the one direction Hebbian's
+rule structurally cannot reach. Sanity-checked first for numerical
+safety: 50 windows produce finite, modest growth (mean 1.0098×, max
+1.08× of the uniform 1.0 start) — no blowup.
+
+**Method:** `scripts/run_v1_alternative_objective.py`. Same discipline
+as `[A41]`/`[A44]`/`[A49]`: N=512, closed dynamics, localized `psi0`
+(baseline-comparable), 5 seeds, curvature structural excess under both
+null models.
+
+**Result:**
+
+```
+global-shuffle excess  = +0.00003  CI (+0.00003, +0.00004)
+strength-strat excess  = +0.00003  CI (+0.00002, +0.00004)
+
+Reference, HebbianAdaptation C0: global +0.00004, strat +0.00003
+```
+
+**Numerically indistinguishable from the Hebbian `C0` baseline's own
+noise-floor excess.** Despite being mechanistically opposite (pure
+growth vs. decay-toward-a-ceiling), `AlternativeObjective` produces the
+same absence of structure. Combined with `[A49]` (V1b, zero excess) and
+`[A45]` (Hebbian under noise, negative excess relative to shuffled), this
+is now the THIRD independently-motivated variant to show no organization.
+
+**Kill Analysis:**
+- *What this kills:* V1 as tested. Neither of the two alternative rules
+  already implemented in this codebase produces structure at this
+  budget — the absence of organization is not an artifact specific to
+  `HebbianAdaptation`'s particular algebra.
+- *What this does NOT kill:* a genuinely novel rule with additive
+  sourcing or non-uniform initial weights (outside `[A19]`'s current
+  scope, would require a dated contract addendum) is untested. Rules
+  that ignore density/correlation entirely and instead reinforce by some
+  other signal (e.g. degree, betweenness) are untested and outside this
+  project's current rule family.
+- *Standing of the Relaxation Map:* V1 and V1b are now BOTH tested and
+  closed. Of the original three branches, **only V3 (active topology
+  updates) remains untested** — and it is qualitatively different from
+  V1/V1b: it requires a `TopologyUpdateRule`, which is currently
+  forbidden almost everywhere in this project (`NoTopologyUpdate`,
+  `[A8]`/`[A14]`) and would need a dated contract addendum to
+  `mathematical_contract.md`, not just a new script.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_v1_alternative_objective.py`
+output, this session's transcript; script committed for reproducibility.
+
+**If wrong:** 5 seeds, one budget, one graph size, one initial state
+(localized). `AlternativeObjective` combined with a delocalized `psi0`
+(the `[A48]`/`[A49]` regime) was not tried — a 2-assumption combination,
+correctly out of scope for a single Minimal-Relaxation variant.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
