@@ -2461,6 +2461,81 @@ toward `W*` across many windows could behave differently from this
 single-window snapshot. This is a screening heuristic for which regime
 to run, not a substitute for actually running it.
 
+### A49 — V1b ran: zero structural excess, contradicting `[A48]`'s screening prediction (2026-08-14)
+
+**Question this answers:** `[A48]` predicted random-phase delocalized
+`psi0` was the best-motivated V1b candidate because its single-window
+`W*` has the most edge-to-edge spread (std≈0.53) of any regime screened.
+Does that prediction survive an actual `dtau_steps=50`-window adaptive
+run?
+
+**Method:** `scripts/run_v1b_random_phase.py`. Identical budget to every
+other experiment in this project (N=512, K=50, `dtau_steps=50`, `η=0.1`,
+`HebbianAdaptation`, `ClosedUnitaryBackend`, `γ=σ=0`) — the ONLY changed
+assumption is `psi0`: random-phase delocalized instead of localized
+(`[A19]`/`localized_psi0`). 5 seeds. Same structural-excess discipline as
+`[A41]`/`[A44]` (global weight-shuffle null and strength-stratified
+null).
+
+**Result:**
+
+```
+seed   F_real    exc_global   exc_strat
+0      -10.0534   +0.00000     +0.00000
+1       -9.9622   +0.00000     +0.00000
+2       -9.8620   +0.00000     +0.00000
+3       -9.8073   +0.00000     +0.00000
+4      -10.0221   +0.00001     +0.00000
+
+global-shuffle excess  = +0.00000  CI (+0.00000, +0.00001)
+strength-strat excess  = +0.00000  CI (+0.00000, +0.00000)
+```
+
+**Zero structural excess** — at the numerical-noise floor, essentially
+identical to the localized-`psi0` `C0` baseline's own near-zero excess
+(`[A43]`: `+0.00004`/`+0.00003`). Mean curvature (`F_real ≈ -9.94`
+averaged) is also statistically indistinguishable from localized `C0`'s
+own `-9.9414` (`[A43]`).
+
+**`[A48]`'s screening heuristic did NOT predict this.** Single-window
+`W*` spread (std≈0.53 for this regime, vs 0.41 for localized) suggested
+more differentiation potential than the status quo — the opposite of
+what the full multi-window run shows. **Named mechanism (not further
+tested here):** `W*` is computed from ONE closed window at the ORIGINAL
+graph. Once adaptation begins, the graph's weights update between all
+50 windows and `psi`'s density redistributes under the *evolving*
+Laplacian each window — a single-window snapshot of the target a
+50-window contraction is heading toward is not obviously representative
+of where 50 iterated contractions on a moving target actually end up.
+`[A48]`'s own "If wrong" clause anticipated exactly this gap and is
+confirmed, not merely hypothetically true.
+
+**Kill Analysis:**
+- *What this kills:* V1b, as a route to structural organization, for
+  `HebbianAdaptation` at this budget. The independently-motivated
+  rationale (`[A47]`'s theorem plus `[A48]`'s screening) does not
+  translate into an actual signal.
+- *What this does NOT kill:* `[A47]`'s theorem itself (unaffected — it
+  is proven algebra, not contingent on this result). `[A48]`'s W* spread
+  measurements (correct as computed; their PREDICTIVE VALUE for
+  multi-window outcomes is what failed, not their arithmetic). V1
+  (a genuinely different adaptation rule) and V3 (active topology
+  updates) remain untested and are unaffected by this result.
+- *Methodological lesson, worth keeping:* a cheapest-differentiating-test
+  screening heuristic computed on a static/single-step proxy can fail to
+  predict a multi-step dynamical outcome. Future screening heuristics in
+  this project should be validated against at least a short real run
+  before being trusted to rank candidates, not just checked for internal
+  consistency as `[A48]` was.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_v1b_random_phase.py` output,
+this session's transcript; script committed for reproducibility.
+
+**If wrong:** 5 seeds, one budget, one graph size (N=512). A larger
+`dtau_steps` might let the multi-window dynamics eventually reflect more
+of the single-window `W*` structure `[A48]` measured — not tested; would
+be a new, separately-motivated variant, not a re-run of this one.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

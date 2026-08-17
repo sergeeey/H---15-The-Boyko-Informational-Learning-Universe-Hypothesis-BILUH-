@@ -128,6 +128,21 @@ any other. **V1b is narrowed to random-phase delocalized `psi0`**
 is therefore the one most likely to give the adaptation rule something
 real to differentiate. Still one assumption changed from baseline.
 
+**Addendum 4 (same day), `[A49]` — V1b RAN. Result: zero structural
+excess. Closed.** `scripts/run_v1b_random_phase.py`, identical budget to
+every other experiment (N=512, 5 seeds), the ONLY changed assumption
+`psi0`. Structural excess (global-shuffle and strength-stratified) both
+sit at the numerical-noise floor, statistically indistinguishable from
+the localized-`psi0` `C0` baseline. `[A48]`'s screening prediction
+(higher single-window `W*` spread ⇒ more differentiation) did **not**
+survive the actual 50-window adaptive run — the target `W*` is computed
+on the original graph before any adaptation, and 50 iterated
+contractions on a graph whose weights (and hence density redistribution)
+change every window can converge somewhere that single-window screening
+does not anticipate. **V1b is now tested and closed, not merely
+untested.** Of the original Relaxation Map, only V1 (a different
+adaptation rule) and V3 (active topology updates) remain open.
+
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the
 result uninterpretable against this baseline.
