@@ -1797,6 +1797,166 @@ script output in this session's transcript.
 **If wrong:** a still-larger N, or the H0 control repeated at N=1024/10
 seeds, could change either conclusion — not resolved here.
 
+### A40 — Phase 12 Stage 0: the community PARTITION is not a well-defined object on this project's graphs; the detector is sound, the graphs are degenerate (2026-08-14)
+
+**Question this answers:** Phase 12's substrate gate (`docs/
+phase12_spec.md` Stage 0) — before comparing partitions between cells,
+is the partition itself a stable property of a graph? Every Phase 12
+Stage-2 comparison is confounded if it is not.
+
+**Measure used (documented deviation from the spec):** `phase12_spec.md`
+named Adjusted Mutual Information; implemented Adjusted Rand Index
+(Hubert & Arabie 1985) instead, to avoid adding scikit-learn as a
+dependency for one function. Same essential chance-correction property.
+`observables/partition_similarity.py`, hand-derived test cases
+(the `[0,0,1,1]` vs `[0,1,0,1]` → exactly `-0.5` case pins the
+chance-correction term).
+
+**Result — the detector is NOT broken, and the discriminator proves it:**
+
+```
+graph type                          Q       ARI after perturbing 1% of edge weights by ±10%
+SBM (4 planted communities)         0.615   0.997   <- STABLE
+Erdos-Renyi (this project's Active) 0.389   0.132   <- chaotic
+periodic cubic lattice N=512        0.583   0.248   <- chaotic
+ER, floor (independent graphs)      --      0.000   (measured, 10 pairs)
+```
+
+Perturbing only 0.1% of edges gives the same ER result (0.132) — the
+instability is not a dose effect, the partition simply is not determined.
+
+`greedy_modularity_communities` recovers planted structure essentially
+perfectly when it exists. On near-random graphs it does not, because
+there is nothing stable to recover: the classic **degenerate modularity
+landscape** (Good, de Montjoye & Clauset 2010) — exponentially many
+partitions with near-identical Q, so the argmax is arbitrary.
+
+**Substrate Gate verdict: PASSED, not BLOCKED.** This is important for
+correct bookkeeping under FL Step 2a. The apparatus works (proven by the
+SBM positive control); what the gate revealed is a property of the
+OBJECT, not a defect of the instrument. Therefore this result IS
+admissible evidence about the claim — it is not a "test could not run"
+outcome.
+
+**Consequence for `phase12_spec.md`:** Stage 2 (2a/2b/2c — "which
+communities formed", "do real and shuffled correlations produce the same
+communities", "is the partition reproducible across noise") is
+**unanswerable as specified**, because the quantity those stages would
+measure does not exist as a stable object on ER-like graphs. Not a
+failure of the plan — the gate did exactly its job, before compute was
+spent on three stages whose output would have been uninterpretable.
+
+**Consequence for `[A37]`/`[A39]`:** the modularity NUMBER stands
+(replicated, MCID-passing, effect grows with N). Its *interpretation* as
+community organization does not follow, and Q≈0.39 on an ER graph should
+never have been read as "communities exist" — `[A37]` already cited
+Guimerà et al. 2004 for exactly this hazard and then partially reasoned
+past it. The decisive follow-up (weight-shuffle null model) is `[A41]`.
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_partition_similarity.py`
+(6 tests incl. a permanent determinism regression test);
+[VERIFIED-bash] discriminator output in this session's transcript.
+
+**If wrong:** if some other community detector proved stable on these
+same ER graphs, the "degenerate landscape" reading would be wrong and
+this would instead be a greedy-specific artifact.
+
+**This falsification condition was TESTED the same day, and did not
+falsify:** repeated the identical perturbation experiment with
+**Louvain** (`nx.algorithms.community.louvain_communities`, a different
+algorithm, fixed algorithm seed so its own randomness is not the
+variable):
+
+```
+detector   ER(512,1536)          SBM (planted communities)
+greedy     ARI = 0.132           ARI = 0.997
+Louvain    ARI = 0.138           ARI = 1.000
+```
+
+Two independent algorithms agree to within 0.006 on the ER graphs and
+both recover planted structure essentially perfectly. The degeneracy is
+detector-independent — a property of the graphs, as claimed.
+
+### A41 — Phase 12 decisive test: the Cσ modularity increase is ENTIRELY distributional, with zero structural content (2026-08-14)
+
+**Question this answers:** given `[A40]` (the partition is not a stable
+object on these graphs), does the `[A37]`/`[A39]` modularity increase
+carry ANY structural information at all?
+
+**Method — weight-shuffle null model** (`scripts/run_phase12_weight_
+shuffle_null.py`): take each final graph and randomly permute its edge
+weights across the existing edges. This destroys every structural
+relationship by construction (which weight sits on which edge) while
+preserving the exact weight multiset and the topology. Define
+`structural excess := Q_real − Q_shuffled`. If Q encodes organization,
+the excess must be positive; if Q is a function of the weight
+distribution alone, the excess is zero.
+
+This is a strictly stronger control than Milestone 5's H0
+(`[A37]`): that one shuffled the correlation term *inside* the update
+rule and compared scalar Q between two dynamics runs (yielding an
+ambiguous `d=−0.735`); this one shuffles the *final structure itself*
+and asks whether the metric can detect the difference at all.
+
+**Result (N=512, 10 seeds, 3 shuffles averaged per point):**
+
+```
+structural excess (Q_real − Q_shuffled):
+  C0     mean = −0.00005   CI95 = (−0.00477, +0.00466)   contains 0: YES
+  Csigma mean = +0.00117   CI95 = (−0.00255, +0.00489)   contains 0: YES
+
+Cohen's d, Csigma vs C0:
+  raw Q                 =  7.658    <- [A37]/[A39]'s headline effect
+  weight std            = 40.751    <- the distributional change
+  STRUCTURAL EXCESS     =  0.207    <- what survives the null model (below MCID 0.8)
+```
+
+**Both cells have zero structural excess** — the confidence interval
+contains zero for `C0` AND for `Cσ`. The entire, large, MCID-passing,
+N-scaling modularity difference between the cells is reproduced by a
+null model that has no structure in it by construction.
+
+**Interpretation, stated plainly:** noise (`σ̃=0.05`) makes edge weights
+~24× more heterogeneous (`w_std` 0.0046 → 0.105, `d=40.8`). A graph with
+heterogeneous weights admits a higher-modularity *arbitrary* partition
+than one with near-uniform weights, purely as an accounting property of
+Q. That is the whole effect. **No organization, no communities, no
+structure — a distributional artifact.**
+
+**What this KILLS (Kill Analysis, required for a negative result):**
+- "`Cσ` produces community structure" — dead. Not weakened, dead: the
+  effect is fully reproduced with all structure destroyed.
+- `[A37]`'s surviving claim ("noise-driven reinforcement moves modularity
+  off the random floor") — the *number* still moves, but the phrase
+  "moves modularity off the floor" was carrying an implied structural
+  reading that is now removed. The honest restatement is: *noise widens
+  the weight distribution, and Q is sensitive to weight-distribution
+  width on graphs with a degenerate modularity landscape.*
+- `[A39]`'s "the effect strengthens with N" — reduces to "weight
+  heterogeneity grows with N under noise", no longer independently
+  interesting.
+
+**What this does NOT kill:**
+- The measurements themselves. Every Q, `D_W`, and effect size recorded
+  in `[A37]`/`[A39]` is correct as a number and reproducible; only the
+  interpretation collapses.
+- Any claim about *geometry* — modularity was never a geometry probe.
+  G1's non-convergence (`[A39]`) and the untested curvature route
+  (`phase12_spec.md` Stage 3) are untouched by this result.
+- The open-system machinery itself, which is validated by T1–T10.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_phase12_weight_shuffle_null.py`
+output, 10 seeds, this session's transcript; script committed for
+reproducibility. Statistics via `statistics/cell_statistics.py` (reused).
+
+**If wrong:** the null model permutes weights across existing edges only,
+so it preserves topology exactly. If the organization were *topological*
+rather than weight-borne it would be invisible to this test — but the
+Stage-1 arms use `NoTopologyUpdate` (`[A8]`/`[A14]`), so topology cannot
+change during a run and there is no topological organization available
+to miss. This caveat would matter only for a future arm with an active
+`TopologyUpdateRule`.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

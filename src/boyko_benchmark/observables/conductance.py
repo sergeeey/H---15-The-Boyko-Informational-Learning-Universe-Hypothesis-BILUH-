@@ -50,6 +50,33 @@ def spectral_conductance(graph: WeightedGraph) -> float:
     return cut / min(vol_s, vol_s_complement)
 
 
+def _greedy_communities(graph: WeightedGraph) -> list[set[int]]:
+    """Shared community detection for `modularity` (below) and Phase 12's
+    `partition_similarity.partition_labels`.
+
+    WHY extracted (Phase 12): the partition-level comparison must analyse
+    EXACTLY the partition whose Q was reported in `[A37]`/`[A39]`. If the
+    two call sites each ran their own detection, a disagreement between
+    them could come from detector variation rather than from the dynamics
+    under study -- which is precisely the confound Phase 12 exists to
+    rule out.
+
+    Returns an empty list for degenerate inputs (N<2 or no edges); both
+    callers translate that into their own neutral value.
+    """
+    if graph.n_nodes < 2:
+        return []
+    nx_graph = nx.from_numpy_array(graph.weights)
+    if nx_graph.number_of_edges() == 0:
+        return []
+    return [
+        set(community)
+        for community in nx.algorithms.community.greedy_modularity_communities(
+            nx_graph, weight="weight"
+        )
+    ]
+
+
 def modularity(graph: WeightedGraph) -> float:
     """Newman modularity Q (ТЗ §12.6), using networkx's greedy-modularity
     community detection (reused, not reimplemented) on the weighted
@@ -57,16 +84,8 @@ def modularity(graph: WeightedGraph) -> float:
     structure; Q closer to its practical ceiling (~0.3-0.7 for typical
     modular networks) -> genuine modular organization.
     """
-    n = graph.n_nodes
-    if n < 2:
+    communities = _greedy_communities(graph)
+    if not communities:
         return 0.0
     nx_graph = nx.from_numpy_array(graph.weights)
-    if nx_graph.number_of_edges() == 0:
-        return 0.0
-    communities = [
-        set(community)
-        for community in nx.algorithms.community.greedy_modularity_communities(
-            nx_graph, weight="weight"
-        )
-    ]
     return float(nx.algorithms.community.quality.modularity(nx_graph, communities, weight="weight"))
