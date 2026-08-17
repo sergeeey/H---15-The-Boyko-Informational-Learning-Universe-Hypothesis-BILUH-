@@ -1,6 +1,53 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — PHASE 12 EXECUTED, [A40]-[A43], Phase 11's headline finding overturned)
+## SESSION HANDOFF (updated 2026-08-14 — PHASE 12 COMPLETE, verdict REJECT, null_results recorded)
+
+**[VERIFIED] Phase 12 ran to completion and terminated the open-system
+geometrogenesis line with a REJECT verdict.** Recorded per the global
+protocol in `null_results/20260814-open-system-geometrogenesis.md` +
+`null_results/INDEX.md` (both new — the directory did not exist before).
+HEAD `f072cfc`, 257/257 tests, ruff/mypy clean.
+
+**[VERIFIED-bash] The decisive result (`[A45]`): the sign is the
+finding.** Running the
+identical budget with `CorrelationShuffleAdaptation` (`[A31]`'s H0)
+produces ~2× MORE Forman-Ricci structural excess than real Hebbian
+correlations — `d=-2.907` (global null), `d=-2.936` (strength null),
+MCID met, CIs disjoint in both. Real dynamical correlations produce
+LESS structure than randomly shuffled ones. Not "no difference"
+(Milestone 5's ambiguous `d=-0.735`) — a large reproducible difference
+pointing AGAINST the hypothesis.
+
+**The chain that got there, each step killing one explanation:**
+`[A40]` partition isn't a stable object (detector sound, graphs
+degenerate; confirmed detector-independent via Louvain) → `[A41]`
+modularity effect has zero structural excess, fully reproduced by a
+structure-destroying null → `[A42]` weight-zeroing means
+`NoTopologyUpdate` doesn't guarantee constant *effective* topology
+(`[A41]`'s "if wrong" clause explicitly corrected, not silently edited)
+→ `[A43]` curvature is the first signal to survive the null, marked
+`[HYPOTHESIS]` with its mundane explanation named → `[A44]` that
+explanation (node strengths) EXCLUDED, 68% retained, but the next one
+named → `[A45]` decisive reversal.
+
+**Kill Analysis is in the null_results file, not just the commit.**
+What died: the whole "open dynamics organizes via real correlations"
+line across G1/conductance/modularity/curvature. What did NOT: every
+measurement stands; all infrastructure (backends, T1-T10, seed/
+provenance discipline, and the new null-model toolkit) is sound and
+reusable; `AntiHebbianAdaptation`/`AlternativeObjective` were never run
+in open mode; only one `(γ̃,σ̃)` point was ever tested; no
+topology-updating arm was ever run.
+
+**Revival requires AOG-5 compliance**: a future attempt must name which
+single assumption from the Relaxation Map (V1 rule / V2 regime / V3
+topology updates) it changes, and justify it independently of wanting to
+save the hypothesis. Re-running the same rule at the same regime is
+explicitly NOT a revival condition.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — Phase 12 mid-flight, [A40]-[A43])
 
 **Phase 12 pre-registered (`docs/phase12_spec.md`, `e19657c`) and then
 executed in full. All merged+pushed to `main` (HEAD `8b3fa29`).
