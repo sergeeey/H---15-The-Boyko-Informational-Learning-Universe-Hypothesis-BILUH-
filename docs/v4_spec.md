@@ -2,6 +2,61 @@
 
 **Status: PROPOSED, 2026-08-14. Not approved. Nothing implemented, nothing run.**
 
+**Revision 1 (2026-08-14, same day, before M1 — legitimate pre-
+registration refinement, not a post-hoc fit).** The user reviewed the
+original spec and an external critique of it, accepted the parts that
+strengthened the design, and rejected the parts that would have added
+unmotivated new degrees of freedom or overclaimed physics. Changes in
+this revision, each explained where it appears below:
+
+1. Causal framing sharpened to explicit potential outcomes over whole
+   simulation *runs* as the unit, with the causal claim scoped
+   explicitly to "within this simulator" (§1).
+2. Independent seed streams enumerated explicitly — six, not one (§3).
+3. **The primary comparator is redefined.** Arm A4 is no longer "random
+   regrowth matched to A3's distance profile" (which requires assuming a
+   functional form for how selection probability depends on distance).
+   It is now a **distance-stratified shuffle of the real `C_ij` values**
+   — permute correlations only among candidate pairs at the same graph
+   distance, then apply the identical deterministic Top-K rule. This
+   preserves the event count, the `C_ij` distribution, and the
+   correlation-vs-distance dependence, destroying only pair-specific
+   information. `Δ_specific = Y(A3) − Y(A4)` is now the **primary**
+   estimand; the original naive-uniform-random arm is kept as `A2`, a
+   secondary diagnostic (§4, §5).
+4. **K1 is redefined around edge recovery, not spectral appearance.**
+   Primary K1 endpoint is the fraction of genuinely-corrupted lattice
+   edges V4 actually restores, `R_edge` — spectral observables
+   (`d_s`, `λ₂`, IPR, conductance) are demoted to secondary. A metric can
+   look "more lattice-like" without recovering the actual damaged edges;
+   `R_edge` cannot be gamed that way (§7).
+5. **New kill criterion, topology churn `χ`** — the fraction of edges
+   that are pruned and re-added repeatedly. An effect that only appears
+   at `χ → 1` is oscillatory rewiring, not stable emergent structure,
+   and is a separate failure mode from K1–K4 (§7).
+6. **Four frozen predictions (`P1`–`P4`)** stated before any run, so the
+   verdict is checked against a pre-committed target, not read off the
+   data after the fact (§7b, new).
+7. **§12 is now decided, not open**: deterministic Top-K is the primary
+   rule. Stochastic/temperature-based regrowth (`Softmax` over `C_ij/T`)
+   is explicitly deferred to a possible future robustness extension,
+   never as V4's confirmatory test — it adds an unmotivated new
+   parameter (`T_topo` and its schedule) at exactly the moment this
+   project's anti-fishing discipline says not to.
+8. **Explicit guardrails added, to preempt scope drift during
+   implementation** (§4, §12): the candidate regrowth set is ALL
+   non-adjacent pairs, never restricted to a local hop radius — an
+   `r`-hop restriction would bake locality into the mechanism and then
+   "discover" it, i.e. target leakage against an emergent-locality
+   claim. A global Top-K over all candidates is labelled exactly as what
+   it is — a nonlocal algorithmic prior in the simulation's update rule
+   — never described as a proven Lieb–Robinson violation, which is a
+   much stronger and untested physical claim this spec does not make.
+   No stochastic regrowth mechanism in this spec is described as
+   physically isomorphic to quantum vacuum fluctuations or as
+   instantiating a physical temperature; that reading is not licensed by
+   anything derived here and is explicitly rejected if proposed later.
+
 This document is a pre-registration: written and committed BEFORE any V4
 measurement, so its pass/fail predicates cannot be reshaped to fit
 results (`~/.claude/rules/estimand-ops.md`, "estimand defined after data
@@ -20,13 +75,32 @@ silently re-inherit killed assumptions.
 
 ## 1. L0 Gate (EstimandOps — mandatory first step)
 
-**Question type: CAUSAL, trivially identified by simulation design.**
+**Question type: CAUSAL, identified by simulation design — with the
+experimental unit defined as the WHOLE RUN, not a node or an edge.**
 
 This is a deliberate change from Phase 11–12, which were classified
-*descriptive* throughout and therefore forbade causal language. V4's
-estimand is explicitly a **contrast between two interventions we
-ourselves assign** (state-driven vs. matched-random regrowth), which is
-causal in form.
+*descriptive* throughout and therefore forbade causal language.
+
+**Experimental unit and potential outcomes (Revision 1 — sharper than
+the original draft).** A unit is one full simulation trajectory
+`u = (G₀, ψ₀, ξ, seed streams)` — an entire run, not a node or an edge
+within it. This choice matters: node- or edge-level interference
+(one node's neighbourhood affecting another's) is *part of the
+mechanism under study*, not a violation to control for — the standard
+network-experiment SUTVA concern (unit-level interference through the
+network) does not apply once the unit is the whole graph trajectory,
+because there is no *other* unit for a run to interfere with. Each arm
+defines a policy applied to the same unit type; potential outcomes are
+`Y_SDR(u)` (state-driven regrowth policy) and `Y_control(u)` (a control
+policy — `A4`, §3), and the estimand is
+
+```
+τ = E_u[ Y_SDR(u) − Y_control(u) ]
+```
+
+— an ordinary interventional causal estimand *within a fully specified
+computational model*, identified by construction because we choose the
+policy.
 
 Identifiability, checked rather than assumed:
 
@@ -34,14 +108,24 @@ Identifiability, checked rather than assumed:
 |---|---|
 | Consistency | Satisfied by construction — the intervention IS the rule we set; there is no ambiguity about "version of treatment" |
 | Positivity | Satisfied — every seed can receive any arm; assignment is by design, never data-dependent |
-| Exchangeability | Satisfied by construction — arms share bit-identical initial `(M₀, W₀, ψ₀)` and seed streams; there are no unmeasured confounders in a fully specified simulation |
-| SUTVA | Satisfied — seeds are independent runs, no interference between units |
+| Exchangeability | Satisfied by construction — arms share bit-identical initial `(M₀, W₀, ψ₀)` and independent seed streams (§3); there are no unmeasured confounders in a fully specified simulation |
+| SUTVA (unit-level) | Satisfied — units are independent runs (whole trajectories), not nodes; there is no cross-unit interference to violate. Within-run node interaction is the mechanism, not a threat to inference. |
 
 **Consequence, and this is the point of doing the gate honestly:** if
 `Δ_specific` exceeds MCID, the phrasing *"state-driven regrowth causes
-more organization than matched-random regrowth"* **is licensed** — unlike
-Phase 11–12, where causal phrasing was forbidden. This is a stronger
-epistemic position, earned by a cleaner design, not by relaxing standards.
+more organization than the distance-conditioned control, within this
+simulator"* **is licensed** — unlike Phase 11–12, where causal phrasing
+was forbidden. This is a stronger epistemic position, earned by a
+cleaner design, not by relaxing standards.
+
+**Hard scope limit, stated explicitly so it cannot drift during
+implementation:** every causal statement V4 can license is of the form
+*"in this simulation model, replacing the control regrowth policy with
+the state-driven one changes Y."* **Never** *"in the physical universe,
+state-driven regrowth causally creates geometry."* External validity
+(does this computational causal claim say anything about physical
+reality) is a separate, harder question this spec does not attempt to
+answer, and no result from V4 closes it.
 
 **Still forbidden regardless of outcome** (`CLAUDE.md` scientific
 boundary, unchanged): claims about physical spacetime, Lorentz
@@ -76,10 +160,13 @@ is true — not "the last four things failed, try a fifth".
 ### Q2. Is there an observable that separates specific structural learning from generic pruning/rewiring?
 
 **Yes — by design, not by hope.** The primary estimand is a contrast at
-**matched edge budget** (§3): arms A2 and A3 delete the same edges at the
-same rate and add the same *number* of edges; the only difference is
-*which* edges are added. A difference between them cannot be attributed
-to edge-count change, density change, or pruning per se.
+**matched edge budget** (§3): arms A3 and A4 delete the same edges at the
+same rate and add the same *number* of edges, using the identical
+selection algorithm applied to the identical `C_ij` value multiset — the
+only difference is *which specific pair*, among pairs at the same graph
+distance, gets connected. A difference between them cannot be
+attributed to edge-count change, density change, distance structure, or
+pruning per se (§5).
 
 ### Q3. Can a kill criterion be stated in advance, without parameter rescue?
 
@@ -95,31 +182,57 @@ kill V4 before the main campaign runs.
 | Field | Value |
 |---|---|
 | **Population** | Connected Erdős–Rényi graphs, N = 512, mean degree 6 (`n_edges = 3N`, `[A7]`), generated by `generate_erdos_renyi` with the `[A38]` retry discipline |
-| **Intervention** | A3: prune lowest-weight edges at rate ρ per adaptation window, regrow the same number by highest time-averaged correlation `C_ij` among non-adjacent pairs |
-| **Comparator** | A2: identical pruning, regrow the same number **uniformly at random** among non-adjacent pairs |
+| **Intervention** | A3: prune lowest-weight edges at rate ρ per adaptation window, regrow the same number by highest time-averaged correlation `C_ij` among non-adjacent pairs (deterministic Top-K, §12) |
+| **Comparator (primary)** | A4: identical pruning, regrow the same number by Top-K on a **distance-stratified shuffle** of the same `C_ij` values (§5) — isolates pair-specific information from distance structure |
+| **Comparator (secondary/diagnostic)** | A2: identical pruning, regrow the same number by Top-K on **uniformly-drawn** values, ignoring distance entirely — `Δ_naive`, §3 |
 | **Endpoint** | Structural excess of Forman-Ricci curvature under the §6 null models (primary); G1 plateau, conductance, ARI partition stability (secondary) |
 | **Summary measure** | Difference in means across independent seeds (absolute difference — never a ratio, per the noncollapsibility rule) |
 | **MCID** | `\|Cohen's d\| ≥ 0.8` **AND** non-overlapping 95% CIs — both required, unchanged from `docs/estimand.md` |
 
-**Primary estimand:**
+**Primary estimand (Revision 1 — promoted from what was previously the
+secondary "confound isolation" contrast, because it is the sharper of
+the two, §5 explains why):**
 
 ```
-Δ_specific = Y(A3) − Y(A2)        [matched edge budget]
+Δ_specific = Y(A3) − Y(A4)        [matched edge budget, matched distance-vs-correlation dependence]
 ```
 
-**Secondary estimand (confound isolation, §5):**
+**Secondary estimand (diagnostic — how much of the total effect is just
+"any correlation-based regrowth beats naive-uniform regrowth", including
+the trivial distance confound §5 names):**
 
 ```
-Δ_distance = Y(A3) − Y(A4)        [matched edge budget AND matched graph-distance profile]
+Δ_naive = Y(A3) − Y(A2)           [matched edge budget only]
 ```
 
 **Natural-language statement, written before any results exist:**
 
 > We estimate the difference in mean curvature structural excess for
 > connected ER(512, 1536) graphs, comparing correlation-driven edge
-> regrowth against uniformly-random edge regrowth at matched edge budget,
-> handling disconnection events by the `while-active` strategy (run
-> truncated and flagged, never silently repaired).
+> regrowth against a distance-stratified shuffle of the same correlation
+> values (same Top-K rule, same event count, same distance-dependence of
+> the correlation magnitude — differing only in which specific pair at
+> a given distance is connected), at matched edge budget, handling
+> disconnection events by the `while-active` strategy (run truncated and
+> flagged, never silently repaired).
+
+**Independent seed streams (Revision 1 — six, not one).** "Same seed" is
+insufficient once arms consume the RNG a different number of times (A3's
+Top-K tie-break, A4's within-stratum shuffle, and A2's uniform draw are
+different operations); reusing one seed naively lets streams drift apart
+after the first extra draw despite nominally matching. Per `[A11]`'s
+`SeedSequence.spawn` discipline (already used throughout this project),
+six independent streams, spawned once per unit from a single top-level
+seed:
+
+```
+graph_seed              -- initial G0 (generate_erdos_renyi, [A38])
+initial_state_seed      -- psi0
+carrier_noise_seed      -- PhenomenologicalOpenBackend's noise, if sigma>0
+adaptation_seed         -- HebbianAdaptation (deterministic; reserved for a future stochastic rule)
+topology_tiebreak_seed  -- deterministic Top-K's tie-break only (exact C_ij ties)
+control_regrowth_seed   -- A4's within-stratum shuffle; A2's uniform draw
+```
 
 **Intercurrent events (ICE) and their strategies:**
 
@@ -142,9 +255,14 @@ identical across arms — **only the `TopologyUpdateRule` differs**.
 |---|---|---|---|---|
 | **A0** | none | none | constant | Baseline = Phase 11–12's exact configuration |
 | **A1** | rate ρ, lowest-`W` | none | decreasing | Isolates the effect of pruning alone |
-| **A2** | rate ρ, lowest-`W` | uniform random among non-edges | **constant** | **Comparator** for the primary estimand |
-| **A3** | rate ρ, lowest-`W` | highest `C_ij` among non-edges | **constant** | **Intervention** |
-| **A4** | rate ρ, lowest-`W` | random, matched to A3's graph-distance profile | **constant** | Confound control (§5) |
+| **A2** | rate ρ, lowest-`W` | uniform random among non-edges | **constant** | Secondary/diagnostic comparator — naive baseline, §3's `Δ_naive` |
+| **A3** | rate ρ, lowest-`W` | deterministic Top-K on `C_ij` among non-edges (§12) | **constant** | **Intervention** |
+| **A4** | rate ρ, lowest-`W` | deterministic Top-K on a **distance-stratified shuffle** of `C_ij` (§5) | **constant** | **Primary comparator** — `Δ_specific`'s control arm |
+
+**All four regrowth-capable arms use the identical deterministic Top-K
+selection rule** (§12) — arms differ only in what values that rule sorts
+on, never in the selection algorithm itself. This is what makes `A3` vs
+`A4` a clean contrast of *information content*, not of *algorithm*.
 
 **Rate-based, not threshold-based — this is the specific fix for V3/V3b's
 `UNDEREXPOSED` verdict.** `[A51]`/`[A52]` failed to test anything because
@@ -183,19 +301,55 @@ reasons having nothing to do with learning. Any diffusion process would
 do the same.
 
 **This is the single most likely way V4 produces a false positive**, and
-it is why arm A4 exists.
+it is why arm A4 exists as the PRIMARY comparator, not a secondary check.
 
-**Control A4:** record the graph-distance distribution of the edges A3
-actually created; then draw A4's new edges uniformly at random *from
-non-edges at the same distances*. A4 therefore matches A3 in edge budget
-**and** in distance profile, differing only in *which specific pair* at
-that distance was chosen.
+**Control A4 (Revision 1 — redefined as a distance-stratified shuffle of
+the real correlations, not a random draw matched to an assumed
+distance-vs-probability functional form):**
 
-- `Δ_specific > MCID` but `Δ_distance ≈ 0` ⇒ the effect is entirely
-  "short edges look geometric". Trivial, not learning. **Kill (K3).**
-- `Δ_specific > MCID` **and** `Δ_distance > MCID` ⇒ the specific pair
-  identity matters beyond distance. This is the only outcome that
-  supports the V4 claim.
+1. Compute the graph distance `d_G(i,j)` for every non-adjacent
+   candidate pair.
+2. Bin candidates into distance strata (e.g. `d=2`, `d=3`, `d≥4`).
+3. **Permute the real `C_ij` values only within each stratum** — a pair
+   at distance 2 gets some other distance-2 pair's correlation value,
+   never a distance-5 pair's.
+4. Apply the **identical deterministic Top-K rule** to the permuted
+   values.
+
+Formally: `A4`'s selection statistic is `π_{d_G}(C_ij)`, a
+distance-respecting random permutation of `A3`'s own `C_ij`.
+
+**Why this is a strictly stronger null than the original "random draw
+matched to A3's distance profile":** that version required assuming
+*some* functional form for how selection probability depends on
+distance (e.g. the previously-considered `∝ e^{-d}}`) — an unmotivated
+modeling choice, not a fact about the mechanism. The stratified-shuffle
+version needs no such assumption. It exactly preserves: the number of
+regrowth events, the marginal distribution of `C_ij` values, and the
+*empirical* dependence of correlation magnitude on distance (whatever
+that dependence actually is in a given run — not assumed a priori). It
+destroys exactly one thing: which specific pair, among pairs at the same
+distance, gets connected. `Δ_specific = Y(A3) − Y(A4)` therefore
+isolates **pair-specific state information, conditional on the
+graph-distance structure** — a sharper question than "does
+correlation-based regrowth beat regrowth that ignores distance
+entirely" (which `Δ_naive`, §3, already answers and is expected to be
+positive for the trivial reason named above).
+
+**Reading the four possible outcomes** (§7b's `P3` makes this a frozen
+prediction, not a post-hoc interpretation):
+
+- `Δ_specific ≈ 0` (A3 ≈ A4) ⇒ **strong negative result**: state-specific
+  correlations add nothing beyond what distance-conditioned generic
+  regrowth already gives. The V4-specific learning claim is dead — kill
+  (K2, §7).
+- `Δ_specific > MCID`, but only on G1 and not on curvature/conductance
+  jointly ⇒ suspected metric artifact, not confirmed structure.
+- `Δ_specific > MCID` on curvature **and** conductance **and** G1
+  jointly (or the substrate-gate-adjusted equivalent, §6) ⇒ the only
+  outcome that actually supports the V4 claim: pair-specific state
+  information causally matters, beyond distance structure, within this
+  simulator.
 
 **Second confound — carrier irrelevance.** If the effect is reproduced
 with a *classical diffusion* carrier (`dp/dt = −Lp`, Arm CD's machinery,
@@ -235,31 +389,82 @@ same reason it was in Phase 12.
 
 ## 7. Kill criteria — pre-registered, in evaluation order
 
-**K1 — the damaged-lattice restoration gate (cheap, runs FIRST).**
-Take a periodic cubic lattice (N = 512, the `[A32]`/T7 positive control),
-randomly rewire 10% of its edges, and run V4's full machinery on it.
+**K1 — the damaged-lattice restoration gate (cheap, runs FIRST;
+Revision 1 — redefined around edge recovery, not spectral appearance).**
+Take a periodic cubic lattice `G*` (N = 512, the `[A32]`/T7 positive
+control), corrupt it by randomly rewiring 10% of its edges to get
+`G_damaged`, and run V4's full machinery starting from `G_damaged`.
 
-- A rule that creates geometry must at minimum **partially restore** a
-  slightly damaged lattice — measurably moving curvature/G1 back toward
-  the pristine lattice values relative to arm A2's random regrowth.
-- If A3 does **not** beat A2 on restoration, V4's rule cannot create
-  geometry from a *near-solution*, so it certainly cannot create it from
-  a random graph. **Stop before the main campaign.**
+**Primary K1 endpoint — edge recovery fraction:**
 
-This is a genuine positive control that Phase 11–12 never had, and it is
-the cheapest possible kill.
+```
+R_edge = |E_recovered ∩ E*| / |E_damaged_out ∩ E*|
+```
 
-**K2 — no specificity.** `Δ_specific` 95% CI contains 0 ⇒ *which* edges
-regrow does not matter ⇒ V4's central claim is dead. Report as a clean
-negative result.
+where `E_damaged_out` is the set of correct lattice edges that were
+actually removed by the corruption, and `E_recovered` is the final
+graph's edge set. `R_edge` answers precisely: *of the specific edges
+that were actually broken, what fraction did V4 correctly restore?*
+Report the wrong-edge-removal rate alongside it (correct edges V4
+deletes that were never damaged).
 
-**K3 — distance-trivial.** `Δ_specific > MCID` but `Δ_distance` CI
-contains 0 ⇒ the effect is the §5 short-edge artifact. Not learning.
+**Why edge recovery, not spectral improvement, is primary:** distinct
+graphs can have similar-looking spectra (`d_s`, `λ₂`, IPR, conductance)
+without sharing the specific edges that make a lattice a lattice — a
+spectral-only criterion could be satisfied by a rule that improves the
+*appearance* of geometry without recovering the *actual* damaged
+structure, which K1 exists specifically to rule out. `d_s`, `λ₂`, IPR,
+and conductance remain **secondary** endpoints, reported alongside.
+
+- **PASS** requires `R_edge(A3) > R_edge(A4)` (§4's distance-stratified
+  control, not the naive `A2`) — V4 must recover more of the genuinely
+  damaged edges than a rule that only knows the distance-vs-correlation
+  dependence, not the specific pairs.
+- If A3 does not beat A4 on `R_edge`, V4's rule cannot restore a
+  *near-solution* using pair-specific information, so it certainly
+  cannot create structure from a random graph using it. **Stop before
+  the main campaign.**
+
+This is a genuine positive control that Phase 11–12 never had, and — with
+the edge-recovery endpoint — a harder one to satisfy by accident than a
+purely spectral criterion would be.
+
+**K2 — no specificity.** `Δ_specific = Y(A3) − Y(A4)` 95% CI contains 0
+⇒ pair-specific information (beyond distance-conditioning) does not
+matter ⇒ V4's central claim is dead. Report as a clean negative result
+(§5's first bullet).
+
+**K3 — distance already explains everything (redefined in terms of the
+new primary/secondary pair).** `Δ_naive = Y(A3) − Y(A2)` (§3) is large
+and MCID-passing, but `Δ_specific` (K2) is not ⇒ the entire apparent
+effect over a naive baseline is attributable to distance-conditioning
+alone, with no pair-specific contribution once distance is controlled
+for. Not learning — the §5 short-edge artifact, now diagnosed directly
+by the difference between the two estimands rather than a separate
+distance metric.
 
 **K4 — carrier-irrelevant.** Classical diffusion reproduces the effect
 ⇒ the quantum carrier is doing no work; downgrade to a
 diffusion-on-graphs result and stop treating it as evidence for this
 project's hypothesis.
+
+**K5 — topology churn (Revision 1, new).** Define
+
+```
+χ = (# edges toggled repeatedly, e.g. pruned then re-added then re-pruned) / (# topology events)
+```
+
+and separately the pure 2-cycle rate (an edge removed then immediately
+regrown next window). If any apparent organization signal is present
+only when `χ → 1` (topology in constant oscillatory flux, never
+settling), that is not stable emergent structure — it is the rate rule
+thrashing. Cheap to compute from the same run, no extra simulation. Threshold:
+flag if `χ > 0.3` on any arm; investigate before trusting that arm's
+`Δ_specific`. `0.3` is a round, un-calibrated heuristic (`[WEAK]`
+sourced, per `~/.claude/rules/evidence-markers.md`) chosen only to be
+low enough to catch obvious thrashing — not derived from any data, and
+should be revisited once `M1`'s implementation gives a real churn
+distribution to calibrate against.
 
 **Explicitly NOT a kill criterion:** G1 failing to converge. `[A36]`/
 `[A39]` already established G1 does not converge for this project's
@@ -268,16 +473,42 @@ evidence about V4.
 
 ---
 
+## 7b. Frozen predictions (Revision 1, new) — checked against the data, not read off it
+
+Stated before any V4 run exists, so the verdict is a comparison against
+a pre-committed target rather than a post-hoc narrative.
+
+**P1 — exposure.** `N_topology_events ≈ ρ·|E|·K` per arm (rounded to the
+nearest integer per window), matching the rate rule's own definition. If
+not satisfied, that is an **implementation bug**, not a scientific
+finding — fix and re-verify before M4.
+
+**P2 — K1 recovery.** `R_edge(A3) > R_edge(A4)` (§7's K1). If false:
+`K1 FAIL ⇒ STOP` before the main campaign.
+
+**P3 — main causal contrast.** `Δ_specific = Y(A3) − Y(A4) > MCID`
+(§3, §5) — not merely `Y(A3) > Y(A0)`, which would not isolate anything
+specific to pair-level information.
+
+**P4 — scale stability.** As `N` increases (if a larger-N follow-up ever
+runs), `Δ_specific` should not vanish. Not tested in the initial M4
+campaign (N=512 only) — recorded here as the standard this project
+already applies elsewhere (`[A39]`'s own finding that some effects are
+N-dependent in ways that matter) so a future N-sweep has a frozen target
+rather than an ad hoc one.
+
+---
+
 ## 8. Milestones (each gates the next)
 
 | # | Deliverable | Gate |
 |---|---|---|
 | **M0** | Dated addendum to `mathematical_contract.md` §3.3 defining `A_ij` as an independent state variable with memory; this spec committed | Contract must be revised before code, per `CLAUDE.md` |
-| **M1** | `StatefulTopologyRule` infrastructure + TDD tests: edge-budget invariant (A2/A3/A4 have identical `\|E\|` at *every* window, not just the end), connectivity invariant, persistence counter, no-self-loop/symmetry invariants | All tests green before any science |
-| **M2** | **K1 damaged-lattice restoration gate** | **KILL GATE** — stop here if A3 ≯ A2 |
+| **M1** | `StatefulTopologyRule` infrastructure + TDD tests: edge-budget invariant (A2/A3/A4 have identical `\|E\|` at *every* window, not just the end), connectivity invariant, persistence counter, no-self-loop/symmetry invariants, six independent seed streams (§3) | All tests green before any science |
+| **M2** | **K1 damaged-lattice restoration gate** (`R_edge(A3)` vs `R_edge(A4)`, §7) | **KILL GATE** — stop here if `P2` fails |
 | **M3** | Null-model recalibration (N1 built and validated; `[A40]` ARI substrate gate re-run) | Substrate must be trustworthy before verdicts |
-| **M4** | Main campaign: A0–A3, N = 512, ≥ 10 seeds | — |
-| **M5** | Confound controls: A4 (distance-matched), classical carrier | K3/K4 evaluated |
+| **M4** | Main campaign: A0–A4, N = 512, ≥ 10 seeds (A4 is now core to computing the primary estimand, §3/§5 — not a separate confound-control run) | K2/K3 evaluated; churn (K5) checked on every arm |
+| **M5** | Carrier-irrelevance control: classical diffusion + the same regrow rule | K4 evaluated |
 | **M6** | Analysis freeze + verdict + `null_results/` entry if REJECT | — |
 
 ---
@@ -335,10 +566,10 @@ windows; `[A39]`'s N=1024 measurement showed ≈ N² scaling in practice):
 | Stage | Cost |
 |---|---|
 | M1 infrastructure + tests | ~half a day of implementation |
-| M2 K1 gate (2 arms × 5 seeds) | ~10 min compute |
+| M2 K1 gate (A3 + A4, 5 seeds) | ~10 min compute |
 | M3 null recalibration | ~15 min compute |
-| M4 main campaign (4 arms × 10 seeds) | ~30 min compute |
-| M5 controls (2 arms × 10 seeds + classical) | ~30 min compute |
+| M4 main campaign (A0–A4, 5 arms × 10 seeds) | ~40 min compute |
+| M5 carrier-irrelevance control (classical + regrow, 10 seeds) | ~15 min compute |
 
 Added per-window cost of the regrow rule: `C_ij` over all non-adjacent
 pairs is O(N²) ≈ 262 k values at N = 512 — negligible in NumPy relative
@@ -349,19 +580,48 @@ Comparable to Phase 12, materially cheaper than Phase 11.
 
 ---
 
-## 12. Open design question requiring a decision before M1
+## 12. Regrowth selection rule — DECIDED (Revision 1; was an open question, now resolved before M1)
 
-**Should regrowth be deterministic (top-k by `C_ij`) or stochastic
-(sampled with probability ∝ `C_ij`)?**
+**Decision: deterministic Top-K, with a seeded tie-break used only on
+exact numerical ties in `C_ij`.** Not stochastic, not a Boltzmann/softmax
+rule over a temperature parameter, for this confirmatory run.
 
-Deterministic is simpler and sharper; stochastic is more robust to a
-degenerate `C_ij` landscape (and `[A40]` showed this project's graphs
-*do* have degenerate landscapes elsewhere). This is a genuine fork, not a
-detail: it changes what "state-driven" means.
+`Regrow(G, C) = argtop_m { C_ij : (i,j) ∉ E }` — every arm that regrows
+edges (`A2`, `A3`, `A4`) uses this identical selection algorithm,
+differing only in what values it is applied to (§4). This is what makes
+`A3` vs `A4` a contrast of information content, not of algorithm.
 
-**Not resolved here deliberately** — it should be frozen by explicit
-decision before M1, not chosen mid-implementation after seeing which
-behaves better. Recommendation: **deterministic top-k**, because it makes
-`Δ_specific` a sharper contrast against A2's uniform draw, with the
-stochastic variant reserved as a separately pre-registered follow-up if
-determinism proves degenerate.
+**Why deterministic, decided now rather than left open:**
+
+- **Minimises new degrees of freedom.** The budget already has one free
+  parameter, `ρ`. A softmax rule adds a temperature `T_topo`, and a
+  temperature all but inevitably invites a schedule `T_topo(τ)` and a
+  cooling regime — turning one pre-registered parameter into an
+  unbounded family `(ρ, T₀, schedule, ...)`. This project's whole
+  anti-parameter-fishing discipline (`[A9]`, `null_results/2026...`'s
+  Relaxation Map, `[A52]`'s explicit refusal to chase a threshold near
+  the observed weight minimums) exists precisely to prevent this kind of
+  drift.
+- **Sharper falsifiability.** A deterministic rule cannot be rescued by
+  "the temperature was wrong" if `A3` loses to `A4` — the K1/K2 verdicts
+  are clean, not confounded by an unexplored hyperparameter.
+- **No physical interpretation is claimed or needed.** A softmax over
+  `C_ij/T` is a standard, well-understood sampling technique (Gibbs/
+  softmax selection) — using it would not by itself be objectionable.
+  What is explicitly rejected is treating `T_topo` as a *physical*
+  temperature, or treating stochastic edge creation as *isomorphic to*
+  quantum vacuum fluctuations. Neither claim is derived by anything in
+  this spec, and no future revision should assert either without a
+  separate, explicit argument — this is a guardrail against a plausible
+  but unsupported drift in interpretation during implementation, not a
+  comment on any specific external proposal.
+
+**Stochastic regrowth is deferred, not abandoned.** If the deterministic
+V4 survives K1 and shows `Δ_specific > MCID`, a stochastic robustness
+extension (does the effect survive if selection is probabilistic rather
+than a hard cutoff?) is a legitimate, separately pre-registered follow-up
+— strictly *after* a positive deterministic result, never as the first
+confirmatory test. Running the stochastic version first would mean V4
+enters its own campaign already carrying an unexplored, unmotivated
+extra parameter, which is exactly the failure mode this section exists
+to prevent.
