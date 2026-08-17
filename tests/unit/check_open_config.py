@@ -12,8 +12,8 @@ _CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "open_pilot.yam
 def test_open_pilot_yaml_loads_and_validates() -> None:
     config = OpenPilotConfig.from_yaml(_CONFIG_PATH)
 
-    assert config.sizes == [512]
-    assert config.seeds_per_cell == 5
+    assert config.sizes == [512, 1024]
+    assert config.seeds_per_cell == 10
     assert config.open_dynamics.gamma_tilde_levels == [0.05]
     assert config.open_dynamics.omega_ref == 2.0
 

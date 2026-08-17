@@ -1,7 +1,12 @@
 # Phase 11 open-system pilot config (TZ Section 21).
 #
-# STATUS: approved for Milestone 3 (user decision, 2026-08-14, [A35]
-# resolution addendum in docs/assumptions.md).
+# STATUS: approved for Milestone 7 (user decision, 2026-08-14): extended
+# FSS at N=512 AND N=1024, seeds_per_cell=10 (was N=512-only, 5 seeds,
+# for Milestone 3 -- see git history for that config). Estimated cost
+# (timed via a throwaway single-seed run before committing to the full
+# grid, per this project's own timing-before-committing discipline):
+# ~159s/seed at N=512, ~366s/seed at N=1024 -> ~87 min total for the
+# full 2-size x 10-seed x 4-cell = 80-point grid.
 #
 # [A35]: at gamma_tilde=0.05 (gamma=0.1, omega_ref=2), Hebbian weight
 # movement nearly freezes on BOTH the lattice and Active (~10-12x smaller
@@ -14,11 +19,10 @@
 # cannot create geometric organization" -- those are different claims.
 #
 # [A36]: G1 has ~zero resolving power at N=64 -- it only cleanly
-# separates lattice from ER at N=512. User chose N=512 for this reason
-# (sizes below was [64, 512] while the scale was undecided).
+# separates lattice from ER at N=512 (and, by extension, N=1024).
 
-sizes: [512]
-seeds_per_cell: 5
+sizes: [512, 1024]
+seeds_per_cell: 10
 
 open_dynamics:
   gamma_tilde_levels: [0.05]
