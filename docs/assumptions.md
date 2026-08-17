@@ -2836,6 +2836,72 @@ session's transcript.
 (`d=-4.36`, `d=-5.73`), so underpowering is unlikely, but neither was
 tested at other N or other `σ̃`.
 
+### A55 — `[A45]` disassembly, round 3: Forman-Ricci is scale-invariant (proven), so the mean-weight-level explanation is dead by algebra, not just by data (2026-08-14)
+
+**Question this answers:** `[A53]`/`[A54]` refuted both natural
+"distribution shape" explanations. Round 3 asked whether the difference
+is really about the reciprocal term's sensitivity to weight
+MAGNITUDE — `H0`'s lower mean weight (`[A53]`: 0.449 vs `H1`'s 0.503)
+pushing `1/√w` into a steeper, more sensitive regime.
+
+**First measurement (uncorrected, own bug caught):** `mean(1/√w)` was
+`inf` for one `H1` seed — a zero-weight edge (`[A42]`'s clamp) poisoned
+the mean, exactly the failure mode `[A42]`/`curvature.py` already exist
+to prevent. Recomputed excluding zero-weight edges, matching
+`curvature.py`'s own treatment: `mean(1/√w)` IS higher for `H0`
+(1.520 vs 1.437, `d=3.751`, MCID met) — consistent with a lower-mean
+explanation, at first glance.
+
+**Decisive test:** rescaled every `H0` weight by a constant so its mean
+exactly matched `H1`'s, then recomputed the `[A41]`-style structural
+excess on the rescaled graph.
+
+```
+exc(H1)                = +0.01577
+exc(H0)                 = +0.03263   d(H0 vs H1) = 2.907
+exc(H0, rescaled to H1's mean) = +0.03263   d = 2.907  -- IDENTICAL, to full float precision
+```
+
+**Rescaling had exactly zero effect.** This is not a small effect that
+happened to wash out — it is an EXACT algebraic identity, confirmed
+after the fact: Forman-Ricci curvature (`observables/curvature.py`,
+unit node weights) is homogeneous of degree 0 in the edge weights.
+For any edge `e=(u,v)`: `F(e) = 2 − w_e·Σ_neighbor 1/√(w_e·w_neighbor)`.
+Scaling every weight by a constant `c` leaves every ratio
+`w_e/√(w_e·w_neighbor) = √(w_e/w_neighbor)` unchanged, so `F` is
+provably invariant under any uniform rescaling. **The mean-weight-level
+explanation was mathematically impossible from the start** — this could
+have been derived algebraically before running any of `[A53]`'s or this
+round's experiments, not discovered by running them.
+
+**Methodological lesson, recorded plainly:** before spending compute on
+a numerical test of "does statistic X of the weight distribution explain
+observable Y," check whether Y is invariant to the transformation X
+implicitly assumes matters (here: scale). An exact `0.000...` result
+across an entire experiment is itself evidence the effect was
+structurally impossible, not merely absent in this sample — worth
+checking the algebra retroactively whenever a numerical result comes
+back suspiciously exact, the same instinct that caught `[A48]`'s bug
+and V3b's identical-to-5-decimals result earlier this session.
+
+**Consequence for the next hypothesis:** since `F` only depends on
+RATIOS between adjacent edge weights (`√(w_e/w_neighbor)`), not absolute
+levels, `[A54]`'s "local roughness" proxy (`|w_i − w_j|`, an absolute
+difference) was measuring the wrong quantity — a scale-invariant formula
+should be probed with a scale-invariant statistic, e.g. the spread of
+`log(w_e/w_neighbor)` over adjacent edges, not raw absolute differences.
+This is the natural next test, not yet run.
+
+**Evidence:** [VERIFIED-bash] rescaling test, 5 seeds, exact-precision
+match confirmed in this session's transcript; algebraic derivation of
+scale-invariance stated above, checkable directly from
+`observables/curvature.py`'s implementation.
+
+**If wrong:** the algebraic argument assumes unit node weights (this
+project's convention throughout, `curvature.py`'s own docstring) — a
+future node-weighted variant of Forman-Ricci would not necessarily share
+this invariance.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
