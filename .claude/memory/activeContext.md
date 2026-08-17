@@ -1,6 +1,56 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — PHASE 12 COMPLETE, verdict REJECT, null_results recorded)
+## SESSION HANDOFF (updated 2026-08-14 — ALL THREE Relaxation Map branches tested, [A47]-[A51])
+
+**Post-REJECT revival exploration is complete for the original
+Relaxation Map.** HEAD `2738d24`, 263/263 tests, ruff/mypy clean.
+
+**`[A47]` THEOREM (unprompted deep-dive, not requested but load-bearing
+for everything after):** `W=1` is an absorbing upper barrier for
+`HebbianAdaptation` — proven algebraically (Cauchy-Schwarz + AM-GM on
+the update rule), verified numerically (violation exactly `0.000e+00`
+across 3 initial states). No weight can ever exceed 1.0 under any
+budget. This is why organization was mechanically unavailable in Phase
+11/12: the rule can only differentiate edges by DECAY from the uniform
+start, never growth.
+
+**`[A48]` cheapest differentiating test, THEN CORRECTED FOR A REAL
+BUG:** screened 3 initial-state regimes for `W*` (the rule's fixed
+point) spread via a single-trajectory computation. **A computation bug
+was caught mid-session** (a script computed `2*C/denom` where `denom`
+already carried `/2`, doubling the true value, and briefly looked like a
+refutation of `[A47]`'s own just-proven theorem — diagnosed via the
+diagonal, which must equal exactly 1.0). Corrected result: random-phase
+delocalization gives the most `W*` spread (std≈0.53) of the three
+regimes tested, more than the currently-used localized state (std≈0.41).
+
+**`[A49]` V1b RAN: zero structural excess.** The `[A48]` screening
+prediction did NOT survive an actual 50-window run — closed, not merely
+untested.
+
+**`[A50]` V1 RAN (`AlternativeObjective`, chosen over `AntiHebbian
+Adaptation` since that rule's own docstring already documents it as a
+pre-characterized decay pathology): zero structural excess.** Third
+independently-motivated variant with no organization.
+
+**`[A51]` V3 RAN (`PruneZeroWeightTopologyUpdate`, new
+`mathematical_contract.md` §3.3 dated addendum + new infrastructure
+`dynamics/topology.py`/`experiment/v3_topology_pilot.py`): INCONCLUSIVE,
+not decisively closed — stated with this calibration explicitly.** The
+rule fired once across 7680 edge-run opportunities; "no additional
+effect" reflects an underpowered test, not proof topology updates don't
+matter. A threshold-based prune rule is the natural next variant.
+
+**Current honest state, not overclaimed:** V1 and V1b are decisively
+closed (real mechanism, real exercise, no effect). V3 as tested is
+inconclusive (real mechanism, negligible exercise) — a genuine gap, not
+evidence either way. All of this is recorded as dated addenda in
+`null_results/20260814-open-system-geometrogenesis.md`, which remains
+the authoritative REJECT verdict for the original Phase 11/12 claim.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — Phase 12 COMPLETE, verdict REJECT, null_results recorded)
 
 **[VERIFIED] Phase 12 ran to completion and terminated the open-system
 geometrogenesis line with a REJECT verdict.** Recorded per the global
