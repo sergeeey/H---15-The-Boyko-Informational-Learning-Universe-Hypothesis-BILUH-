@@ -54,3 +54,32 @@ def test_generate_erdos_renyi_preserves_edge_count_when_retrying() -> None:
     graph = generate_erdos_renyi(n_nodes, n_edges, rng)
 
     assert int(graph.mask.sum()) // 2 == n_edges
+
+
+def test_generate_erdos_renyi_connects_at_n1024_mean_degree_6_despite_low_success_rate() -> None:
+    """[A38] regression: Milestone 7's N=1024 factorial pilot failed with
+    `NetworkXAlgorithmError` after exhausting the original 20-retry cap.
+    Root cause is NOT bad luck -- mean degree 6 ([A7]'s n_edges=3*n_nodes)
+    is BELOW Erdos-Renyi's connectivity threshold ln(N)~=6.93 at N=1024,
+    so the expected isolated-vertex count is N*e^-6~=2.5 and only ~9% of
+    draws are connected (measured via prototype script: 18/200 successes
+    for `numpy.random.default_rng(7024)`, the exact seed
+    `run_open_pilot.py` used for size=1024/seed_index=6 -- graph_seed
+    formula is `1000*seed_index+size`). This seed is a genuine
+    reproduction of the actual failing run, not a brute-force search like
+    the N=64 test above. With ~9% per-draw success, P(20 consecutive
+    failures) ~= 0.19 -- a real, expected failure mode at this budget, not
+    an anomaly. The retry cap must be large enough that this succeeds
+    reliably (P(all attempts fail) << 1) without changing mean degree
+    (preserves [A7]'s fixed-mean-degree-across-N convention and exact
+    consistency with the 40 N<=512 points already computed under the old
+    cap)."""
+    n_nodes = 1024
+    n_edges = n_nodes * 6 // 2
+    rng = np.random.default_rng(7024)
+
+    graph = generate_erdos_renyi(n_nodes, n_edges, rng)
+
+    nx_graph = nx.from_numpy_array(graph.mask)
+    assert nx.is_connected(nx_graph)
+    assert int(graph.mask.sum()) // 2 == n_edges

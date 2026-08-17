@@ -1681,6 +1681,55 @@ a real-vs-shuffled separation this 5-seed pilot lacked power to detect
 it) — not resolved here, would need a dedicated power analysis before
 concluding the null result is final rather than underpowered.
 
+### A38 — Milestone 7's N=1024 grid failed: mean degree 6 is below Erdős–Rényi's connectivity threshold at N=1024, not a random unlucky draw (2026-08-14)
+
+**Question this answers:** why did `scripts/run_open_pilot.py`'s
+Milestone 7 run (user-approved: N=512 AND N=1024, `seeds_per_cell=10`)
+crash with `NetworkXAlgorithmError` at `size=1024 seed=6` after 64/80
+points already completed cleanly?
+
+**Root cause, verified with a prototype before touching code:** `[A7]`'s
+mean degree 6 (`n_edges=3*n_nodes`) is fixed across every N this project
+uses, for FSS comparability. Erdős–Rényi connectivity requires mean
+degree above `ln(N)`. `ln(512)≈6.24 > 6` (mean degree 6 was already
+slightly below threshold at N=512 — `[A29]`'s original 20-retry cap
+absorbed this) but `ln(1024)≈6.93`, further above 6, so the gap is
+worse: expected isolated-vertex count `N·e⁻⁶≈2.5`, and a direct
+prototype run (`numpy.random.default_rng(7024)`, the EXACT seed
+`run_open_pilot.py` used for `size=1024/seed_index=6` — graph_seed
+formula `1000*seed_index+size`) found only 18/200 draws connected
+(~9%). With `p≈0.09`, `P(20 consecutive failures)≈0.19` — a real,
+expected failure mode at this budget, not bad luck; the first success in
+that same 200-draw run only appeared at attempt 24, past the old cap.
+
+**Fix:** raised `_MAX_CONNECTIVITY_RETRY_ATTEMPTS` from 20 to 150
+(`graphs/generators.py`) — `P(all 150 fail)≈(0.91)¹⁵⁰≈6e-7`, a safety
+margin appropriate for a Full-Ladder run. **Mean degree was NOT
+changed** — doing so would break `[A7]`'s fixed-mean-degree-across-N
+convention and invalidate exact comparability with the 40 N≤512 points
+already computed under the old cap (mean degree is part of what "same
+Active topology generator" means across this project's FSS grid).
+
+**Why this is not a parameter-fishing violation:** the retry cap governs
+*generation feasibility* (how many draws until a valid population member
+is found), not the *scientific* parameter (mean degree) that defines the
+population itself — raising it changes nothing about which graphs are
+scientifically eligible, only how hard the code tries to find one.
+
+**Evidence:** [VERIFIED-pytest] `tests/unit/check_erdos_renyi_connectivity.py::
+test_generate_erdos_renyi_connects_at_n1024_mean_degree_6_despite_low_success_rate`
+— reproduces the exact failing seed (not a brute-force search like the
+existing N=64 regression test), fails RED against the old cap, passes
+GREEN after the fix. 245/245 tests, ruff/mypy clean.
+
+**If wrong:** if N=1024 is not the largest N this project ever uses, the
+same threshold-crossing will recur at some larger N with an even lower
+per-draw success probability — the retry cap is not scale-free. Not
+fixed here (no larger N is in scope yet); a future N large enough to
+need more than 150 attempts should trigger revisiting this as a formula
+(e.g. attempts scaling with the connectivity gap) rather than another
+one-off constant bump.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

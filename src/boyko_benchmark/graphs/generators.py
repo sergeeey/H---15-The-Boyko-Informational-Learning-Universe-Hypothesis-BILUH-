@@ -16,8 +16,9 @@ INITIAL_EDGE_WEIGHT = 1.0
 structureless, so any geometric structure Active later develops comes
 from the adaptation rule, not from a biased initial condition."""
 
-_MAX_CONNECTIVITY_RETRY_ATTEMPTS = 20
-"""[Found 2026-08-13, development.yaml's first full-grid run]:
+_MAX_CONNECTIVITY_RETRY_ATTEMPTS = 150
+"""[Found 2026-08-13, development.yaml's first full-grid run; raised
+2026-08-14, [A38], Milestone 7's N=1024 run]:
 `nx.gnm_random_graph`'s exact edge-count draw has no connectivity
 guarantee -- at N=64, mean-degree-6 ([A7], n_edges=192), a disconnected
 draw is empirically reachable (witness: numpy_seed=18, see
@@ -30,7 +31,19 @@ legitimate-recovery pattern as graphs/rewiring.py's
 infeasible for this (n_nodes, n_edges), just that this particular random
 draw was unlucky) -- silently returning a disconnected graph would violate
 the estimand's population assumption without any error surfacing until an
-arbitrary downstream consumer trips on it, as happened here."""
+arbitrary downstream consumer trips on it, as happened here.
+
+The original cap of 20 was sized for N<=512, where mean degree 6 is
+comfortably above Erdos-Renyi's connectivity threshold ln(N) (ln(512)~=
+6.24). At N=1024, ln(N)~=6.93 > 6 -- mean degree 6 is now BELOW the
+threshold, so isolated vertices are expected (N*e^-6~=2.5) and only
+~9% of draws connect (measured: 18/200 for a real failing seed, `[A38]`).
+With p~=0.09, P(20 consecutive failures)~=0.19 -- a real, non-rare
+failure mode at N=1024, not bad luck. 150 attempts drives P(all fail)
+to ~(0.91)^150~=6e-7, a safety margin appropriate for a Full-Ladder run,
+without changing mean degree (which would break [A7]'s fixed-mean-degree-
+across-N convention and invalidate exact comparability with the N<=512
+points already computed under the old cap)."""
 
 
 def generate_erdos_renyi(n_nodes: int, n_edges: int, rng: np.random.Generator) -> WeightedGraph:
