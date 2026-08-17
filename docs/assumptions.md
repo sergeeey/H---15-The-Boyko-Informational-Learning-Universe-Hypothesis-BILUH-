@@ -2604,6 +2604,80 @@ output, this session's transcript; script committed for reproducibility.
 (the `[A48]`/`[A49]` regime) was not tried — a 2-assumption combination,
 correctly out of scope for a single Minimal-Relaxation variant.
 
+### A51 — V3 ran (`PruneZeroWeightTopologyUpdate`): the rule barely fires at this budget — inconclusive, NOT a decisive closure (2026-08-14)
+
+**Question this answers:** does letting the topology actually change
+where `HebbianAdaptation`'s clamp zeroes a weight produce structure the
+fixed-topology arms did not? The last open branch of the Relaxation Map.
+
+**Method:** `scripts/run_v3_topology_pilot.py`, using the V3 pilot
+infrastructure (`experiment/v3_topology_pilot.py`,
+`dynamics/topology.py::PruneZeroWeightTopologyUpdate`, both new this
+session, contract addendum in `mathematical_contract.md` §3.3). Single
+assumption changed from the already-established `Cσ` regime
+(`σ̃=0.05`, `γ=0`, N=512, 5 seeds, `HebbianAdaptation`, localized
+`psi0` — exactly `[A43]`/`[A44]`'s configuration): the topology rule is
+`PruneZeroWeightTopologyUpdate` instead of `NoTopologyUpdate`. `Cσ`
+was chosen over `C0` because `[A46]` showed `Cσ`'s weights actually
+approach the floor (mean 0.503) while `C0`'s barely move (mean 0.990).
+
+**Result:**
+
+```
+seed  n_edges_before  n_edges_after  n_pruned
+0     1536            1536           0
+1     1536            1536           0
+2     1536            1536           0
+3     1536            1535           1
+4     1536            1536           0
+
+Total pruned: 1 / 7680 edge-runs (0.013%)
+
+global-shuffle excess  = +0.01763  CI (+0.00958, +0.02568)
+strength-strat excess  = +0.01013  CI (+0.00918, +0.01109)
+
+Reference, Csigma WITHOUT pruning ([A43]/[A44]):
+  global +0.01577, strat +0.01074
+```
+
+**The rule fired essentially once across 7680 edge-run opportunities.**
+The structural-excess numbers with pruning active are statistically
+indistinguishable from the no-pruning `Cσ` baseline — unsurprising,
+since a rule that almost never activates cannot be expected to change
+the outcome. This is the correct and only honest reading.
+
+**This is NOT a decisive closure of V3, unlike `[A49]`/`[A50]`'s closure
+of V1/V1b — stated explicitly to avoid over-claiming:**
+
+- `[A49]` and `[A50]` tested mechanisms that WERE substantially
+  exercised (large `W*` spread, real weight movement) and still produced
+  no structure — a meaningful negative result.
+- `[A51]` tested a mechanism that was barely exercised at all. "No
+  effect from a rule that almost never fires" is expected regardless of
+  whether active topology change would matter in principle — the test
+  was underpowered by construction, not a demonstration that topology
+  updates don't help.
+
+**Kill Analysis, calibrated to this distinction:**
+- *What this kills:* `PruneZeroWeightTopologyUpdate` specifically, at
+  this exact budget, as a way to test V3 — it does not trigger often
+  enough to be informative here.
+- *What this does NOT kill:* V3 as a general direction. A more
+  aggressive topology rule (e.g. pruning below a small positive
+  threshold rather than requiring exact zero, or a longer `dtau_steps`
+  budget giving more zeroing opportunities) remains untested and would
+  be a genuinely different, separately-motivated variant — not a repeat
+  of this one, per the Minimal Relaxation Rule (changing the threshold
+  or budget is itself a new single-assumption change from THIS variant).
+
+**Evidence:** [VERIFIED-bash] `scripts/run_v3_topology_pilot.py` output,
+this session's transcript; script and rule committed for reproducibility.
+
+**If wrong:** a threshold-based prune rule (e.g. `W_ij < 0.01`, not only
+`W_ij == 0`) would fire far more often at this same budget and could
+show a genuinely different result — this is the natural next variant,
+not tested here to keep this entry's single-assumption discipline clean.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

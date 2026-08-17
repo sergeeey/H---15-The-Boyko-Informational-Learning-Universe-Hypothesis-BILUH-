@@ -156,12 +156,34 @@ docstring already documents it as a pre-characterized decay pathology,
 so running it would not have tested anything new.
 
 **Of the original three-branch Relaxation Map, V1 and V1b are both now
-tested and closed. Only V3 (active topology updates) remains
-untested** — and it is qualitatively different from the other two: it
-requires implementing a `TopologyUpdateRule`, which `NoTopologyUpdate`
-(`[A8]`/`[A14]`) currently forbids almost everywhere in this project, and
-would need a dated addendum to `mathematical_contract.md`, not just a
-new script. It is the only remaining branch, and it is the expensive one.
+tested and closed.**
+
+**Addendum 6 (same day), `[A51]` — V3 RAN too, but is INCONCLUSIVE, not
+decisively closed — stated with this calibration explicitly, not
+over-claimed.** Implemented `PruneZeroWeightTopologyUpdate`
+(`mathematical_contract.md` §3.3 dated addendum, `dynamics/topology.py`,
+`experiment/v3_topology_pilot.py`) and ran it on the established `Cσ`
+regime (single assumption changed: topology rule active instead of
+`NoTopologyUpdate`). Result: the rule fired **once** across 7680
+edge-run opportunities (0.013%) — structural excess with pruning active
+(`+0.01763`/`+0.01013`) is statistically indistinguishable from `Cσ`
+without pruning (`+0.01577`/`+0.01074`), exactly as expected from a rule
+that almost never activates. **This differs qualitatively from V1/V1b's
+closures**: those mechanisms were substantially exercised and still
+produced nothing; V3's specific rule (prune-on-exact-zero) was barely
+exercised at all, so "no additional effect" here reflects the test being
+underpowered by construction, not a demonstration that active topology
+change doesn't matter. A threshold-based prune rule (e.g. `W_ij<0.01`,
+not only `W_ij==0`) would fire far more often and is the natural next
+variant — untested, and a genuinely new single-assumption change from
+this one, not a repeat.
+
+**Current state: V1 and V1b are decisively closed (real mechanism,
+real exercise, no effect). V3 as tested is inconclusive (real mechanism,
+negligible exercise).** No branch of the original Relaxation Map
+positively confirms structure; V3 alone leaves a genuine, honest gap —
+not evidence for the hypothesis, but not evidence against it either at
+the threshold actually tested.
 
 **Hard rule (Minimal Relaxation):** one assumption per variant, new
 experiment id, new pre-registration. Bundling two changes makes the
