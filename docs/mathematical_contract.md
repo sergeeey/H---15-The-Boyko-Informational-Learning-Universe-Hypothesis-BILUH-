@@ -388,6 +388,25 @@ steps (e.g. returning an intermediate graph between them) would need
 its own explicit ICE-checking discipline for that intermediate state,
 since the while-active strategy as specified assumes atomicity.
 
+**Addendum 5 (2026-08-18, `V5` M0) — degree-preserving connected edge
+swap as a second permitted class of topology-modifying operation,
+scoped to `V5`'s own arms only.** `V4`'s prune/regrow rule (Addendum 3)
+remains the only operation permitted to ADD an edge among V4's own
+arms; that scoping is unchanged. `V5` (`docs/v5_spec.md`, following
+`V4`'s `FEASIBILITY REJECT` closure, `docs/assumptions.md` `[A64]`)
+introduces a DIFFERENT elementary operation — a simultaneous
+delete-two/add-two swap, `(a,b),(c,d) → (a,c),(b,d)` or
+`(a,d),(b,c)` — for node-disjoint edge pairs, accepted only if the
+result is a simple graph and remains connected. This is explicitly
+NOT a relaxation of Addendum 3's edge-addition scoping (V5's arms are
+new, separate arms, not a Stage-1 arm and not V4's `A2`/`A3`/`A4`) but
+a parallel, independently-scoped authorization: **every node's degree
+is invariant under this operation by construction**, which is the
+entire point — V5's swap does not need, and does not have, an
+incidence-cap mechanism, because the failure mode that cap existed to
+address (`[A57]`-`[A63]`) cannot arise from an operation that never
+changes any node's degree in the first place.
+
 ---
 
 ## 4. Required Experimental Arms
