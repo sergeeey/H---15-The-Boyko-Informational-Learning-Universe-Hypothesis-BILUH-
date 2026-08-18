@@ -935,6 +935,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 12:31] `cf7be6a`: feat(v5): M2 -- K1' damaged-lattice gate; PASS on bare inequality but weak, substrate fully clean
 - [2026-08-18 12:10] `cb47539`: feat(v5): M1 -- degree-preserving connected swap operation, full TDD
 - [2026-08-18 11:46] `865b4e8`: docs(v4): close prune/regrow family as FEASIBILITY REJECT, not BILUH FAIL
 - [2026-08-18 11:33] `2685edc`: fix(v4): extract max_capacity_cardinality to a tested shared module
