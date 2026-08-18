@@ -1030,6 +1030,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 16:56] `7d595e6`: docs(v5): V5-K1'-Exposure ran -- FAIL per frozen criteria, K_skip=0% reconfirmed
 - [2026-08-18 14:54] `a3cdc0b`: feat(v5): pre-register + implement V5-K1'-Exposure dose-response follow-up
 - [2026-08-18 12:31] `cf7be6a`: feat(v5): M2 -- K1' damaged-lattice gate; PASS on bare inequality but weak, substrate fully clean
 - [2026-08-18 12:10] `cb47539`: feat(v5): M1 -- degree-preserving connected swap operation, full TDD
