@@ -341,6 +341,33 @@ used because it is the exact value `[A51]` pre-committed to, not a value
 chosen after seeing threshold-run results. Same scope restriction and
 same no-edge-addition invariant as the zero-weight rule above.
 
+**Addendum 3 (2026-08-14, same day) — `docs/v4_spec.md` M0: `A_ij` becomes
+an independent state variable with memory; the no-edge-addition invariant
+is explicitly scoped, not repealed.** V4 (`docs/v4_spec.md`,
+`null_results/2026...`'s Relaxation Map having exhausted V1/V1b and left
+V3/V3b `UNDEREXPOSED`) is the first rule in this project's history
+permitted to **add** an edge (`M_ij: 0 → 1`). This is a deliberate,
+scoped departure, not a silent relaxation of §3.3's opening invariant —
+that invariant continues to bind **every Stage-1 arm** (`A0`–`CD`, §4
+below) and both prior exploratory prune-only rules unchanged. It applies
+**only** to V4's own experimental arms `A2`/`A3`/`A4` (`docs/v4_spec.md`
+§4), which exist entirely outside the Stage-1 arm table.
+
+`StatefulTopologyRule` (new, `dynamics/topology.py`) generalizes
+`TopologyUpdateRule` with **persistent per-edge state**: an edge becomes
+eligible for pruning only after `m` consecutive windows in the
+lowest-`ρ`-quantile set (`docs/v4_spec.md` §4's persistence
+requirement) — the rule's `A_ij` therefore carries memory beyond the
+current window's weight snapshot, which is the specific sense in which
+V4 treats topology as "an independent state variable" rather than a pure
+function of `W` at each step. Regrowth candidates are selected by a
+declared, versioned rule (deterministic Top-K on a per-arm selection
+statistic, `docs/v4_spec.md` §12) — never as a side effect of noise or
+weight adaptation, preserving the *spirit* of the original invariant
+("no accidental edges") even though the letter (`no rule may add an
+edge`) is deliberately relaxed for this one, explicitly-scoped class of
+rules.
+
 ---
 
 ## 4. Required Experimental Arms
