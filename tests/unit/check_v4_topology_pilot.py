@@ -74,9 +74,15 @@ def test_real_rate_based_rule_actually_changes_topology_over_a_real_run() -> Non
     rng = np.random.default_rng(11)
     graph = generate_erdos_renyi(n_nodes=20, n_edges=40, rng=rng)
     psi0 = localized_psi0(graph.n_nodes, source_node=0)
+    # rho=0.05/m=3 (not rho=0.1/m=1): found while adding the while-active
+    # ICE check (docs/v4_spec.md Sec3) that the more aggressive config
+    # reproducibly disconnects this exact fixture on window 0 -- a real
+    # ICE, not a wiring bug, but this test's job is checking the
+    # trajectory plumbing on a run that actually completes, not exercising
+    # ICE truncation (that has its own dedicated tests below).
     rule = RateBasedTopologyRule(
-        rho=0.1,
-        m=1,
+        rho=0.05,
+        m=3,
         regrow_scorer=CorrelationScorer(),
         topology_tiebreak_seed=42,
         control_regrowth_seed=42,
@@ -100,3 +106,84 @@ def test_real_rate_based_rule_actually_changes_topology_over_a_real_run() -> Non
     n_before = int(graph.mask.sum()) // 2
     n_after = int(result.final_graph.mask.sum()) // 2
     assert n_after == n_before, "edge count should be conserved (matched budget)"
+    assert result.truncated_at_window is None
+
+
+class _DisconnectAtWindow:
+    """ICE-injection fixture (`docs/v4_spec.md` Sec3: "Pruning
+    disconnects the graph -> while-active -- truncate the run at that
+    window"): a no-op topology rule except on its `disconnect_at`-th
+    call, when it deterministically removes edge (0,1) -- a bridge on
+    the 4-node path fixture below, disconnecting node 0 from the rest."""
+
+    def __init__(self, disconnect_at: int) -> None:
+        self._disconnect_at = disconnect_at
+        self._calls = 0
+
+    def update(
+        self, graph: WeightedGraph, trajectory: StateTrajectory, dtau: float
+    ) -> WeightedGraph:
+        self._calls += 1
+        if self._calls != self._disconnect_at:
+            return graph
+        new_mask = graph.mask.copy()
+        new_weights = graph.weights.copy()
+        new_mask[0, 1] = new_mask[1, 0] = False
+        new_weights[0, 1] = new_weights[1, 0] = 0.0
+        return WeightedGraph(mask=new_mask, weights=new_weights)
+
+
+def _path_graph_4() -> WeightedGraph:
+    mask = np.zeros((4, 4), dtype=bool)
+    weights = np.zeros((4, 4))
+    for i, j in [(0, 1), (1, 2), (2, 3)]:
+        mask[i, j] = mask[j, i] = True
+        weights[i, j] = weights[j, i] = 1.0
+    return WeightedGraph(mask=mask, weights=weights)
+
+
+def test_disconnection_truncates_the_run_at_that_window_and_flags_it() -> None:
+    graph = _path_graph_4()
+    psi0 = localized_psi0(graph.n_nodes, source_node=3)
+    rule = _DisconnectAtWindow(disconnect_at=2)
+
+    result = run_adaptive_dynamics_v4(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=0.1),
+        rule,
+        dt=0.05,
+        k=5,
+        dtau_steps=5,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+    )
+
+    assert result.truncated_at_window == 1  # 0-indexed: rule's 2nd call happens in window 1
+    assert len(result.window_trajectories) == 2
+    assert not result.final_graph.mask[0, 1]
+
+
+def test_no_disconnection_means_truncated_at_window_is_none() -> None:
+    graph = _path_graph_4()
+    psi0 = localized_psi0(graph.n_nodes, source_node=3)
+    rule = _DisconnectAtWindow(disconnect_at=100)  # never fires within dtau_steps
+
+    result = run_adaptive_dynamics_v4(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=0.1),
+        rule,
+        dt=0.05,
+        k=5,
+        dtau_steps=5,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+    )
+
+    assert result.truncated_at_window is None
+    assert len(result.window_trajectories) == 5

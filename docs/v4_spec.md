@@ -398,8 +398,22 @@ control), corrupt it by randomly rewiring 10% of its edges to get
 **Primary K1 endpoint — edge recovery fraction:**
 
 ```
-R_edge = |E_recovered ∩ E*| / |E_damaged_out ∩ E*|
+R_edge = |E_recovered ∩ E_damaged_out| / |E_damaged_out|
 ```
+
+**Correction (2026-08-18, found during M2 implementation, before any run
+— not after seeing output):** the original formula written here was
+`|E_recovered ∩ E*| / |E_damaged_out ∩ E*|`. Since `E_damaged_out ⊆ E*`
+by its own definition, that denominator silently simplified to just
+`|E_damaged_out|` — fine — but the numerator, `E_recovered ∩ E*`, counts
+*every* lattice edge present in the final graph, including the ~90% that
+were never damaged and that any arm (even one that does nothing useful)
+trivially still has. That numerator does not match the prose directly
+below it ("of the specific edges that were actually broken, what
+fraction did V4 correctly restore") and would make `R_edge` insensitive
+to whether recovery targeted the actually-damaged edges at all. Fixed by
+restricting the numerator to `E_recovered ∩ E_damaged_out` — exactly the
+specific broken edges, and only those, that reappear in the final graph.
 
 where `E_damaged_out` is the set of correct lattice edges that were
 actually removed by the corruption, and `E_recovered` is the final

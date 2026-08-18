@@ -2962,6 +2962,83 @@ prevent.
 | `[A55]` | mean weight level | refuted by algebra — curvature is scale-invariant |
 | `[A56]` | log-ratio location vs dispersion | dispersion explains RAW `F`, not the EXCESS asymmetry `[A45]` measured |
 
+### A57 — V4 M2 (K1 gate) ran at spec scale: 100% while-active ICE (disconnection) rate — grid INVALID per Sec3's own rule, K1 verdict NOT reachable as pre-registered (2026-08-18)
+
+**What ran:** `scripts/run_k1_gate.py` at exactly `docs/v4_spec.md`
+Sec7/Sec11's frozen parameters — N=512 (periodic cubic lattice, T7/
+`[A32]`'s positive control), damage_fraction=0.10, ρ=0.01, m=3, eta=0.1,
+dt=0.05, K=50, dtau_steps=50, 5 seeds (master_seed=20260818). A3
+(`CorrelationScorer`) and A4 (`DistanceStratifiedShuffleScorer`) each
+run from the identical damaged lattice per seed.
+
+**Result: every single run (10/10 — both arms, all 5 seeds)
+disconnected at window index 2 — the earliest window at which `m=3`'s
+own persistence requirement first makes any edge eligible for
+pruning.** `R_edge` is reported as exactly 0.0000 for every cell, but
+that number is not evidence about A3 vs A4 — the runs never had a
+chance to regrow anything meaningful before hitting the while-active
+ICE truncation the spec itself requires (`docs/v4_spec.md` Sec3:
+"Pruning disconnects the graph -> truncate the run at that window, flag
+it, report the rate. Never silently reconnect."). Implemented and
+TDD-verified as its own dedicated behavior
+(`experiment/v4_topology_pilot.py`'s `_is_connected` check,
+`tests/unit/check_v4_topology_pilot.py`'s two truncation tests) before
+this campaign ran — the ICE handling itself is confirmed correct, not
+suspect.
+
+**Per `docs/v4_spec.md` Sec3's own stated rule, a >20% ICE rate makes
+"the whole grid ... invalid and must be re-pre-registered, not patched"
+— 100% is unambiguously over that line.** This is a Substrate-Gate-style
+outcome (`~/.claude/rules/falsification-ladder.md` Step 2a): "the test
+could not run as designed" is a different fact from "the test ran and
+K1 failed," and must not be recorded as either a PASS or a FAIL for K1.
+No PASS/FAIL verdict is entered here. This blocks M3-M6 exactly as a K1
+FAIL would (V4 does not proceed with an unrunnable substrate), but for
+a different reason, and the distinction matters for what a future
+attempt is allowed to conclude.
+
+**Why this happens (mechanistic account, not yet independently
+verified — [HYPOTHESIS], stated so a future check has something
+concrete to test):** at N=512, `ρ=0.01` prunes `n_target=max(1,
+round(0.01*1536))=15` edges per eligible window. A periodic cubic
+lattice has uniform degree 6 everywhere; 15 simultaneous prunes, if
+they concentrate more than 5-6 of the removed edges on any one node
+(plausible when regrowth in the SAME window doesn't yet target that
+node — Top-K regrowth this early in the run has almost no correlation
+signal to work from, since `eta=0.1`'s Hebbian update has only had 2
+windows to move weights off their uniform start), can isolate that node
+before regrowth has a chance to reconnect it. This is a property of
+`(ρ, m, lattice degree, eta, dtau_steps-until-informative-C_ij)`
+jointly, not of the corruption or the scorer — A3 and A4 disconnect
+identically (`trunc(A3)==trunc(A4)==2` on every seed), consistent with
+the failure happening BEFORE the two scorers' behavior could even
+diverge.
+
+**What this does NOT mean:** it does not falsify V4's mechanism, and it
+does not mean A3 and K1 are dead — `ρ=0.01`'s value was calibrated
+against Sec4's ER/random-graph turnover intuition (`~40% over 50
+windows`), never validated against a uniform-degree-6 LATTICE's much
+lower edge-connectivity margin. The lattice is far more fragile to a
+15-edge/window batch than an N=512 ER graph with the same mean degree
+would be, because ER's degree variance gives some nodes slack the
+lattice's exactly-uniform degree does not.
+
+**AOG-5 compliant next step, NOT taken here — requires the user's
+explicit go-ahead per this project's pre-registration discipline
+(`docs/v4_spec.md` Sec4: "Any later ρ change requires a new dated
+pre-registration"), not a unilateral parameter patch after seeing this
+result:** re-pre-register a single changed assumption — most likely a
+smaller `ρ` specifically for the K1 gate (e.g. `ρ=0.002`, ~3 edges/
+window, independently motivated by "stay below the lattice's local
+edge-connectivity margin," not chosen to force a PASS), OR a K1-specific
+`dtau_steps` floor before pruning starts (let correlations become
+informative first), OR both. Each is a genuine, separately-testable
+relaxation, not a bundle — Minimal Relaxation Rule applies.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1_gate.py` full stdout, this
+session's transcript; [VERIFIED-pytest] 294/294 tests, ruff clean, mypy
+`--strict` clean on the M2 infrastructure that produced this result.
+
 `[A45]`'s decisive finding itself stands, unaffected: real Hebbian
 correlations produce LESS curvature structural excess than shuffled
 ones. Four cheap scalar-summary explanations were tried and none fully
