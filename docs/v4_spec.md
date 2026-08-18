@@ -1,6 +1,16 @@
 # V4 — Autonomous Topology Dynamics: Technical Specification
 
-**Status: PROPOSED, 2026-08-14. Not approved. Nothing implemented, nothing run.**
+**Status: CLOSED, 2026-08-18 — `FEASIBILITY REJECT` for the independent
+edge-pruning family this document specifies (K1/K1c/K1d, §7/§7d/§7e).
+See `null_results/20260818-v4-prune-regrow-feasibility.md` and
+`docs/assumptions.md` `[A64]` for the full closing result. This is
+explicitly NOT a BILUH hypothesis FAIL — see that document's own
+"What is NOT killed" section. Superseded by `docs/v5_spec.md`
+(Balanced Support Rewiring), which changes the elementary structural
+operation itself rather than constraining this one further.**
+
+**Status (as originally written, kept for history): PROPOSED,
+2026-08-14. Not approved. Nothing implemented, nothing run.**
 
 **Revision 1 (2026-08-14, same day, before M1 — legitimate pre-
 registration refinement, not a post-hoc fit).** The user reviewed the
