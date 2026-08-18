@@ -3603,6 +3603,37 @@ stdout, this session's transcript; [VERIFIED-pytest] 336/336 tests,
 ruff clean, mypy `--strict` clean on the V5 M1/M2 infrastructure that
 produced this result.
 
+### A67 — `V5-K1'-Exposure` seed count decided from a real timing probe: 10 paired seeds, ≈116 minutes, compute decision made before any checkpoint `R_edge` is seen (2026-08-18)
+
+**User pre-registered `V5-K1'-Exposure`** (`docs/v5_spec.md` Sec13,
+Revision 1) after `[A66]`: a frozen dose-response follow-up,
+`B_total=D≈148`, `n_swaps=3`/window unchanged, checkpoints at window
+counts `{10,25,49}` (nominal `B≈{30,75,147}`), primary verdict decided
+only at the largest checkpoint. Seed count (5 vs 10) was explicitly
+deferred to a measured timing probe (Sec13.3), not chosen in advance.
+
+**Probe ran** (`scripts/probe_k1_prime_exposure_timing.py`, 1 seed, 5
+windows/arm, identical `dt=0.05`/`k=50` to the real campaign):
+`[VERIFIED-bash]` **7.08s/window measured**, materially higher than
+`[A65]`'s own `~1.2-1.3s/swap-slot` (`≈3.6-3.9s`/window) estimate --
+`[A65]` measured only `generate_swap_candidates`'s enumeration/lexsort
+cost, not the FULL per-window pipeline (fast-dynamics evolution +
+Hebbian adaptation + swap selection together). `7.08s`/window is the
+complete, correct number for planning; `[A65]`'s figure is superseded
+for this purpose, not silently kept.
+
+**Extrapolated cost:** `49 windows × 2 arms × N_seeds × 7.08s`:
+5 seeds ≈ 58 minutes, 10 seeds ≈ 116 minutes. Per `docs/v5_spec.md`
+Sec13.3's own stated preference order ("10 paired seeds if the measured
+cost stays roughly the same order of magnitude as other real campaigns
+already run on this project" -- prior real campaigns here have run
+tens of minutes to a few hours), **116 minutes is judged tolerable**
+-- **decision: `N_seeds=10`**, made from this measured number alone,
+before any `R_edge` from this follow-up exists.
+
+**Evidence:** [VERIFIED-bash] `scripts/probe_k1_prime_exposure_timing.py`
+stdout, this session's transcript.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

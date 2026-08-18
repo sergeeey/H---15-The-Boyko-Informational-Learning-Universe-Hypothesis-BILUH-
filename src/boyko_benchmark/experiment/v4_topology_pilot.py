@@ -19,6 +19,7 @@ node), so this truncates on ANY disconnection, not only on the cases
 that would actually break the Laplacian.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -59,13 +60,22 @@ def run_adaptive_dynamics_v4(
     gamma: float,
     sigma: float,
     noise_seed: int | None,
+    on_window: Callable[[int, WeightedGraph], None] | None = None,
 ) -> V4AdaptiveRunResult:
     """Identical to `run_adaptive_dynamics_open`/`run_adaptive_dynamics_
     with_topology` except `topology_rule.update` also receives this
     window's `trajectory` -- verified by `check_v4_topology_pilot.py`'s
     wiring test to match `run_adaptive_dynamics_open` exactly when the
     topology rule is a no-op. Truncates early per the while-active ICE
-    strategy if a topology update disconnects the graph."""
+    strategy if a topology update disconnects the graph.
+
+    `on_window`, if given, is called after each window's full update
+    (adaptation + topology) with `(window_index, graph)` -- added for
+    `docs/v5_spec.md` Sec13 (`V5-K1'-Exposure`)'s checkpoint recording,
+    generic on purpose: this loop stays agnostic of what a caller
+    records (R_edge, cumulative rule stats, ...) rather than growing
+    V5-specific concepts. Default `None` reproduces the exact prior
+    behavior (`check_v4_topology_pilot.py`'s own regression test)."""
     graph = initial_graph
     psi = psi0
     window_trajectories: list[StateTrajectory] = []
@@ -87,6 +97,8 @@ def run_adaptive_dynamics_v4(
         graph = adaptation_rule.update(graph, trajectory, ADAPTATION_DTAU)
         graph = topology_rule.update(graph, trajectory, ADAPTATION_DTAU)
         psi = states[-1]
+        if on_window is not None:
+            on_window(window_index, graph)
         if not _is_connected(graph.mask):
             truncated_at_window = window_index
             break

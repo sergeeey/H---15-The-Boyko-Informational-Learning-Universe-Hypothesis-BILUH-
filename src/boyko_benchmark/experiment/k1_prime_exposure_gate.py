@@ -1,26 +1,15 @@
-"""V5-K1' (`docs/v5_spec.md` Sec7/Sec8 M2): the damaged-lattice
-restoration gate for `BalancedSwapTopologyRule` -- a PAIRED comparison,
-A3 (`CorrelationSwapScorer`) vs A4 (`DistanceStratifiedSwapScorer`),
-both restoring from the IDENTICAL damaged lattice for a given seed
-index. `PASS` requires `R_edge(A3) > R_edge(A4)` (`docs/v5_spec.md`
-Sec7).
+"""`V5-K1'-Exposure` (`docs/v5_spec.md` Sec13): a dose-response follow-up
+to `K1'` (`k1_prime_damage_gate.py`) -- was `[A66]`'s weak result caused
+by an insufficient number of structural opportunities (starvation), or
+does state-driven selection genuinely not beat the matched null even at
+`B=D` (as many committed swaps as damaged edges)?
 
-Reuses V4's damage/`R_edge` infrastructure unchanged (`docs/v5_spec.md`
-Sec9: "carries over"), and V4's own `run_adaptive_dynamics_v4` loop --
-`BalancedSwapTopologyRule.update(graph, trajectory, dtau) ->
-WeightedGraph` matches `StatefulTopologyRule`'s protocol exactly
-(duck-typed), so the same validated fast-dynamics/adaptation/topology
-loop applies unchanged, even though V5 never needs its while-active
-truncation (connectivity cannot be lost by construction, Sec3).
-
-Adds only the connectivity precondition check Sec8 requires --
-`corrupt_lattice_edges` does not itself guarantee a connected result,
-and V5's whole connectivity argument depends on starting from one.
-
-Damage/lattice-center/connectivity helpers live in `k1_prime_common.py`
--- shared with `k1_prime_exposure_gate.py` (Sec13), extracted here to
-avoid the same cross-module private-import duplication this project's
-own reviewer already flagged once (`capacity_matching.py`).
+ONE continuous run per arm/seed records `R_edge` and cumulative
+committed/skipped counts at several frozen window counts, via
+`run_adaptive_dynamics_v4`'s `on_window` hook -- never by restarting the
+run at different `dtau_steps` values, which would require ASSUMING (not
+verifying) that the first N windows of a longer run reproduce a
+standalone N-window run exactly (Sec13.1).
 """
 
 from dataclasses import dataclass
@@ -53,19 +42,25 @@ from boyko_benchmark.types import WeightedGraph
 
 
 @dataclass(frozen=True)
-class K1PrimeArmResult:
+class K1PrimeExposureCheckpoint:
+    window_count: int
     r_edge: float
     wrong_removal_rate: float
-    total_committed: int
-    total_skipped: int
+    cumulative_committed: int
+    cumulative_skipped: int
 
 
 @dataclass(frozen=True)
-class K1PrimeSeedResult:
+class K1PrimeExposureArmResult:
+    checkpoints: tuple[K1PrimeExposureCheckpoint, ...]
+
+
+@dataclass(frozen=True)
+class K1PrimeExposureSeedResult:
     seed_index: int
     damaged_out: frozenset[Edge]
-    arm_a3: K1PrimeArmResult
-    arm_a4: K1PrimeArmResult
+    arm_a3: K1PrimeExposureArmResult
+    arm_a4: K1PrimeExposureArmResult
 
 
 def _run_one_arm(
@@ -80,8 +75,8 @@ def _run_one_arm(
     eta: float,
     dt: float,
     k: int,
-    dtau_steps: int,
-) -> K1PrimeArmResult:
+    checkpoint_windows: tuple[int, ...],
+) -> K1PrimeExposureArmResult:
     inner_rule = BalancedSwapTopologyRule(
         n_swaps=n_swaps,
         score_scorer=scorer,
@@ -89,39 +84,52 @@ def _run_one_arm(
         control_seed=control_seed,
     )
     rule = AccumulatingSwapRule(inner_rule)
-    result = run_adaptive_dynamics_v4(
+    checkpoint_set = set(checkpoint_windows)
+    checkpoints: list[K1PrimeExposureCheckpoint] = []
+
+    def on_window(window_index: int, graph: WeightedGraph) -> None:
+        window_count = window_index + 1
+        if window_count not in checkpoint_set:
+            return
+        recovery = compute_edge_recovery(original_edges, damaged_out, graph.mask)
+        checkpoints.append(
+            K1PrimeExposureCheckpoint(
+                window_count=window_count,
+                r_edge=recovery.r_edge,
+                wrong_removal_rate=recovery.wrong_removal_rate,
+                cumulative_committed=rule.total_committed,
+                cumulative_skipped=rule.total_skipped,
+            )
+        )
+
+    run_adaptive_dynamics_v4(
         damaged_graph,
         psi0,
         HebbianAdaptation(eta=eta),
         rule,
         dt,
         k,
-        dtau_steps,
+        max(checkpoint_windows),
         backend=ClosedUnitaryBackend(),
         gamma=0.0,
         sigma=0.0,
         noise_seed=None,
+        on_window=on_window,
     )
-    recovery = compute_edge_recovery(original_edges, damaged_out, result.final_graph.mask)
-    return K1PrimeArmResult(
-        r_edge=recovery.r_edge,
-        wrong_removal_rate=recovery.wrong_removal_rate,
-        total_committed=rule.total_committed,
-        total_skipped=rule.total_skipped,
-    )
+    return K1PrimeExposureArmResult(checkpoints=tuple(checkpoints))
 
 
-def run_k1_prime_gate_one_seed(
+def run_k1_prime_exposure_gate_one_seed(
     side_length: int,
     damage_fraction: float,
     n_swaps: int,
+    checkpoint_windows: tuple[int, ...],
     eta: float,
     dt: float,
     k: int,
-    dtau_steps: int,
     seed_index: int,
     master_seed: int = 0,
-) -> K1PrimeSeedResult:
+) -> K1PrimeExposureSeedResult:
     seed_manager = SeedManager(master_seed)
     graph = generate_periodic_cubic_lattice(side_length)
     original_edges = frozenset((int(i), int(j)) for i, j in np.argwhere(np.triu(graph.mask)))
@@ -148,7 +156,7 @@ def run_k1_prime_gate_one_seed(
         eta,
         dt,
         k,
-        dtau_steps,
+        checkpoint_windows,
     )
     arm_a4 = _run_one_arm(
         damaged_graph,
@@ -162,9 +170,9 @@ def run_k1_prime_gate_one_seed(
         eta,
         dt,
         k,
-        dtau_steps,
+        checkpoint_windows,
     )
 
-    return K1PrimeSeedResult(
+    return K1PrimeExposureSeedResult(
         seed_index=seed_index, damaged_out=damaged_out, arm_a3=arm_a3, arm_a4=arm_a4
     )

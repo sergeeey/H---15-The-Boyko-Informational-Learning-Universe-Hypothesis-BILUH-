@@ -2,6 +2,17 @@
 
 **Status: PROPOSED, 2026-08-18. Not approved. Nothing implemented, nothing run.**
 
+**Revision 1 (2026-08-18, after `[A66]`) — M2's `K1'` result is PASS but
+WEAK (`Cohen's d=0.63 < 0.8` MCID, effect concentrated in 1/5 seeds,
+`K_skip=0%` confirming the substrate itself is clean). The user's own
+diagnosis and pre-registration for the follow-up: `[A66]`'s weak result
+is most plausibly compute-driven starvation (`n_swaps=3`/window,
+`dtau_steps=10` ⇒ only ~30 committed swaps against ~148 damaged edges),
+not evidence against the mechanism. §13 below pre-registers
+**`V5-K1'-Exposure`** — a single, frozen dose-response follow-up, not an
+open-ended budget search — BEFORE any of it runs. §8's `M3` row is filled
+in accordingly.**
+
 **Provenance.** Succeeds `V4` (`docs/v4_spec.md`, CLOSED 2026-08-18 as
 `FEASIBILITY REJECT`, `docs/assumptions.md` `[A64]`,
 `null_results/20260818-v4-prune-regrow-feasibility.md`). V4's entire
@@ -298,7 +309,7 @@ enumerated legal candidate set).
 | **M0** | Dated Addendum 5 to `mathematical_contract.md` (§4 above, formalized); this spec committed | Contract revised before code, per `CLAUDE.md` |
 | **M1** | Swap-operation infrastructure + TDD: legality checker (simple-graph + connected), candidate generator, `ΔS` scorer, deterministic-argmax-with-tiebreak selector, `A4`'s distance-stratified shuffle reused from V4's `DistanceStratifiedShuffleScorer` logic. Degree-invariance and connectivity-by-construction verified as explicit test invariants, not assumed. | All tests green before any science |
 | **M2** | `K1'` damaged-lattice restoration gate at real scale (N=512, 5 seeds, same `master_seed=20260818` convention) | **KILL GATE** — stop here if `K1'` fails |
-| **M3+** | Not specified here — deferred until `K1'`'s result is known, matching this project's own discipline of not pre-committing to a full campaign before the cheap gate resolves | — |
+| **M3** | `V5-K1'-Exposure` — frozen dose-response follow-up (§13), pre-registered after `[A66]`'s weak-but-clean `K1'` result | Per §13's own frozen stop-rule — no automatic `M4` |
 
 **Before M2 runs:** verify each seed's damaged graph is connected
 BEFORE any swap dynamics start (bounded-retry re-damage if not, same
@@ -398,3 +409,179 @@ they argmax over). No stochastic/temperature-based variant is proposed
 or licensed, matching V4 §12's own guardrail against physical-
 temperature or vacuum-fluctuation interpretations of any future
 stochastic extension.
+
+---
+
+## 13. `V5-K1'-Exposure` — dose-response follow-up (Revision 1, pre-registered before any of it runs)
+
+**Question this answers.** `[A66]`: `K1'` PASSED the bare inequality
+but weakly (`d=0.63 < 0.8` MCID, 1/5 seeds carrying almost the entire
+effect), while `K_skip=0%` showed the substrate itself is fully
+feasible. Was the weak result caused by an insufficient number of
+structural opportunities (starvation), or does state-driven selection
+genuinely not beat the matched null even when given as many swaps as
+there are damaged edges to recover?
+
+**This is a distinct experiment from `K1'`, not a re-run of it** — the
+question, the budget, and the primary diagnostic (`ΔR(B)`, a curve, not
+a single-point inequality) are all new. It is also **not** a revival of
+`V4`'s `FEASIBILITY REJECT` (`[A64]`,
+`null_results/20260818-v4-prune-regrow-feasibility.md`) — that verdict
+concerned independent edge pruning, a different elementary operation;
+nothing here touches or reopens it.
+
+**L0 gate:** unchanged from §1 — causal, potential outcomes over whole
+runs, same identifiability argument. No new estimand primitive is
+introduced; `B` (swap budget) becomes an indexing variable for a
+dose-response CURVE over the same `Y(A3)`/`Y(A4)` endpoint, not a new
+outcome.
+
+### 13.1 Budget — frozen from damage size, not from the observed effect
+
+`D` = number of genuinely-damaged edges for a given seed
+(`len(damaged_out)`), observed in `[A66]` to be 146–149 out of 1536 at
+`damage_fraction=0.10`, N=512. Freeze a single nominal value for the
+whole campaign:
+
+```
+D_nominal = 148
+B_total   = D_nominal = 148   (target committed swaps, full run)
+```
+
+**Deliberately NOT chosen to reach `d≥0.8`** — chosen because it equals
+the number of things there are to recover, the natural upper reference
+scale for "enough exposure," decided before any checkpoint is read.
+
+**`n_swaps_per_window` stays frozen at 3** (§8 M2's own value) — the
+follow-up increases the number of topology WINDOWS, not the
+per-window rate, so the timescale ratio between fast dynamics and
+structural update is unchanged from `K1'`. Changing the rate would
+confound "was it starved" with "does a faster structural clock change
+the answer," which is a different, unasked question.
+
+**Checkpoint window schedule (frozen, single continuous run per
+arm/seed — not three separate restarted runs):**
+
+| Checkpoint | `B/D` target | Window count (`round(target/3)`) | Nominal committed swaps |
+|---|---|---|---|
+| C1 | 0.2 | 10 | 30 |
+| C2 | 0.5 | 25 | 75 |
+| C3 | 1.0 (= `B_total`) | 49 | 147 |
+
+`dtau_steps=49` for the whole run; `R_edge`, cumulative committed, and
+cumulative skipped are recorded at windows 10, 25, and 49 from ONE
+continuous trajectory per arm/seed — never by restarting
+`run_adaptive_dynamics_v4` at three different `dtau_steps` values,
+which would not guarantee the first 10/25 windows are identical to a
+standalone shorter run unless verified, and this design sidesteps that
+question entirely rather than assuming it. Actual committed-swap counts
+at each checkpoint are MEASURED (via the accumulating wrapper), not
+assumed to equal `3×window_count` — `K1'`'s `K_skip=0%` makes that a
+reasonable expectation, not a substitute for reporting the real number.
+
+**No further checkpoints, no reactive insertion of a 4th.** All three
+are reported regardless of what C1/C2 show — cherry-picking the
+"nicest" checkpoint post hoc is exactly what this table exists to
+prevent.
+
+### 13.2 Primary diagnostic
+
+```
+ΔR(B) = R_edge(A3, B) − R_edge(A4, B)
+```
+
+reported at all three checkpoints, forming a dose-response curve, not
+a single point. This is deliberately a stronger requirement than
+`K1'`'s own bare `R_edge(A3) > R_edge(A4)` — the interpretation below
+depends on the SHAPE of `ΔR(B)`, not just its sign at `B=D`.
+
+### 13.3 Seed count — decided by measured compute cost, not by the observed effect
+
+Preference order, stated before any timing is measured:
+
+1. **10 paired seeds** if the measured real per-window cost (§11,
+   `[A65]`) keeps the full campaign within roughly the same order of
+   magnitude of wall-clock effort already spent on this project's other
+   real campaigns.
+2. **5 seeds** (reusing exactly `K1'`'s own `seed_index 0..4`, same
+   `master_seed=20260818` — directly comparable damaged lattices) if
+   compute is not tolerable at 10.
+
+**The actual choice is made from a timing PROBE run before the full
+campaign, documented as a compute decision in `docs/assumptions.md`
+(same precedent as `[A65]`) — never chosen after seeing any `R_edge`
+value from this follow-up.** If 5 seeds are used, results are reported
+with explicit caution about `d`'s instability at `n=5` (§13.5) rather
+than silently treated as equally powered to a 10-seed run.
+
+### 13.4 Success / stop criteria — frozen in evaluation order
+
+**Primary, at `C3` (`B=D`):**
+
+```
+ΔR_edge(B=D) > 0   AND   Cohen's d ≥ 0.8   (non-overlapping 95% CIs)
+```
+
+**Additional requirement, not substitutable by the above:**
+
+```
+majority of paired seeds show A3 > A4 at C3
+```
+
+A large standardized effect concentrated in one seed (exactly `[A66]`'s
+own failure mode) does not, by itself, satisfy this follow-up's
+success criterion even if `d≥0.8` is reached numerically.
+
+**Frozen stop-rule — no exceptions, no automatic escalation:**
+
+> If, at `B/D=1.0` (`C3`), the substrate remains fully feasible
+> (`K_skip` still near 0%) but `A3` does not beat `A4` by the MCID
+> above, `V5-K1'-Exposure` is closed as its own result. No automatic
+> `2D`, `5D`, or `10D` follow-up is run. A further budget increase would
+> require a new, separately-motivated pre-registration, exactly like
+> this one — never a silent continuation.
+
+### 13.5 Interpretation, pre-registered before data (four buckets)
+
+1. **Strong positive.** `ΔR(B)` increases with `B` (at least up to some
+   saturation) and, at `C3`, `A3>A4` with `d≥0.8` distributed across a
+   majority of paired seeds, not concentrated in one. Read as: state-
+   specific correlation information causally improves recovery of a
+   known geometric structure inside this simulator — a genuine positive
+   result for the swap mechanism, not a claim about BILUH, geometrogenesis,
+   or physical spacetime (§10 still applies in full).
+2. **Null.** `A3 ≈ A4` all the way to `C3`. The "just not enough swaps"
+   explanation is substantially weakened (the budget now equals the
+   damage count). `V5-K1' FAIL` under this follow-up's own criteria;
+   the stop-rule (§13.4) applies — no automatic larger budget.
+3. **Both improve, no differential.** `R_edge(A3)` and `R_edge(A4)` both
+   rise with `B`, but `ΔR(B)≈0` throughout. Read as: degree-preserving
+   rewiring helps generic structural recovery, but the specific
+   `C_ij`-driven selection carries no additional value over a
+   distance-matched null — informative and reportable, but a negative
+   result for the state-specific mechanism this project cares about.
+4. **Non-monotonic.** `A3` leads at an intermediate checkpoint, then
+   the gap shrinks or reverses by `C3`. Report the full `ΔR(B)` curve
+   honestly as non-monotonic dose-response (possible over-rewiring or
+   disruption of already-restored structure) — the pre-registered `C3`
+   endpoint remains the one the stop-rule is evaluated against; a
+   better-looking intermediate checkpoint is never substituted for it
+   after the fact.
+
+**What this follow-up does NOT establish, regardless of outcome** — all
+of §10's five points apply unchanged, plus: a strong-positive result
+here would validate the SWAP operation with a properly-powered budget,
+not resurrect V4's independent-deletion mechanism, and would not by
+itself be evidence for or against `[A45]`'s still-open Phase 11-12
+anomaly.
+
+### 13.6 What is already established independent of this follow-up
+
+Regardless of `V5-K1'-Exposure`'s result, `[A66]`'s clean-substrate
+finding stands on its own: **balanced, degree-preserving structural
+moves resolve the feasibility conflict that `V4`'s independent edge
+deletion could not** (`K_skip=0%` across 300 real swap-slot operations,
+vs. `V4`'s `K1`/`K1c`/`K1d`, none of which ever produced a clean
+substrate). This is a concrete adaptive-topology design principle, not
+contingent on whether the state-specific advantage this follow-up tests
+turns out to be strong, null, or absent.

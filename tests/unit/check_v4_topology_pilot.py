@@ -11,6 +11,7 @@ from boyko_benchmark.experiment.open_pilot import run_adaptive_dynamics_open
 from boyko_benchmark.experiment.runner import localized_psi0
 from boyko_benchmark.experiment.v4_topology_pilot import run_adaptive_dynamics_v4
 from boyko_benchmark.graphs.generators import generate_erdos_renyi
+from boyko_benchmark.observables.propagation_front import hop_distances_from_source
 from boyko_benchmark.types import WeightedGraph
 
 
@@ -166,6 +167,94 @@ def test_disconnection_truncates_the_run_at_that_window_and_flags_it() -> None:
     assert not result.final_graph.mask[0, 1]
 
 
+class _RecordingTopologyRule:
+    """`on_window` regression fixture (V5-K1'-Exposure, `docs/v5_spec.md`
+    Sec13): an identity rule that also records the exact graph object it
+    returns each call, so a test can confirm `on_window` receives THAT
+    SAME post-update object (not a stale copy, not the pre-update graph)
+    via identity comparison -- avoids depending on Hebbian adaptation's
+    numeric details, which also mutate this same graph earlier each
+    window and would make a value-based marker fragile."""
+
+    def __init__(self) -> None:
+        self.returned: list[WeightedGraph] = []
+
+    def update(
+        self, graph: WeightedGraph, trajectory: StateTrajectory, dtau: float
+    ) -> WeightedGraph:
+        self.returned.append(graph)
+        return graph
+
+
+def test_on_window_is_called_once_per_window_with_the_post_update_graph() -> None:
+    graph = _path_graph_4()
+    psi0 = localized_psi0(graph.n_nodes, source_node=3)
+    rule = _RecordingTopologyRule()
+    recorded: list[tuple[int, WeightedGraph]] = []
+
+    def on_window(window_index: int, current_graph: WeightedGraph) -> None:
+        recorded.append((window_index, current_graph))
+
+    run_adaptive_dynamics_v4(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=0.1),
+        rule,
+        dt=0.05,
+        k=5,
+        dtau_steps=3,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+        on_window=on_window,
+    )
+
+    assert [window_index for window_index, _ in recorded] == [0, 1, 2]
+    assert len(rule.returned) == 3
+    assert [g for _, g in recorded] == rule.returned
+
+
+def test_omitting_on_window_reproduces_baseline_exactly() -> None:
+    """Regression: default `on_window=None` must not change the result
+    at all -- same fixture/params as the existing identity-rule wiring
+    test above, re-run once with the new parameter's default."""
+    rng = np.random.default_rng(7)
+    graph = generate_erdos_renyi(n_nodes=8, n_edges=16, rng=rng)
+    psi0 = localized_psi0(graph.n_nodes, source_node=0)
+    dt, k, dtau_steps, eta = 0.05, 10, 5, 0.1
+
+    baseline = run_adaptive_dynamics_open(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=eta),
+        dt,
+        k,
+        dtau_steps,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+    )
+    v4_result = run_adaptive_dynamics_v4(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=eta),
+        _IdentityTopologyRule(),
+        dt,
+        k,
+        dtau_steps,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+    )
+
+    np.testing.assert_allclose(
+        baseline.final_graph.weights, v4_result.final_graph.weights, atol=1e-12
+    )
+
+
 def test_no_disconnection_means_truncated_at_window_is_none() -> None:
     graph = _path_graph_4()
     psi0 = localized_psi0(graph.n_nodes, source_node=3)
@@ -187,3 +276,40 @@ def test_no_disconnection_means_truncated_at_window_is_none() -> None:
 
     assert result.truncated_at_window is None
     assert len(result.window_trajectories) == 5
+
+
+def test_on_window_still_fires_for_the_truncating_window() -> None:
+    """Reviewer-flagged gap (2026-08-18, V5-K1'-Exposure infra review):
+    `on_window` is documented as generic/reusable (any future caller, not
+    just V5 -- which can never disconnect by construction, `docs/v5_spec.
+    md` Sec3), so its behavior on a disconnecting window must be locked
+    down by a test, not left implicit. Confirms `on_window` DOES receive
+    the disconnected post-update graph for the truncating window -- it
+    fires before the connectivity check, exactly as `run_adaptive_
+    dynamics_v4`'s own docstring orders it."""
+    graph = _path_graph_4()
+    psi0 = localized_psi0(graph.n_nodes, source_node=3)
+    rule = _DisconnectAtWindow(disconnect_at=2)
+    recorded: list[tuple[int, bool]] = []
+
+    def on_window(window_index: int, current_graph: WeightedGraph) -> None:
+        connected = bool(np.all(hop_distances_from_source(current_graph.mask, 0) != -1))
+        recorded.append((window_index, connected))
+
+    result = run_adaptive_dynamics_v4(
+        graph,
+        psi0,
+        HebbianAdaptation(eta=0.1),
+        rule,
+        dt=0.05,
+        k=5,
+        dtau_steps=5,
+        backend=ClosedUnitaryBackend(),
+        gamma=0.0,
+        sigma=0.0,
+        noise_seed=None,
+        on_window=on_window,
+    )
+
+    assert result.truncated_at_window == 1
+    assert recorded == [(0, True), (1, False)]
