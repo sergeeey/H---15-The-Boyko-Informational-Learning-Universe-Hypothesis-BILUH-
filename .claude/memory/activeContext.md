@@ -1,6 +1,41 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — K1 concentration mechanism identified + CONFIRMED GENUINE (permutation-equivariant); awaiting user sign-off on `q` for V4-K1c)
+## SESSION HANDOFF (updated 2026-08-18 — V4-K1c ran at spec scale (q=1/2, pre-registered): still INVALID, not FAIL — cap delays disconnection but doesn't prevent it; awaiting user decision on next relaxation)
+
+**Repo state:** on `main` at `d226d47`, working tree has uncommitted
+V4-K1c work (`BoundedIncidenceTopologyRule` in `dynamics/topology_v4.py`,
+new `experiment/k1c_damage_gate.py`/`k1c_gate_verdict.py`,
+`scripts/run_k1c_gate.py`, tests, `docs/v4_spec.md` Revision 2,
+`docs/assumptions.md` `[A60]`) — about to be committed. 310/310 tests,
+ruff clean, mypy `--strict` clean.
+
+**User pre-registered V4-K1c fully** (bounded-incidence structural
+plasticity: `b_i = max(0, min(floor(q*d_i), d_i-1))`, `q=1/2` frozen no
+sweep, constrained greedy selection, three new ICE gates — Exposure,
+Connectivity reused, Cap Activity — PASS/FAIL/INVALID trichotomy,
+regrowth logged not capped). Implemented via strict TDD (hand-derived
+5-node "hub" fixture caught the naive-cap edge case the user flagged;
+a real-scale wiring test caught a genuine degree-drift phenomenon —
+uncapped regrowth can push a node's degree above 6, so `max_i n_i^prune
+<= 3` is NOT a universal invariant, only a starting-degree one).
+
+**Ran at spec scale, `[A60]` [VERIFIED-bash]: still `INVALID`, not `FAIL`.** ICE-1
+(exposure) = 0.254 (<<0.95 threshold) — the cap is starving pruning to
+~1/4 of target. ICE-2 (disconnection) = 80% (still >20%) — but every
+disconnection now happens at windows 10-17, not the original's uniform
+window 2 — **the cap delayed the failure ~5-8x, did not prevent it.**
+Mechanism: `max_i n_i^regrow` reached 6-10 (uncapped regrowth
+concentrates too), inflating some nodes' degree over time, which
+inflates THEIR future `b_i` proportionally — the same star-concentration
+mechanism reasserts itself over a longer horizon because nothing bounds
+degree growth via regrowth. `max_i n_i^prune` reached 5, exceeding the
+naive `<=3` prediction for exactly this reason.
+
+**STOPPED HERE, not unilaterally trying a new `q`** — same pre-
+registration discipline as `[A57]`. Three AOG-5-compliant candidates
+named in `[A60]` for the user to choose among (cap regrowth too; compute
+`b_i` from ORIGINAL damage-time degree instead of current; smaller `q`)
+— none chosen or run. M3-M6 remain blocked.
 
 **Repo state:** on `main`, HEAD `0505cfc`, working tree has two new
 uncommitted diagnostic scripts (`scripts/run_k1_feasibility_audit.py`,

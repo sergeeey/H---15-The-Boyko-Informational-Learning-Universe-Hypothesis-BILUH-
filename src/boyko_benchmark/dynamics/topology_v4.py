@@ -16,6 +16,7 @@ resets it to 0 (`docs/v4_spec.md` Sec4's "sustained low utility, not a
 coin flip").
 """
 
+import math
 from typing import Protocol
 
 import numpy as np
@@ -239,6 +240,159 @@ class RateBasedTopologyRule:
         tiebreak = self._tiebreak_rng.random(len(candidates))
         order = np.lexsort((tiebreak, -scores))
         to_regrow = [candidates[k] for k in order[:n_to_prune]]
+
+        new_mask = graph.mask.copy()
+        new_weights = graph.weights.copy()
+        for i, j in to_prune:
+            new_mask[i, j] = new_mask[j, i] = False
+            new_weights[i, j] = new_weights[j, i] = 0.0
+            self.persistence_counters.pop(frozenset((i, j)), None)
+        for i, j in to_regrow:
+            new_mask[i, j] = new_mask[j, i] = True
+            new_weights[i, j] = new_weights[j, i] = NEW_EDGE_WEIGHT
+
+        return WeightedGraph(mask=new_mask, weights=new_weights)
+
+
+def bounded_incidence_cap(degree: int, q: float, d_min: int = 1) -> int:
+    """V4-K1c (`docs/v4_spec.md` Sec7d, Revision 2): `b_i = max(0,
+    min(floor(q*d_i), d_i - d_min))` -- how many of a node's CURRENT
+    `degree` edges the prune step may remove in one window.
+
+    NOT `max(1, floor(q*d))` (the naive form, and the spec's own
+    documented rejection of it): at `degree=1`, `floor(q*1)=0` already,
+    but a `max(1, ...)` floor would force `b=1`, allowing a node's LAST
+    edge to be pruned -- re-introducing the exact single-window full-
+    isolation failure this relaxation exists to prevent. The `d_i-d_min`
+    term instead caps the cap itself, so a node is never allowed to drop
+    below `d_min` surviving edges via this mechanism, for ANY starting
+    degree.
+    """
+    return max(0, min(math.floor(q * degree), degree - d_min))
+
+
+class BoundedIncidenceTopologyRule:
+    """V4-K1c (`docs/v4_spec.md` Sec7d, Revision 2, pre-registered
+    2026-08-18): identical persistence-gated, weight-sorted pruning to
+    `RateBasedTopologyRule`, except the final selection of WHICH
+    persistence-eligible edges actually get pruned this window is a
+    constrained (capacitated) selection -- `bounded_incidence_cap`
+    limits how many of any single node's CURRENT edges may be pruned in
+    one window, so a single window can no longer remove 100% of a
+    node's incident edges the way `[A57]`-`[A59]` found `RateBased
+    TopologyRule` reproducibly does.
+
+    Implemented as a deterministic greedy walk (score-descending =
+    weight-ascending, fixed ordering) over the eligible set, adding an
+    edge to the prune selection only while neither endpoint's cap is
+    yet exhausted -- an accepted PRACTICAL approximation to the
+    formally-stated constrained selection problem (`docs/v4_spec.md`
+    Sec7d), not claimed to be the exact combinatorial optimum.
+
+    Regrowth is sized to the ACTUAL prune count (which may be smaller
+    than `n_target` when caps bind), not the target -- preserves the
+    edge-budget-conservation invariant. Regrowth itself is NOT capped
+    (Sec7d: concentration there is logged, not pre-emptively fixed).
+
+    `last_eligible`/`last_pruned`/`last_regrown` are exposed publicly
+    (same style as `persistence_counters`) so a caller can compute
+    Sec7d's ICE-1 (exposure) and ICE-3 (cap activity) diagnostics
+    externally, without duplicating selection logic.
+    """
+
+    def __init__(
+        self,
+        rho: float,
+        m: int,
+        q: float,
+        regrow_scorer: RegrowScorer,
+        topology_tiebreak_seed: int,
+        control_regrowth_seed: int,
+        d_min: int = 1,
+    ) -> None:
+        self._rho = rho
+        self._m = m
+        self._q = q
+        self._d_min = d_min
+        self._regrow_scorer = regrow_scorer
+        self._tiebreak_rng = np.random.default_rng(topology_tiebreak_seed)
+        self._regrow_rng = np.random.default_rng(control_regrowth_seed)
+        self.persistence_counters: dict[frozenset[int], int] = {}
+        self.last_eligible: frozenset[Edge] = frozenset()
+        self.last_pruned: frozenset[Edge] = frozenset()
+        self.last_regrown: frozenset[Edge] = frozenset()
+
+    def update(
+        self, graph: WeightedGraph, trajectory: StateTrajectory, dtau: float
+    ) -> WeightedGraph:
+        existing_edges = [(int(i), int(j)) for i, j in np.argwhere(np.triu(graph.mask))]
+        n_edges = len(existing_edges)
+        n_target = max(1, round(self._rho * n_edges)) if n_edges > 0 else 0
+
+        low_set = sorted(existing_edges, key=lambda e: graph.weights[e[0], e[1]])[:n_target]
+        low_set_keys = {frozenset(e) for e in low_set}
+
+        for edge in existing_edges:
+            key = frozenset(edge)
+            if key in low_set_keys:
+                self.persistence_counters[key] = self.persistence_counters.get(key, 0) + 1
+            else:
+                self.persistence_counters.pop(key, None)
+
+        eligible = [e for e in low_set if self.persistence_counters.get(frozenset(e), 0) >= self._m]
+        self.last_eligible = frozenset(eligible)
+
+        if not eligible:
+            self.last_pruned = frozenset()
+            self.last_regrown = frozenset()
+            return graph
+
+        # WHY: score-descending = weight-ascending (lowest weight is
+        # most prune-desirable), same direction as RateBasedTopologyRule
+        # -- fixed, reproducible ordering for the greedy walk.
+        eligible_sorted = sorted(eligible, key=lambda e: graph.weights[e[0], e[1]])
+
+        current_degree = {
+            node: int(graph.mask[node].sum()) for node in {n for e in eligible_sorted for n in e}
+        }
+        caps = {
+            node: bounded_incidence_cap(degree, self._q, self._d_min)
+            for node, degree in current_degree.items()
+        }
+        selected_count: dict[int, int] = dict.fromkeys(caps, 0)
+
+        to_prune: list[Edge] = []
+        for i, j in eligible_sorted:
+            if len(to_prune) >= n_target:
+                break
+            if selected_count[i] < caps[i] and selected_count[j] < caps[j]:
+                to_prune.append((i, j))
+                selected_count[i] += 1
+                selected_count[j] += 1
+
+        n_to_prune = len(to_prune)
+        self.last_pruned = frozenset(to_prune)
+
+        if n_to_prune == 0:
+            self.last_regrown = frozenset()
+            return graph
+
+        candidates = [
+            (i, j)
+            for i in range(graph.n_nodes)
+            for j in range(i + 1, graph.n_nodes)
+            if not graph.mask[i, j]
+        ]
+        if len(candidates) < n_to_prune:
+            raise ValueError(
+                f"BoundedIncidenceTopologyRule: only {len(candidates)} regrow candidates "
+                f"available for {n_to_prune} pruned edges -- graph is too dense for this rho."
+            )
+        scores = self._regrow_scorer.score(graph, trajectory, candidates, self._regrow_rng)
+        tiebreak = self._tiebreak_rng.random(len(candidates))
+        order = np.lexsort((tiebreak, -scores))
+        to_regrow = [candidates[k] for k in order[:n_to_prune]]
+        self.last_regrown = frozenset(to_regrow)
 
         new_mask = graph.mask.copy()
         new_weights = graph.weights.copy()

@@ -3181,6 +3181,75 @@ full stdout (histogram/Gini/HHI table for all 5 seeds, and the
 permutation-equivariance exact-match comparison), this session's
 transcript.
 
+### A60 — V4-K1c ran at spec scale (`docs/v4_spec.md` Sec7d, `q=1/2`, no exploratory calibration): still INVALID, not FAIL — the cap delays disconnection (window 2 -> windows 10-17) but does not prevent it, and severely under-exposes pruning; degree drift via uncapped regrowth is the reason (2026-08-18)
+
+**What ran:** `scripts/run_k1c_gate.py`, `BoundedIncidenceTopologyRule`
+(`q=0.5`, `d_min=1`, constrained greedy selection), otherwise IDENTICAL
+parameters and the SAME damaged lattices as `[A57]`'s original K1 run
+(N=512, damage=10%, ρ=0.01, m=3, eta=0.1, 5 seeds, master_seed=20260818).
+
+**Result: `INVALID`, not `FAIL` — the ICE gates correctly caught this,
+per Sec7d's own design.** `ICE-1` (exposure) = **0.254**, far below the
+**0.95** threshold: the cap is starving the intended pruning rate to
+roughly a quarter of target. `ICE-3` (cap activity) = **0.471** — nearly
+half of all eligible candidate removals are rejected by the per-node
+cap, confirming the cap is the dominant constraint, not dead weight.
+`ICE-2` (disconnection rate) = **80%** (8/10 arm-runs) — STILL above the
+20% threshold, though every disconnection now happens much later
+(windows 10-17, vs. `[A57]`'s uniform window 2) — **the cap delayed the
+failure by roughly 5-8x in window-count, but did not prevent it.**
+
+**Mechanism, directly observed, not merely hypothesized:** `max_i
+n_i^regrow` reached 6-10 across seeds (arm A3) — regrowth is UNCAPPED
+by Sec7d's own explicit design ("logged, not capped"), and it is
+itself concentrating new edges onto specific nodes, sometimes heavily.
+Since `bounded_incidence_cap`'s `b_i` is computed from a node's
+CURRENT degree at the START of each window, a node that accumulates
+several regrown edges over successive windows gets a PROPORTIONALLY
+LARGER cap later — `max_i n_i^prune` reached **5** in this campaign
+(seed 1), exceeding the naive `<=3` prediction that assumes degree
+stays fixed at the lattice's starting 6. This is the exact degree-drift
+caveat found and documented during K1c's own wiring tests
+(`tests/unit/check_k1c_damage_gate.py`), now confirmed to matter at
+real campaign scale, not just as a toy-test artifact. **The concentration
+mechanism `[A57]`-`[A59]` diagnosed has not been eliminated by a static
+per-window cap — it has been redistributed over a longer horizon,
+because nothing bounds how much a node's OWN degree (and therefore its
+own future cap) can grow via uncapped regrowth.**
+
+**This is exactly the outcome the user's own epistemic note anticipated
+before this run** ("может лишь отсрочить тот же дефект" — discussing
+`ρ`, but the same logic applies to a static local cap that doesn't
+account for degree growth): delaying a failure is not the same as
+removing its cause.
+
+**What this does NOT mean:** it does NOT mean `V4-K1c`'s FAIL/PASS
+question was answered — `R_edge` was never trustworthy here (`INVALID`,
+not `FAIL`, exactly the Substrate-Gate distinction `[A57]` already
+required once). It does NOT mean `q=1/2` was a bad guess in principle —
+the delay from window 2 to windows 10-17 shows the cap genuinely changed
+the dynamics in the intended direction, just not sufficiently. It does
+NOT license silently trying a different `q` — per `docs/v4_spec.md`
+Sec4/Sec7d, any `q` change requires a new dated pre-registration, and
+per the user's own explicit instruction, no exploratory `q` sweep was
+run here or is licensed by this entry.
+
+**AOG-5-compliant candidates for the NEXT pre-registration, NOT chosen
+here — requires the user's explicit go-ahead:** (a) cap regrowth too
+(symmetric bound on `n_i^regrow`, reversing Sec7d's original "log, don't
+cap" stance now that regrowth concentration has been OBSERVED to drive
+degree drift, not merely hypothesized); (b) compute `b_i` from a node's
+ORIGINAL (damage-time) degree rather than its current, possibly-inflated
+degree, so a node's allowance cannot grow through regrowth; (c) a
+smaller `q`; (d) some combination — per the Minimal Relaxation Rule,
+each is a separate, independently-motivated variant, not a bundle to
+sweep.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1c_gate.py` full stdout,
+this session's transcript; [VERIFIED-pytest] 310/310 tests, ruff clean,
+mypy `--strict` clean on the K1c infrastructure that produced this
+result.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

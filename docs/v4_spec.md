@@ -57,6 +57,63 @@ this revision, each explained where it appears below:
    instantiating a physical temperature; that reading is not licensed by
    anything derived here and is explicitly rejected if proposed later.
 
+**Revision 2 (2026-08-18, after `[A57]`-`[A59]`) — K1's original rule
+disconnected 10/10 lattices at spec-frozen `ρ=0.01`/`m=3`; the mechanism
+was diagnosed (not guessed at), confirmed genuine via a permutation-
+equivariance red-team test, and V4-K1c is pre-registered here to fix it
+by construction rather than by tuning `ρ` until K1 happens to pass.**
+
+1. **Mechanism, established by two diagnostic-only audits before this
+   revision was written** (`docs/assumptions.md` `[A57]`-`[A59]`):
+   Hebbian dynamics on an under-propagated node depresses its WHOLE
+   incident-edge group together; global weight-sorted Top-K pruning
+   selects that whole "star" in one window (`max_i n_i^prune = 6` on a
+   degree-6 lattice, every seed); regrowth has no obligation to repair
+   the specific node it just isolated. Confirmed GENUINE, not a
+   tie-break/label artifact, via a random-relabeling test whose pruned
+   edge set matched the original run's exactly (15/15) once mapped
+   back through the permutation.
+2. **V4-K1c: bounded-incidence structural plasticity (§7d, new).** A
+   per-node cap on how many of a node's CURRENT edges the prune step may
+   remove in one window — framed as "structural turnover has a finite
+   local rate," not as "prevent disconnection" — with the SAME cap
+   applied identically to A3 and A4, so the cap cannot itself become a
+   confound in `Δ_specific`.
+3. **`q=1/2` frozen, no exploratory calibration.** Motivated as a
+   pre-registered stability convention (loosely analogous to a CFL-type
+   bound on local state change per step — an analogy, not a derived
+   physical law), chosen for being a simple round value fixed BEFORE
+   this K1c run exists, not for producing a particular `R_edge`. No
+   other `q` is tried.
+4. **Constrained selection, not naive greedy-with-skip.** Framed
+   explicitly as: choose `S_prune` of size `round(ρ|E|)` maximizing
+   total prune-desirability subject to a per-node incidence cap.
+   Implemented via a deterministic greedy heuristic with a fixed
+   ordering (score-descending) — an accepted practical approximation,
+   not claimed to be the exact combinatorial optimum.
+5. **Three new ICE gates specific to K1c (§7d):** Exposure (did the cap
+   silently starve the intended pruning rate?), Connectivity (reuses the
+   existing while-active truncation, unchanged), and Cap Activity
+   (`f_cap` — is the cap binding at all, or is it dead weight?). All
+   three distinguish INVALID (substrate/design problem) from FAIL
+   (mechanism ran cleanly and A3 did not beat A4) — never conflated.
+6. **Regrowth concentration is logged, not capped.** If A3 turns out to
+   concentrate NEW edges around a few nodes too, that is left to be
+   OBSERVED as a possible real property of the mechanism, not
+   pre-emptively "fixed" by symmetry before any such behavior has
+   actually been seen.
+7. **Decision framing sharpened.** The original K1 effectively asked
+   "can state-driven regrowth restore a lattice while the SAME rule is
+   allowed to instantly destroy an entire node's neighborhood?" — an
+   unfairly hard, possibly ill-posed test. K1c asks "can state-driven
+   plasticity restore damaged geometry, under a finite local rate of
+   connection loss, better than a matched null?" — a more meaningful
+   test of the actual causal claim `[A3]` vs `[A4]` is about.
+8. **If K1c FAILS under normal exposure/connectivity** (A3 does not
+   beat A4 on `R_edge`, substrate valid): the user's own instruction is
+   to close V4 before M3, not propose K1d/K1e — the Minimal Relaxation
+   Rule does not license an unbounded search for a variant that passes.
+
 This document is a pre-registration: written and committed BEFORE any V4
 measurement, so its pass/fail predicates cannot be reshaped to fit
 results (`~/.claude/rules/estimand-ops.md`, "estimand defined after data
@@ -517,6 +574,155 @@ campaign (N=512 only) — recorded here as the standard this project
 already applies elsewhere (`[A39]`'s own finding that some effects are
 N-dependent in ways that matter) so a future N-sweep has a frozen target
 rather than an ad hoc one.
+
+**P5 — cap enforcement (Revision 2, new).** `max_i n_i^prune ≤ 3` on the
+degree-6 lattice, every window K1c runs, by construction of `§7d`'s cap
+(`b_i = 3` for `d_i = 6`). If violated: **implementation bug**, not a
+scientific finding — fix and re-verify before trusting anything else
+from that run.
+
+---
+
+## 7d. V4-K1c — bounded-incidence structural plasticity (Revision 2, pre-registered 2026-08-18, before this variant has ever run)
+
+**Motivation.** `[A57]`-`[A59]` established, and confirmed via a
+permutation-equivariance red-team test (not merely inferred), that the
+original K1 rule's failure is a genuine property of unconstrained
+global Top-K pruning: an under-propagated node's whole incident-edge
+group depresses together under Hebbian dynamics, so a single window's
+prune step can remove 100% of one node's edges, isolating it before
+regrowth (which optimizes globally, with no obligation toward the node
+it just isolated) can respond. K1c fixes this by construction — a
+per-node cap on how many of its CURRENT edges the prune step may remove
+in one window — rather than by shrinking `ρ` until the original rule
+happens not to trigger the same failure (which the user's own analysis
+showed would likely only delay, not repair, the same defect, since `ρ`
+and concentration interact rather than being independent).
+
+**Per-node cap, `d_min = 1`:**
+
+```
+b_i = max(0, min(floor(q * d_i), d_i - d_min))    where q = 1/2, d_min = 1
+```
+
+`d_i` is node `i`'s CURRENT degree at the start of this window's
+pruning decision (before this window's prune, i.e. `graph.mask` as
+adaptation left it). The `d_i - d_min` term is the correction to the
+naive `max(1, floor(q*d_i))` form: at `d_i=1`, `floor(q*1)=0` already,
+but the naive form's `max(1, ...)` floor would have forced `b_i=1`,
+allowing a node's LAST edge to be pruned and re-breaking the exact
+guarantee this relaxation exists to provide. The corrected form gives
+`b_i=0` at `d_i=1` (and at `d_i=0`, vacuously) — a node can never be
+pruned below one surviving edge by this mechanism, for any starting
+degree, not just degree 6. On this project's lattice (`d_i=6`
+uniformly, pre-damage): `b_i = max(0, min(3, 5)) = 3`.
+
+**`q=1/2`'s epistemic status, stated precisely, not oversold:** a
+pre-registered stability convention motivated by the observed
+concentration failure — loosely analogous to a CFL-type bound on how
+much local state may change per timestep, but that is an *analogy*
+offered for intuition, not a claim that `q=1/2` is physically derived.
+It is defensible because: it is a simple round value; it was chosen
+before this K1c variant has ever run, not by searching for a value that
+passes; it does not depend on where a particular `R_edge` outcome would
+land; it scales with degree via `b_i`'s formula rather than being a
+fixed absolute count, so it is not lattice-specific; and it does not
+disable structural plasticity, only bounds its rate. **No sweep over
+`q` is performed for this confirmatory run** — `1/3`, `0.4`, `0.6`,
+`2/3` are explicitly NOT tried and selecting among them post-hoc would
+be exactly the parameter-fishing this project's discipline forbids.
+
+**Constrained selection (not naive greedy-skip stated as if it were the
+formal definition):**
+
+```
+choose S_prune subset of E_eligible, |S_prune| = min(|E_eligible|, n_target)
+subject to: for every node i, |{e in S_prune : i in e}| <= b_i
+maximizing: sum_{e in S_prune} score(e)
+```
+
+where `E_eligible` is exactly the same persistence-qualified edge set
+`§4`'s original rule already computes (persistence tracking itself is
+UNCHANGED by this revision — an edge accumulates persistence under the
+same bottom-`ρ`-quantile membership rule as before, regardless of
+whether it is later capped out of `S_prune`), `n_target =
+max(1, round(ρ·|E|))` (unchanged), and `score(e) = -weight(e)` (lower
+weight = more prune-desirable, same direction as the original rule).
+
+**Implementation is a deterministic greedy heuristic, explicitly NOT
+claimed to be the exact combinatorial optimum** (an exact max-weight
+degree-constrained subgraph solver is not warranted for this
+confirmatory run): sort `E_eligible` by `score` descending (fixed,
+reproducible ordering — ties broken by the SAME seeded tiebreak stream
+`§3` already uses), walk the list once, add an edge to `S_prune` iff
+neither endpoint's already-selected count has reached its `b_i`,
+otherwise skip it (its persistence counter is left untouched, exactly
+as if this window's low-set/persistence recomputation had never
+considered removing it — it remains eligible for the next window
+without needing to re-accumulate `m` windows of persistence). Stop once
+`|S_prune| = n_target` or `E_eligible` is exhausted.
+
+**Regrowth is NOT capped.** `to_regrow` is sized to exactly `|S_prune|`
+(the ACTUAL prune count, which may be smaller than `n_target` when caps
+bind), preserving the edge-budget-conservation invariant exactly as
+before — matched exposure between A3 and A4 remains intact because both
+arms share the identical `S_prune` selection logic (pruning depends only
+on `graph.weights`, never on the regrow scorer, unchanged from the
+original rule) and differ only in which candidate scores the regrow
+step maximizes.
+
+**Same cap for A3 and A4 — non-negotiable for causal validity.** Both
+arms use `q=1/2`, `d_min=1`, the identical constrained-selection
+algorithm, and the identical `ρ`/`m`/event budget. Only the regrow
+SCORER differs. A cap that differed between arms would itself become a
+confound inside `Δ_specific`.
+
+**Three K1c-specific ICE gates (in addition to the original while-active
+disconnection strategy, `§3`, unchanged and still active):**
+
+- **ICE-1, Exposure.** `sum(|S_prune| per window) / sum(n_target per
+  window)`, summed over the run EXCLUDING the first `m-1` windows
+  (mirrors P1's own warmup exemption — no edge can be eligible before
+  window `m-1`, so those windows contributing a raw zero is expected,
+  not a cap effect). **Threshold: ≥ 0.95.** Below this, the cap is
+  starving the intended pruning rate by more than the tolerance allows
+  → **INVALID**, not a K1c FAIL — the cap itself needs reconsideration
+  before any A3-vs-A4 comparison is trustworthy.
+- **ICE-2, Connectivity.** Reuses `§3`'s existing while-active
+  truncation and its own 20% rate threshold, unchanged. Still gates
+  before any `R_edge` is trusted.
+- **ICE-3, Cap activity.** `f_cap = (# candidate removals rejected by
+  the node cap) / (# candidate removals considered)`, summed over the
+  run. Reported, not gated on a threshold — informative either
+  direction: `f_cap ≈ 0` means the cap is nearly inert (the relaxation
+  changed little); `f_cap ≈ 1` means the cap, not the Hebbian ranking,
+  is now the dominant driver of which edges get pruned. Both are valid,
+  reportable outcomes; neither invalidates the run by itself.
+
+**Regrowth concentration is logged, never capped or pre-symmetrized.**
+`max_i n_i^regrow`, its own Gini, and post-window degree evolution are
+recorded every window K1c runs. If A3 turns out to concentrate NEW
+edges around a small set of nodes, that is left to be OBSERVED as a
+possibly-real property of correlation-driven regrowth — imposing a
+matching cap on regrowth before any such behavior has been seen would
+be fixing a problem that has not been demonstrated to exist.
+
+**What K1c PASS/FAIL/INVALID now means, precisely (unchanged K1
+`R_edge` definition, `§7`, just evaluated under this variant's rule):**
+
+- **PASS** — `R_edge(A3) > R_edge(A4)`, ICE-1/ICE-2 both satisfied.
+  `Δ_specific > MCID` remains the substantive claim `§3`/`P3` require
+  for the main campaign; K1c PASS licenses proceeding to M3.
+- **FAIL** — substrate valid (ICE-1/ICE-2 both satisfied) but `A3 ≈ A4`
+  or `A3 ≤ A4` on `R_edge`. This is now a REAL result about
+  state-specific regrowth, not an infrastructure problem — per the
+  user's explicit instruction, a FAIL here closes V4 before M3. No
+  K1d/K1e is proposed; the Minimal Relaxation Rule does not license an
+  unbounded search for a cap that happens to pass.
+- **INVALID** — ICE-1 or ICE-2 fails (exposure starved or >20%
+  disconnection persists even under the cap). Must not be conflated
+  with FAIL, per the same Substrate-Gate discipline `[A57]` already
+  applied once.
 
 ---
 
