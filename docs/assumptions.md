@@ -2962,6 +2962,25 @@ prevent.
 | `[A55]` | mean weight level | refuted by algebra — curvature is scale-invariant |
 | `[A56]` | log-ratio location vs dispersion | dispersion explains RAW `F`, not the EXCESS asymmetry `[A45]` measured |
 
+`[A45]`'s decisive finding itself stands, unaffected: real Hebbian
+correlations produce LESS curvature structural excess than shuffled
+ones. Four cheap scalar-summary explanations were tried and none fully
+account for it. The mechanism remains open; resolving it further would
+require genuine edge-level/conditional analysis (per-edge covariate
+regression of excess against local graph features), which is a new,
+larger investigative program, not another cheap test.
+
+**Evidence:** [VERIFIED-bash] Jensen decomposition, 5 seeds, this
+session's transcript.
+
+**If wrong:** an edge-level regression (excess contribution per edge
+against local features: degree, node strength, distance from the
+`psi0` source) could still find the mechanism cheaply if it turns out to
+be concentrated on a small, identifiable subset of edges rather than
+distributed globally — not tested, and would be a different kind of
+analysis (conditional, not another global scalar) from any of the four
+rounds run here.
+
 ### A57 — V4 M2 (K1 gate) ran at spec scale: 100% while-active ICE (disconnection) rate — grid INVALID per Sec3's own rule, K1 verdict NOT reachable as pre-registered (2026-08-18)
 
 **What ran:** `scripts/run_k1_gate.py` at exactly `docs/v4_spec.md`
@@ -3039,24 +3058,128 @@ relaxation, not a bundle — Minimal Relaxation Rule applies.
 session's transcript; [VERIFIED-pytest] 294/294 tests, ruff clean, mypy
 `--strict` clean on the M2 infrastructure that produced this result.
 
-`[A45]`'s decisive finding itself stands, unaffected: real Hebbian
-correlations produce LESS curvature structural excess than shuffled
-ones. Four cheap scalar-summary explanations were tried and none fully
-account for it. The mechanism remains open; resolving it further would
-require genuine edge-level/conditional analysis (per-edge covariate
-regression of excess against local graph features), which is a new,
-larger investigative program, not another cheap test.
+### A58 — K1 feasibility-only audit (no `R_edge`/G1/curvature): disconnection happens on the FIRST eligible pruning window, at the prune step itself, before regrow runs (2026-08-18)
 
-**Evidence:** [VERIFIED-bash] Jensen decomposition, 5 seeds, this
-session's transcript.
+**User-directed, following `[A57]`'s 100% ICE finding**: before choosing
+a relaxation to re-pre-register, isolate WHERE the disconnection
+mechanism actually acts. `scripts/run_k1_feasibility_audit.py` re-runs
+`[A57]`'s exact 5 seeds/damaged lattices, arm A3 only (pruning is driven
+purely by `graph.weights`, never by the regrow scorer — confirmed by
+`[A57]`'s own data, `trunc(A3)==trunc(A4)==2` on every seed, and by
+reading `RateBasedTopologyRule.update`, `dynamics/topology_v4.py:196`),
+instrumenting every window's prune/regrow step externally (via mask
+set-differences — no changes to production code).
 
-**If wrong:** an edge-level regression (excess contribution per edge
-against local features: degree, node strength, distance from the
-`psi0` source) could still find the mechanism cheaply if it turns out to
-be concentrated on a small, identifiable subset of edges rather than
-distributed globally — not tested, and would be a different kind of
-analysis (conditional, not another global scalar) from any of the four
-rounds run here.
+**Result, identical on all 5 seeds:** windows 0-1 prune nothing
+(`m=3`'s persistence gate correctly blocks premature pruning — rules
+out `H_early` as the mechanism). Window 2 (first eligible window) prunes
+14-15 edges, close to the planned `n_target=15` — **and on every seed,
+`max/node = 6`: one node loses ALL SIX of its edges in the same window,
+`min_degree: 6->0`, disconnecting it before regrowth (which optimizes
+globally on `C_ij`, with no preference for repairing a node it just
+isolated) gets a chance to reconnect it.** `bridges=0` pre-window on
+every seed (a periodic lattice has none by construction, so this isn't
+"targeting topologically critical edges" in that literal sense).
+Disconnection is `intermediate` (present immediately after the prune
+sub-step) on every seed, never only `final`.
+
+**Atomic-operation clarification (empirically confirmed, not just
+inferred), addressing the user's specific red-team question:**
+`RateBasedTopologyRule.update` (`dynamics/topology_v4.py:243-253`)
+builds `to_prune` and `to_regrow` into a single copied `mask`/`weights`
+pair and returns ONE `WeightedGraph` — there is no externally-visible
+intermediate state. `v4_topology_pilot.py`'s connectivity check
+(`_is_connected`) runs on this fully-atomic result, confirmed by this
+audit's own externally-reconstructed intermediate-vs-final masks
+(`conn_mid`/`conn_fin` columns) showing the loss is already present at
+the reconstructed intermediate point and the atomic operation's return
+value reflects that faithfully — never a case of "final looks fine but
+an unobserved mid-state was briefly broken." Recorded as an explicit
+`docs/mathematical_contract.md` Sec3.3 clause (dated addendum) rather
+than left implicit, per the user's request.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1_feasibility_audit.py` full
+stdout, this session's transcript.
+
+### A59 — K1 concentration confirmed GENUINE via permutation-equivariance red-team test, not a labeling/tie-break artifact; `[A58]`'s H_rho framing corrected (2026-08-18)
+
+**User-directed follow-up to `[A58]`**, two parts, both diagnostic-only
+(no `R_edge`/G1/curvature/scientific outcome):
+
+**Part 1 — per-node concentration distribution** at window 2, all 5
+seeds (`scripts/run_k1_concentration_audit.py`): severe concentration
+confirmed quantitatively, not just via the single `max/node=6` scalar
+`[A58]` reported. Gini = 0.98-0.98, HHI = 0.11-0.12, top-1 node carries
+20-21% of all prune-incidences, top-3 nodes carry 46-50%, only 13-15 of
+512 nodes are touched at all, and **on 3 of 5 seeds TWO distinct nodes
+each lose all 6 edges in the same window** (histogram bin 6 = 2), not
+merely one — concentration is worse than `[A58]`'s single-node framing
+suggested. **Weights are NOT tied**: 1536/1536 distinct weight values
+among existing edges pre-prune on every seed — the suspected "stable-
+sort tie-break by node-index order" artifact mechanism is empirically
+RULED OUT before the equivariance test even ran. The single most-
+affected node (id 292 on 4/5 seeds, id 153 on the 5th — the SAME
+physical node recurring across independently-damaged lattices is itself
+informative) has near-zero density (0.0005-0.012) and near-zero mean
+|correlation| over its own edges (0.0002-0.001) — consistent with a
+node far enough from the localized source that `psi` has barely reached
+it after 2 short windows, so its Hebbian update stays close to its
+initial value while other, closer edges move more (in either
+direction), pushing this node's whole star to the bottom of the ranking
+together.
+
+**Part 2 — permutation-equivariance test (the decisive check, seed 0):**
+relabeled every node via a random permutation (`G -> PGP^T`, `psi ->
+P*psi`), reran the IDENTICAL window-0..2 sequence with the SAME seeds,
+and compared the pruned-edge SET (not just the max node) mapped back
+through the permutation against the original run's pruned-edge set.
+**Exact match: all 15/15 pruned edges, mapped back, are identical to
+the original run's 15 pruned edges.** `VERDICT: GENUINE` per the user's
+own pre-registered kill criterion — relabeling did not change WHICH
+PHYSICAL location gets concentrated-pruned, only its label. This is not
+a tie-break/ordering artifact; it is a real property of the current
+rule (weight-sorted pruning + globally-optimized regrow, with no
+node-level constraint), reproducible under label-invariance as a
+genuine mechanism should be.
+
+**Correction to `[A58]`'s framing (user-flagged epistemic point,
+recorded rather than silently absorbed):** `[A58]` should NOT be read
+as "`H_rho` excluded." The correct statement is **"pure batch-size
+explanation weakened, not excluded — ρ and concentration interact."**
+At `ρ=0.01` (n_target=15), there was enough budget in one window to
+remove all 6 of the concentrated node's edges; at a much smaller `ρ`,
+this specific full-isolation event would be physically impossible in
+ONE window even if the underlying ranking stays exactly as concentrated
+— but repeated across several consecutive windows, the same
+concentration mechanism could still eventually isolate the same node.
+Whether it does is untested here; `ρ` remains part of the causal chain,
+just not the ROOT mechanism (concentration is).
+
+**Causal picture, now empirically supported end-to-end except the first
+arrow (Hebbian dynamics -> correlated group of low incident weights),
+which is consistent with but not separately re-derived from first
+principles here:** Hebbian dynamics on an under-propagated node -->
+correlated depression of its whole incident-edge group --> global
+Top-K prune selects that whole "star" together --> `degree: 6->0` -->
+regrow has no obligation to repair that specific node --> disconnect.
+
+**What this unblocks, NOT yet taken here — still requires the user's
+explicit sign-off on the specific relaxation before implementation:**
+per the user's own pre-stated conditional ("если подтвердится... я бы
+без дальнейших exploratory тестов заморозил V4-K1c"), a node-local
+bounded-incidence relaxation now has genuine mechanistic motivation
+rather than being a post-hoc rescue. The user's own preferred framing:
+`n_i^prune <= b_i = max(1, floor(q * d_i))` for every node `i`, with `q`
+calibrated via an independent exposure/survival criterion — NOT by
+searching for whatever value makes K1 pass (explicit anti-fishing
+requirement, `[A9]`'s "report the landscape, never chase a winning
+statistic" discipline extended here). No specific `q` is chosen or
+pre-registered in this entry.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1_concentration_audit.py`
+full stdout (histogram/Gini/HHI table for all 5 seeds, and the
+permutation-equivariance exact-match comparison), this session's
+transcript.
 
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 

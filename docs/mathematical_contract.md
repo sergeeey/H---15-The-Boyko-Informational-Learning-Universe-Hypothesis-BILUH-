@@ -368,6 +368,26 @@ weight adaptation, preserving the *spirit* of the original invariant
 edge`) is deliberately relaxed for this one, explicitly-scoped class of
 rules.
 
+**Addendum 4 (2026-08-18) — `StatefulTopologyRule.update` is atomic;
+connectivity is checked only after the full prune+regrow operation,
+never at an intermediate prune-only state.** Raised as a specific
+red-team question during `[A57]`/`[A58]` (`docs/assumptions.md`): could
+the while-active ICE truncation (`docs/v4_spec.md` §3) be reacting to a
+transient, mid-operation disconnection that a completed prune+regrow
+step would have healed? Answer, empirically confirmed (`[A58]`, not
+merely asserted): no. `RateBasedTopologyRule.update`
+(`dynamics/topology_v4.py`) computes `to_prune` and `to_regrow` and
+writes both into a single copied `mask`/`weights` pair before returning
+ONE `WeightedGraph` — there is no externally-observable intermediate
+state, and `run_adaptive_dynamics_v4`'s connectivity check
+(`experiment/v4_topology_pilot.py`'s `_is_connected`) runs strictly on
+that atomic result. This is now a binding contract clause for any
+future `StatefulTopologyRule` implementation, not just the current one:
+a rule that separated pruning and regrowth into two externally-visible
+steps (e.g. returning an intermediate graph between them) would need
+its own explicit ICE-checking discipline for that intermediate state,
+since the while-active strategy as specified assumes atomicity.
+
 ---
 
 ## 4. Required Experimental Arms

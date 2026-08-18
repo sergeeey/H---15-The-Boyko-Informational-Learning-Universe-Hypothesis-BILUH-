@@ -1,14 +1,53 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V4 M2 ran: grid INVALID, 100% ICE — awaiting user decision on re-pre-registering rho)
+## SESSION HANDOFF (updated 2026-08-18 — K1 concentration mechanism identified + CONFIRMED GENUINE (permutation-equivariant); awaiting user sign-off on `q` for V4-K1c)
 
-**Repo state:** branch `feat/v4-m2-k1-gate` (commits `0e05f8e` + fix
-`75cc3b5`), about to be merged to `main` (`git merge --ff-only`).
-Reviewer pass complete: verdict NEEDS_WORK/P2, no HIGH findings, one
-MEDIUM (docstring overclaimed A3/A4 seed-pairing scope — independently
-re-verified via grep before fixing, per `audit-verification-gate.md`)
-+ 3 LOW nits, all addressed in `75cc3b5`. 295/295 tests, ruff clean,
-mypy `--strict` clean on the feature branch.
+**Repo state:** on `main`, HEAD `0505cfc`, working tree has two new
+uncommitted diagnostic scripts (`scripts/run_k1_feasibility_audit.py`,
+`scripts/run_k1_concentration_audit.py`) plus `[A58]`/`[A59]` in
+`docs/assumptions.md` and Addendum 4 in `docs/mathematical_contract.md`
+— about to be committed. 295/295 tests, ruff clean, mypy `--strict`
+clean.
+
+**Two user-directed diagnostic-only audits (no `R_edge`/G1/curvature)
+ran after `[A57]`'s 100%-ICE finding, in sequence:**
+
+1. **`[A58]` feasibility audit [VERIFIED-bash]**: disconnection happens on window 2
+   (first eligible), at the PRUNE sub-step, on every seed — one node
+   loses all 6 of its edges in the same window (`max/node=6`),
+   regrowth never repairs it (global Top-K has no obligation to). Also
+   empirically confirmed (not just claimed) that `RateBasedTopology
+   Rule.update` is atomic — connectivity is checked only after the
+   full prune+regrow, never at an intermediate state — now a binding
+   clause, `mathematical_contract.md` Addendum 4.
+2. **`[A59]` concentration + permutation-equivariance red-team test**
+   (user's own kill criterion): per-node distribution is severely
+   concentrated (Gini~0.98, top-1 node 20-21% of all prunes, weights
+   are NOT tied — 1536/1536 distinct, ruling out a tie-break-by-index
+   artifact before the equivariance test even ran). **The decisive
+   check: relabeled all 512 nodes via a random permutation, reran the
+   identical windows with the SAME seeds — the pruned edge SET, mapped
+   back through the permutation, matched the original run's EXACTLY
+   (15/15).** Verdict: GENUINE, not an implementation artifact.
+   Corrected `[A58]`'s framing per the user's own epistemic note: `H_ρ`
+   is "weakened, not excluded" — ρ and concentration interact (ρ=0.01
+   supplied enough budget in one window; a smaller ρ makes single-
+   window full isolation impossible but may not prevent it accumulating
+   over several windows on the same physically-fragile node).
+
+**Causal picture now empirically supported end-to-end:** Hebbian
+dynamics on an under-propagated node -> correlated depression of its
+WHOLE incident-edge group -> global Top-K prune selects that whole star
+together -> degree 6->0 -> regrow has no obligation to repair that
+specific node -> disconnect.
+
+**What this unblocks, NOT yet taken** — per the user's own pre-stated
+conditional ("если подтвердится... заморозил V4-K1c"), this diagnosis
+now gives genuine mechanistic motivation for a node-local bounded-
+incidence relaxation: `n_i^prune <= b_i = max(1, floor(q*d_i))`. **Still
+needs the user's sign-off on the specific `q`** — calibrated via an
+independent exposure/survival criterion, explicitly NOT by searching
+for whatever passes K1 (anti-fishing). No `q` has been chosen yet.
 
 **M2 ran at spec-frozen scale and found the grid INVALID, not a K1
 verdict.** `scripts/run_k1_gate.py` (N=512, rho=0.01, m=3, damage=10%,
