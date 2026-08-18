@@ -370,13 +370,23 @@ as V4 §10:
 
 ## 11. Cost estimate
 
-Based on this session's V4 timings (K1c/K1d's 5-seed campaigns at
-N=512 completed within single-digit minutes each): `K1'` at the same
-scale (N=512, 5 seeds, a comparable swap budget to V4's `ρ·|E|·
-dtau_steps` exposure target) is expected to be similarly cheap —
-comparable to or cheaper than K1c/K1d, since each swap slot is a
-single argmax over an enumerated candidate set (no persistence
-tracking, no cap bookkeeping, no capacity audit needed at this stage).
+**Original estimate (kept for history, found WRONG during M1, not
+silently corrected):** based on V4's timings, `K1'` at N=512 with a
+swap budget comparable to V4's `ρ·|E|·dtau_steps` exposure target was
+expected to be cheap. This assumed candidate SELECTION cost scales like
+V4's rate rule (bounded by `n_target`), not realizing swap candidate
+GENERATION itself is `O(|E|^2)` — a fundamentally different scaling
+than V4's `O(n_target)` selection.
+
+**Corrected, per `docs/assumptions.md` `[A65]` (measured, not
+estimated):** at N=512, `generate_swap_candidates` enumerates ~2.3
+million legal candidates per call; even fully vectorized, each swap
+slot costs ~1.2-1.3s (dominated by `np.lexsort` over that array). The
+swap budget is calibrated DOWN accordingly (§8 M2's own parameters:
+`n_swaps_per_window=3`, `dtau_steps=10`, ≈300 total swap-slot
+operations across the 5-seed/2-arm campaign, ≈6 minutes estimated) —
+a compute-driven adjustment made from measured cost BEFORE any `K1'`
+run, not a response to seeing `R_edge`.
 
 ---
 

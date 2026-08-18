@@ -3477,6 +3477,58 @@ transcript; recorded permanently per
 `null_results/20260818-v4-prune-regrow-feasibility.md` +
 `null_results/INDEX.md`.
 
+### A65 — V5 M1: swap-candidate enumeration is O(|E|^2), found to be a real compute bottleneck at N=512 scale; swap budget calibrated down to keep total campaign runtime comparable to V4's own K1 cost estimate — a compute decision, not a scientific one, made before any run (2026-08-18)
+
+**Found while implementing `dynamics/topology_v5.py`'s M1, not
+assumed:** `generate_swap_candidates` enumerates all node-disjoint
+existing-edge pairs — at N=512 (T7/`[A32]` lattice, 1536 edges), this
+is `~2.3 million` legal candidates per call. A first, correctness-
+verified-first implementation (plain Python nested loop, one
+`SwapCandidate` object per candidate) took **6.3s to enumerate alone**
+per call, `.venv/Scripts/python.exe -c "..."` measured directly, plus
+another ~2.8s to construct that many dataclass instances. At a swap
+budget comparable to V4's own `ρ·|E|·dtau_steps` exposure target
+(~15 swaps/window × 50 windows), this would require ~7500 calls across
+a 5-seed/2-arm campaign — multiple HOURS, infeasible.
+
+**Fixed by vectorizing enumeration+legality-filtering in NumPy**
+(0.14s measured for the same graph, ~44x faster) and changing
+`generate_swap_candidates`'s return type from `list[SwapCandidate]` to
+a pair of NumPy arrays, with `SwapCandidate` objects constructed only
+for the handful of top-ranked candidates actually walked during the
+connectivity-legality search (typically one, per swap slot) — not the
+full candidate pool. This is a genuine API redesign, done within the
+same TDD cycle before M1 was committed (tests rewritten to the array
+contract, all still hand-derived/prototype-verified, not weakened).
+
+**Residual cost after vectorization, measured via `cProfile`, not
+guessed:** ~1.2-1.3s per swap slot at N=512 remains, dominated by
+`np.lexsort` and array construction over the ~2.3M-candidate array
+itself (irreducible without abandoning exhaustive enumeration, which
+would compromise the "deterministic argmax over ALL legal candidates"
+property `docs/v5_spec.md` §4 specifies). At the original ~750-events-
+per-run swap budget, this is still ~15 min/run × 10 runs ≈ 2.5 hours —
+too slow for a confirmatory gate meant to be cheap (`docs/v5_spec.md`
+§7's own framing, "runs first, cheap").
+
+**Resolution: the swap budget for `K1'` (§8 M2) is calibrated DOWN to
+keep total campaign runtime in the same ballpark as V4's own K1 cost
+estimate (`docs/v4_spec.md` §11, "~10 min compute"), a COMPUTE decision
+made from the measured per-swap cost, before any `R_edge` result is
+seen — not a scientific parameter chosen to influence the outcome.**
+`n_swaps_per_window=3`, `dtau_steps=10` (30 swap-slot operations per
+run, 300 total across 5 seeds × 2 arms, ≈6 minutes estimated). This is
+smaller than V4's original exposure-matched target, and that trade-off
+is stated here explicitly rather than left implicit — a future,
+better-optimized implementation (e.g. incremental candidate-set
+maintenance instead of full regeneration per swap) could restore a
+larger budget without changing anything about the causal comparison
+itself, since `A3` and `A4` always share the identical budget.
+
+**Evidence:** [VERIFIED-bash] all timings above measured directly,
+this session's transcript; [VERIFIED-pytest] 11/11 `check_topology_v5.py`
+tests pass against the array-based API.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
