@@ -13,6 +13,7 @@ from boyko_benchmark.dynamics.adaptive import StateTrajectory
 from boyko_benchmark.dynamics.topology_v4 import (
     CorrelationScorer,
     DistanceStratifiedShuffleScorer,
+    IdentityStatefulTopology,
     RateBasedTopologyRule,
     UniformRandomScorer,
     graph_distance_matrix,
@@ -40,6 +41,26 @@ def _fake_trajectory(n_nodes: int, seed: int) -> StateTrajectory:
     states = rng.normal(size=(3, n_nodes)) + 1j * rng.normal(size=(3, n_nodes))
     states = states / np.linalg.norm(states, axis=1, keepdims=True)
     return StateTrajectory(states=states.astype(np.complex128))
+
+
+def test_identity_stateful_topology_never_changes_the_graph() -> None:
+    """Signal-diagnostic infra (docs/v5_spec.md Sec14): a `StatefulTopo
+    logyRule`-protocol-compatible identity rule -- `dynamics/topology.py`'s
+    own `NoTopologyUpdate` takes `(graph, dtau)`, not `(graph, trajectory,
+    dtau)`, so it cannot be passed to `run_adaptive_dynamics_v4`."""
+    mask = np.zeros((3, 3), dtype=bool)
+    weights = np.zeros((3, 3))
+    for i, j in [(0, 1), (1, 2)]:
+        mask[i, j] = mask[j, i] = True
+        weights[i, j] = weights[j, i] = 1.0
+    graph = WeightedGraph(mask=mask, weights=weights)
+    trajectory = StateTrajectory(states=np.array([[1 + 0j, 0 + 1j, -1 + 0j]]))
+    rule = IdentityStatefulTopology()
+
+    result = rule.update(graph, trajectory, dtau=1.0)
+
+    np.testing.assert_array_equal(result.mask, graph.mask)
+    np.testing.assert_array_equal(result.weights, graph.weights)
 
 
 def test_graph_distance_matrix_matches_hand_derived_ring_distances() -> None:

@@ -3732,6 +3732,94 @@ session's transcript; [VERIFIED-pytest] 351/351 tests, ruff clean,
 mypy `--strict` clean on the infrastructure that produced this result
 (reviewer LGTM before the run, `.claude/memory/verdict_log.jsonl`).
 
+### A69 — `C_ij` Recall@D/AUPRC Signal Diagnostic ran: essentially at chance across all checkpoints — H1 (signal problem) favored over H2 (operator problem) (2026-08-18)
+
+**Ran exactly as pre-registered** (`docs/v5_spec.md` Sec14):
+`scripts/run_signal_diagnostic.py`, N=512, 10% damage, SAME 10 damaged
+lattices as `K1'-Exposure` (`master_seed=20260818`), topology held
+FROZEN (`IdentityStatefulTopology`) — no swap operator ran at all.
+Checkpoints at window counts `{10,25,49}`, matching `K1'-Exposure`
+exactly for direct comparability. `[VERIFIED-bash]`, full stdout in
+`.claude/scratch/signal_diagnostic_run.log`.
+
+**Result (corrected 2026-08-18, same day — reviewer-caught error in the
+FIRST run's `AUPRC` baseline, not silently fixed, see addendum below):**
+
+| window | mean `Recall@D` | Recall@D baseline (exact, `D/M`) | Recall@D ratio | mean `AUPRC` | `AUPRC` baseline (exact, closed-form) | `AUPRC` ratio |
+|---|---|---|---|---|---|---|
+| 10 | 0.0007 | 0.0011 | 0.59x | 0.0013 | 0.0012 | 1.03x |
+| 25 | 0.0007 | 0.0011 | 0.59x | 0.0011 | 0.0012 | 0.93x |
+| 49 (final) | 0.0014 | 0.0011 | **1.19x** | 0.0012 | 0.0012 | **0.98x** |
+
+**At the final checkpoint, `Recall@D` is 1.19x chance and `AUPRC` is
+0.98x its OWN (corrected, exact) chance baseline — i.e. statistically
+indistinguishable from chance, if anything fractionally BELOW it.**
+Per `docs/v5_spec.md` Sec14's own pre-registered two-bucket
+interpretation (ratio `>>1`, roughly `>10x` ⇒ H2 favored; ratio near
+chance, roughly `2-3x` or less ⇒ H1 favored), this unambiguously lands
+in the **H1 (signal problem) bucket** — nowhere close to the H2
+threshold, and even below the loose "near chance" bound. The correction
+below made the H1 reading MORE decisive, not less.
+
+**Correction addendum (same day, reviewer-caught, `docs/v5_spec.md`
+Sec14 / `observables/signal_diagnostic.py`):** the first run of this
+diagnostic incorrectly assumed `AUPRC`'s chance expectation equals
+`Recall@D`'s (`D/M`) — an independent reviewer pass caught that this is
+FALSE (only `Recall@D`'s chance expectation has that simple closed
+form; `AUPRC`'s exact chance expectation is `H_m/m +
+((d-1)/(m(m-1)))(m-H_m)`, `H_m` = the `m`-th harmonic number).
+Verified by brute-force enumeration on small `(d,m)` cases (exact match
+to floating-point precision) before being coded
+(`_expected_average_precision`, `observables/signal_diagnostic.py`).
+The FIRST run's reported baseline (`0.0011`, i.e. `D/M`) was ~8.5% off
+the true value (`0.0012`) at this scale — the campaign was RE-RUN (not
+hand-patched) with the fix in place; the table above is the corrected,
+final result. The correction does not reverse the H1 verdict — the
+`AUPRC` ratio moves from an already-uninformative `~1.09x` (comparing
+against the wrong baseline) to `0.98x` (comparing against the right
+one), which if anything strengthens H1.
+
+**Per-seed detail:** only 3/10 seeds (0, 2, 5) EVER produced a single
+top-`D` hit at any checkpoint across the entire run — and each such hit
+was exactly one edge (`1/D≈0.0067`), never more. `AUPRC` across the
+FULL ranking (not just top-`D`) also never meaningfully separates from
+chance for any seed at any checkpoint (range `0.0010-0.0016` against a
+`~0.0011-0.0012` baseline) — this is not merely a top-`D` cutoff
+artifact; the correlation field shows no detectable discriminative
+power anywhere in the ranking, not just near the top.
+
+**Interpretation:** `[A68]`'s FAIL is most plausibly an H1 (signal
+problem), not an H2 (operator problem). The swap operator's `K_skip=0%`
+feasibility (confirmed twice) means the swap MECHANISM is not at
+fault — but `C_ij`, at this `N`/damage level/adaptation rate
+(`eta=0.1`), does not itself encode which specific edges were removed
+strongly enough to be exploitable by ANY selection rule operating on it,
+not just `CorrelationSwapScorer`'s particular argmax. This reframes
+what a future attempt should target: NOT a better/different structural
+operator (`[A68]`'s Relaxation Map's "different scorer" candidate is
+now de-prioritized by this finding), but either a different `N`/damage
+regime, a different adaptation dynamic that might concentrate signal
+more sharply, or accepting this specific mechanism (Hebbian correlation
++ swap-based restoration) does not recover exact damaged-lattice
+identity at this scale.
+
+**What this does NOT mean:** does not retroactively change `[A68]`'s
+FAIL verdict (which stands on its own evidence, independent of WHY);
+does not test any other `N`, damage fraction, or adaptation rate — only
+one configuration; does not rule out that `C_ij` carries OTHER useful
+information (e.g. about aggregate/coarse-grained structure) even if it
+fails at exact single-edge discrimination.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_signal_diagnostic.py` full
+stdout (corrected re-run), `.claude/scratch/signal_diagnostic_run.log`,
+this session's transcript; [VERIFIED-pytest] 359/359 tests (2 new:
+`_expected_average_precision`'s formula independently confirmed against
+brute-force enumeration for 5 small `(d,m)` cases, plus a hardening
+guard + a tie-break regression test), ruff clean, mypy `--strict`
+clean. Reviewer: `NEEDS_WORK`→addressed (all 3 P2 findings fixed:
+`AUPRC` baseline formula, `m<=1` guard, tie-break test coverage), no
+P0/P1 at any point.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

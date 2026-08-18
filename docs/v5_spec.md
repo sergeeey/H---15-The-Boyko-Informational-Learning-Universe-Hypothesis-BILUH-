@@ -11,6 +11,16 @@ preserving connected rewiring avoids `V4`'s collapse) stands
 independently of M3's negative result. See `[A68]`'s "What is NOT
 killed" section before deciding what, if anything, comes next.**
 
+**§14 (`C_ij` Recall@D/AUPRC Signal Diagnostic) RAN 2026-08-18:
+essentially at chance (final-checkpoint `Recall@D` ratio `1.19x`,
+`AUPRC` ratio `0.98x` its own exact chance baseline — corrected
+same-day after a reviewer-caught baseline-formula error, `[A69]`) —
+H1 (signal problem) favored over H2 (operator problem). The swap
+operator's own feasibility is not implicated; `C_ij` itself does not
+appear to encode
+which specific edges were removed strongly enough for ANY selection
+rule to exploit, at this `N`/damage level/adaptation rate.**
+
 **Status (as originally written, kept for history): PROPOSED, 2026-08-18.
 Not approved. Nothing implemented, nothing run.**
 
@@ -586,6 +596,107 @@ here would validate the SWAP operation with a properly-powered budget,
 not resurrect V4's independent-deletion mechanism, and would not by
 itself be evidence for or against `[A45]`'s still-open Phase 11-12
 anomaly.
+
+---
+
+## 14. `C_ij` Recall@D Signal Diagnostic — pre-registered before any of it runs (Revision 2, after `[A68]`'s FAIL)
+
+**RAN 2026-08-18: `[A69]`.** Final-checkpoint `Recall@D` ratio `1.19x`
+chance, `AUPRC` ratio `0.98x` its own exact chance baseline — the H1
+(signal problem) bucket below, not H2. See `[A69]` for the full
+per-checkpoint table, per-seed detail, and a same-day reviewer-caught
+correction to the `AUPRC` baseline formula (§'s "computed exactly, not
+assumed" claim below now holds for BOTH metrics, not just `Recall@D` —
+it did not, in the first run).
+
+**Motivation.** `[A68]` killed the state-specific SWAP advantage at
+`B=D`, but left an important ambiguity unresolved (the user's own H1/H2
+split): does `C_ij` itself fail to carry information about which edges
+were removed (**H1 — signal problem**), or does it carry the signal but
+the swap operator's combinatorial constraints fail to exploit it
+(**H2 — operator problem**)? This diagnostic answers that directly,
+without running the swap mechanism at all — a mechanistic probe, not
+another campaign, and by construction far cheaper (no `O(|E|^2)`
+candidate enumeration, `[A65]`'s bottleneck, is involved at all).
+
+**L0 gate (EstimandOps — mandatory first step):** **Predictive**, not
+causal. The question is "does the existing `C_ij` field, at a fixed
+point in the dynamics, discriminate genuinely-damaged edges among
+non-edges better than chance?" — a ranking/discrimination question
+about an already-computed quantity, no intervention or counterfactual
+is proposed. No DAG, no identifiability argument, no causal layer
+required.
+
+**Population:** the SAME T7/`[A32]` N=512 lattice, 10% degree-preserving
+damage, SAME 10 seeds (`master_seed=20260818`, identical damaged
+lattices to `K1'`/`K1'-Exposure` — direct comparability, no new draws).
+
+**Procedure per seed:** run fast dynamics (`ClosedUnitaryBackend`) +
+`HebbianAdaptation` (`eta=0.1`, `dt=0.05`, `k=50`, matching `K1'-
+Exposure` exactly) on the DAMAGED graph, topology held FROZEN via
+`IdentityStatefulTopology` (§ above — no swaps, no pruning, nothing
+structural happens at all). Reuses `run_adaptive_dynamics_v4`
+unchanged, with the identity rule in place of any real topology rule
+and the same `on_window` checkpoint hook used for `K1'-Exposure`.
+
+**Checkpoints:** SAME window counts as `K1'-Exposure`, `{10,25,49}` —
+direct comparability with the `ΔR(B)` curve already recorded.
+
+**Endpoint, at each checkpoint:** compute `C_ij = time_averaged_
+correlation(trajectory)` from that window's own trajectory (the exact
+quantity `CorrelationSwapScorer` would have used). Candidate universe =
+every currently non-adjacent pair `(i,j)`, `i<j` (topology is frozen,
+so this universe is IDENTICAL across all three checkpoints for a given
+seed — only the `C_ij` VALUES change). Positive set = `damaged_out`
+(the genuinely-removed lattice edges, as unordered pairs). Rank all
+candidates by `C_ij` descending; report:
+
+- **`Recall@D`** (primary, per the user's own preference for
+  interpretability under extreme imbalance): fraction of the top-`D`
+  ranked candidates (`D=len(damaged_out)` for that seed) that are
+  actually in `damaged_out`.
+- **`AUPRC`** (secondary): area under the precision-recall curve over
+  the full ranking.
+- **Chance baseline for both, computed exactly — NOT the same formula
+  for each, corrected 2026-08-18 after a reviewer caught this document
+  originally assuming otherwise:** `Recall@D` under a uniformly random
+  ranking has expectation `D / M_candidates` (hypergeometric mean,
+  exact). `AUPRC`'s chance expectation is a DIFFERENT closed form —
+  `H_m/m + ((d-1)/(m(m-1)))(m-H_m)`, `H_m` = the `m`-th harmonic
+  number (`_expected_average_precision`, `observables/signal_
+  diagnostic.py`, verified against brute-force enumeration on small
+  cases before being trusted). The two happen to be numerically close
+  at this project's scale (`D≈148`, `M≈129,000` ⇒ both ≈`0.11-0.12%`)
+  but are not interchangeable, and diverge sharply as `D` shrinks.
+  Reported
+  per-seed, not assumed constant, since `D` varies slightly by seed
+  (`[A68]`: 142–150).
+
+**No MCID, no PASS/FAIL gate — this is diagnostic, not confirmatory.**
+The question this answers is interpretive (which hypothesis, H1 or H2,
+does the next design decision rest on), not a claim requiring a
+frozen-in-advance accept/reject threshold. Reported as a ratio to
+chance (`Recall@D / baseline`), with the two-bucket interpretation
+below stated before any run:
+
+- **`Recall@D` and `AUPRC` orders of magnitude above chance** (e.g.
+  `>10x`): `C_ij` DOES carry genuine information about which edges are
+  missing — **H2 (operator problem)** is favored. A future attempt
+  should focus on a better structural operator or endpoint, not on
+  the correlation signal itself.
+- **`Recall@D` and `AUPRC` near chance** (within roughly `2-3x`):
+  **H1 (signal problem)** is favored — the correlation field itself
+  does not encode which specific edges were removed, at this `N`/
+  damage level/adaptation rate. Improving the swap operator further,
+  without changing what drives the score, would not be expected to
+  help.
+
+**What this does NOT mean, regardless of outcome:** does not retroactively
+validate or invalidate `[A68]`'s FAIL verdict (that stands on its own
+evidence); does not test any DIFFERENT `N`, damage fraction, or
+adaptation rate; a signal-favors-H2 result does not by itself specify
+what the better operator or endpoint should be — only that it is worth
+looking for one.
 
 ### 13.6 What is already established independent of this follow-up
 

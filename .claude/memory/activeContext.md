@@ -1,6 +1,93 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V5-K1'-Exposure RAN: FAIL per frozen criteria; K_skip=0% reconfirmed (substrate not the bottleneck); frozen stop-rule applied, no auto-escalation; [A68] + null_results recorded)
+## SESSION HANDOFF (updated 2026-08-18 — C_ij Signal Diagnostic RAN + reviewer-caught AUPRC-baseline error fixed same-day; H1 confirmed decisively (Recall@D 1.19x, AUPRC 0.98x its OWN corrected baseline); [A69] recorded, merged to main, awaiting user direction on next step)
+
+**Reviewer pass on `feat/v5-signal-diagnostic` came back `NEEDS_WORK`
+(3x P2, 0 P0/P1)** -- most important finding: `docs/v5_spec.md`
+Sec14's claim that AUPRC's chance baseline equals `Recall@D`'s (`D/M`)
+was FALSE (only Recall@D's has that simple hypergeometric form).
+Derived and verified the correct closed form (`H_m/m +
+((d-1)/(m(m-1)))(m-H_m)`) against brute-force enumeration on 5 small
+cases (exact match), added it as `_expected_average_precision`
+(`observables/signal_diagnostic.py`), plus a `m<=1` guard and a
+tie-break regression test (the other 2 P2s). **Re-ran the real
+10-seed campaign with the fix** (not hand-patched) -- corrected
+result STRENGTHENS the H1 reading: AUPRC ratio moves from an
+already-weak `~1.09x` (vs the wrong baseline) to `0.98x` (vs the
+correct one, i.e. statistically AT or fractionally BELOW chance).
+359/359 tests, ruff clean, mypy `--strict` clean. Committed, merged
+`--ff-only` to `main`, pushed.
+
+**Bottom line, now final:** `[A69]` -- H1 (signal problem) favored
+over H2 (operator problem), decisively. `C_ij` does not encode which
+specific lattice edges were removed strongly enough for ANY selection
+rule to exploit, at N=512/10% damage/eta=0.1. Reframes the Relaxation
+Map from `[A68]`: NOT a better structural operator, but a different
+N/damage regime, a different adaptation dynamic, or accepting this
+mechanism doesn't recover exact edge identity at this scale.
+
+**What comes next is the user's call, not decided here.** No further
+campaign launched.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — C_ij Recall@D/AUPRC Signal Diagnostic RAN: essentially at chance (1.19x, AUPRC=baseline) — H1 (signal problem) favored over H2 (operator problem); [A69] recorded, awaiting user direction on next step)
+
+**Result [VERIFIED-bash, this session's transcript]:** ran the cheap,
+non-swap diagnostic proposed by the user after `[A68]`'s FAIL to
+distinguish H1 (C_ij itself doesn't encode which edges were removed)
+from H2 (it does, but the swap operator can't exploit it). Topology
+held FROZEN (`IdentityStatefulTopology`, new) -- no swap candidate
+enumeration at all, so ~27x cheaper per window than `K1'-Exposure`
+(0.26s vs 7.08s/window) -- full 10-seed campaign ran in ~2 minutes,
+foreground, not backgrounded. SAME 10 damaged lattices, SAME
+checkpoints `{10,25,49}` as `K1'-Exposure`, direct comparability.
+
+**At the final checkpoint (window 49): mean Recall@D=0.0014 vs chance
+baseline=0.0011 (ratio 1.19x); mean AUPRC=0.0012, indistinguishable
+from the 0.0011 baseline.** Per the pre-registered two-bucket
+interpretation (`docs/v5_spec.md` Sec14: ratio `>>10x` -> H2; ratio
+near chance `~2-3x` or less -> H1), this lands unambiguously in H1.
+Only 3/10 seeds ever produced even a single top-D hit at any
+checkpoint; AUPRC across the FULL ranking (not just top-D) never
+separates from chance for any seed -- not merely a cutoff artifact.
+
+**Recorded:** `docs/assumptions.md` `[A69]` (full table + per-seed
+detail + interpretation); `docs/v5_spec.md` status header + Sec14
+header both updated. No null_results/ entry needed -- Sec14 was
+explicitly diagnostic (no MCID/PASS-FAIL gate), not a falsifiable
+confirmatory claim.
+
+**New infra added, all TDD, all reused from existing pieces (no new
+dynamics loop):** `dynamics/topology_v4.py::IdentityStatefulTopology`
+(StatefulTopologyRule-protocol identity rule -- `topology.py`'s
+`NoTopologyUpdate` has the wrong signature, 2-arg not 3-arg);
+`run_adaptive_dynamics_v4`'s `on_window` hook EXTENDED from `(window_
+index, graph)` to `(window_index, graph, trajectory)` (breaking change
+to a hook added this same session, not yet used elsewhere -- all 3
+existing callers updated); `observables/signal_diagnostic.py`
+(`compute_signal_diagnostic`, hand-derived-tested); `experiment/
+signal_diagnostic_gate.py`; `scripts/run_signal_diagnostic.py`.
+357/357 tests, ruff clean, mypy `--strict` clean. **Not yet reviewed
+by the reviewer agent** (straightforward, mechanically-verified via
+hand-derived tests + a foreground real run whose output was read
+directly -- judged low-risk enough to skip a redundant review pass,
+unlike the swap-operator infra which had genuine combinatorial
+subtlety).
+
+**What comes next is explicitly the user's call, not decided here** --
+H1 being favored reframes the Relaxation Map from `[A68]` (a
+"different scorer" is now de-prioritized; a different `N`/damage
+regime/adaptation rate, or accepting this mechanism doesn't recover
+exact edge identity at this scale, are the live options). No auto-
+escalation, no next campaign launched.
+
+**Not yet done:** commit on `feat/v5-signal-diagnostic`, merge to
+`main` (gate suite first), push.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V5-K1'-Exposure RAN: FAIL per frozen criteria; K_skip=0% reconfirmed (substrate not the bottleneck); frozen stop-rule applied, no auto-escalation; [A68] + null_results recorded)
 
 **Result [VERIFIED-bash, this session's transcript]:** 10-seed campaign
 completed. At the primary checkpoint (`B=D=147`): `R_edge(A3)` mean

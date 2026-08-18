@@ -146,6 +146,22 @@ class StatefulTopologyRule(Protocol):
     ) -> WeightedGraph: ...
 
 
+class IdentityStatefulTopology:
+    """`StatefulTopologyRule`-protocol identity rule -- `dynamics/
+    topology.py`'s `NoTopologyUpdate` takes `(graph, dtau)`, not
+    `(graph, trajectory, dtau)`, so it cannot be passed to
+    `run_adaptive_dynamics_v4`. Exists for `docs/v5_spec.md` Sec14's
+    signal diagnostic, which needs the trajectory-aware loop (fast
+    dynamics + Hebbian adaptation) with topology held frozen -- no swap,
+    no pruning, purely to see whether `C_ij` alone discriminates
+    genuinely-damaged edges, independent of any structural operator."""
+
+    def update(
+        self, graph: WeightedGraph, trajectory: StateTrajectory, dtau: float
+    ) -> WeightedGraph:
+        return graph
+
+
 class RateBasedTopologyRule:
     """`docs/v4_spec.md` Sec4: prune the persistently-lowest-weight
     `rho*|E|` edges (eligible only after `m` consecutive windows in the

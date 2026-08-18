@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from boyko_benchmark.dynamics.adaptive import HebbianAdaptation
+from boyko_benchmark.dynamics.adaptive import HebbianAdaptation, StateTrajectory
 from boyko_benchmark.dynamics.backend import ClosedUnitaryBackend
 from boyko_benchmark.dynamics.topology_v5 import (
     BalancedSwapTopologyRule,
@@ -87,7 +87,7 @@ def _run_one_arm(
     checkpoint_set = set(checkpoint_windows)
     checkpoints: list[K1PrimeExposureCheckpoint] = []
 
-    def on_window(window_index: int, graph: WeightedGraph) -> None:
+    def on_window(window_index: int, graph: WeightedGraph, trajectory: StateTrajectory) -> None:
         window_count = window_index + 1
         if window_count not in checkpoint_set:
             return

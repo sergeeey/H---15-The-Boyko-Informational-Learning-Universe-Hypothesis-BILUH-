@@ -192,7 +192,9 @@ def test_on_window_is_called_once_per_window_with_the_post_update_graph() -> Non
     rule = _RecordingTopologyRule()
     recorded: list[tuple[int, WeightedGraph]] = []
 
-    def on_window(window_index: int, current_graph: WeightedGraph) -> None:
+    def on_window(
+        window_index: int, current_graph: WeightedGraph, trajectory: StateTrajectory
+    ) -> None:
         recorded.append((window_index, current_graph))
 
     run_adaptive_dynamics_v4(
@@ -292,7 +294,9 @@ def test_on_window_still_fires_for_the_truncating_window() -> None:
     rule = _DisconnectAtWindow(disconnect_at=2)
     recorded: list[tuple[int, bool]] = []
 
-    def on_window(window_index: int, current_graph: WeightedGraph) -> None:
+    def on_window(
+        window_index: int, current_graph: WeightedGraph, trajectory: StateTrajectory
+    ) -> None:
         connected = bool(np.all(hop_distances_from_source(current_graph.mask, 0) != -1))
         recorded.append((window_index, connected))
 
