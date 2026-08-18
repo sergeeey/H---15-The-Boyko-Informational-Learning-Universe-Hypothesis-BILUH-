@@ -728,6 +728,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 10:12] `2701090`: feat(v4): K1 disconnection mechanism identified -- diagnosis, not fix
 - [2026-08-18 09:30] `75cc3b5`: fix(v4): address M2 reviewer finding -- seed-pairing scope overclaim, tie-case coverage
 - [2026-08-18 09:23] `0e05f8e`: feat(v4): M2 -- K1 damaged-lattice gate infrastructure + while-active ICE truncation; grid INVALID at spec params (100% disconnection)
 - [2026-08-18 09:04] `7d70760`: docs: M1 handoff -- V4 topology infra merged to main, M2 (K1 gate) queued
