@@ -1,6 +1,67 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V4-K1d (reference-degree cap) ran: still INVALID via structural incompatibility (exact capacity audit, H-A confirmed twice now); past the user's pre-planned decision tree, awaiting direction)
+## SESSION HANDOFF (updated 2026-08-18 — V4 prune/regrow CLOSED as FEASIBILITY REJECT ([A64]); V5 "Balanced Support Rewiring" now being pre-registered per user's explicit 7-step directive)
+
+**Repo state:** `main` HEAD `2e90d35` plus one committed-but-not-yet-
+merged branch `docs/v4-close-feasibility-reject` (commit `865b4e8`).
+317/317 tests, ruff clean.
+
+**User's decision on the K1c/K1d structural-wall finding (their own
+words, adopted verbatim as `[A64]`):** stop the "prune/regrow + cap"
+line entirely, do not try K1e/K1f/a new `q`. Two independently-
+motivated cap formulations (K1c current-degree, K1d reference-degree)
+both hit `CR* < 0.52` against a 0.95 requirement, confirmed by EXACT
+capacity optimization (not greedy weakness — greedy reaches 94-98% of
+the true optimum in both). Their reading: the elementary operation
+itself is mis-specified — independent edge DELETION, decoupled from
+creation, is what manufactures the star-collapse failure in the first
+place.
+
+**Closed:** `docs/v4_spec.md` status header updated to `CLOSED`,
+`docs/assumptions.md` `[A64]` records the mechanism-level synthesis,
+`null_results/20260818-v4-prune-regrow-feasibility.md` + `INDEX.md`
+per this project's own null_results protocol. **Explicitly NOT a BILUH
+hypothesis FAIL** — the architecture (rank-then-delete edges
+independently) is rejected, not the broader claim that state-dependent
+structural plasticity can organize.
+
+**User's explicit 7-step directive for what comes next (their own
+numbered list, to follow in order):**
+1. ~~Close V4 prune/regrow as FEASIBILITY REJECT~~ DONE (`865b4e8`,
+   not yet merged to `main`).
+2. ~~Record `[A64]`~~ DONE.
+3. Do not try a new `q`. Do not run K1e.
+4. **Open a new L0/pre-registration for "Balanced Support Rewiring"**
+   (`docs/v5_spec.md`, not yet written) — user suggests naming it `V5`
+   (or `V4B` if the V4 line should be kept). EstimandOps L0 gate
+   (causal, same potential-outcomes framing as V4 §1) is mandatory
+   BEFORE any implementation, per this project's standing discipline.
+5. **Elementary structural operation becomes a degree-preserving,
+   CONNECTED edge swap** (support rewiring): `(a,b),(c,d) →
+   (a,c),(b,d)` or `(a,d),(b,c)` — `d_i` never changes for any node,
+   so no incidence cap is needed by construction, not by constraint.
+   Proposal accepted only if the result is a simple graph, degree-
+   preserving, AND connected.
+6. Arms: **A3 = state-driven swap** (maximizes a score like `ΔS =
+   C_added − C_removed`); **A4 = matched-null swap** (identical
+   initial graph/swap count/degree sequence/candidate set/distance
+   profile, but state-specific pair assignment destroyed by
+   permutation). `Δ_specific = Y_state − Y_matched-null` remains the
+   estimand.
+7. **Re-run a cheap damaged-lattice K1-equivalent FIRST** before any
+   larger campaign — same damage-then-restore positive control, now
+   asking whether state-driven swaps restore the original lattice
+   better than matched-null swaps, with connectivity checked as part
+   of move legality rather than as an after-the-fact ICE gate.
+
+**Not yet started: steps 4-7 (the actual V5 spec + implementation).**
+Tracked as tasks #22 (spec), #23 (TDD implementation), #24 (run the
+gate). This is a substantial new build, comparable in scope to V4's own
+M0-M2 arc.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V4-K1d ran: still INVALID via structural incompatibility; past the user's pre-planned decision tree, awaiting direction)
 
 **Repo state:** `main` HEAD `d949ec0` plus uncommitted V4-K1d work
 (`BoundedIncidenceTopologyRule.reference_degrees` param, `k1c_damage_
@@ -823,6 +884,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 11:46] `865b4e8`: docs(v4): close prune/regrow family as FEASIBILITY REJECT, not BILUH FAIL
 - [2026-08-18 11:33] `2685edc`: fix(v4): extract max_capacity_cardinality to a tested shared module
 - [2026-08-18 11:23] `7780192`: feat(v4): V4-K1d -- reference-degree cap + exact capacity audits; H-A structural incompatibility confirmed twice, INVALID again
 - [2026-08-18 10:59] `d93b1d4`: docs(v4): explain BoundedIncidenceTopologyRule's dead-code break guard, matching RateBasedTopologyRule's own pattern
