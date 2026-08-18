@@ -31,7 +31,6 @@ import sys
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import Bounds, LinearConstraint, milp
 
 from boyko_benchmark.dynamics.adaptive import HebbianAdaptation, StateTrajectory
 from boyko_benchmark.dynamics.backend import ClosedUnitaryBackend
@@ -45,6 +44,9 @@ from boyko_benchmark.experiment.seed_manager import SeedManager
 from boyko_benchmark.experiment.v4_topology_pilot import run_adaptive_dynamics_v4
 from boyko_benchmark.graphs.damage import Edge, corrupt_lattice_edges
 from boyko_benchmark.graphs.lattice import generate_periodic_cubic_lattice, lattice_coordinates
+from boyko_benchmark.observables.capacity_matching import (
+    max_capacity_cardinality as _solve_max_capacity_cardinality,
+)
 from boyko_benchmark.types import WeightedGraph
 
 N_SIDE_LENGTH = 8  # N = 512
@@ -68,30 +70,18 @@ _K1_REGROWTH_STREAM = 2
 def max_capacity_cardinality(
     eligible_edges: frozenset[Edge], mask: NDArray[np.bool_], q: float, d_min: int = 1
 ) -> int:
-    """Exact `M* = max |S|, S subset of eligible_edges, s.t. deg_S(i) <=
-    b_i for every node i touching S` -- a small binary integer program,
-    solved exactly via `scipy.optimize.milp` (formulation sanity-checked
-    on a hand-worked triangle example, b_i=1 for all 3 nodes -> M*=1,
-    the correct max-matching answer, before trusting it on real data)."""
+    """K1c-specific wrapper: derives per-node caps from CURRENT degree
+    (read off `mask`) via `bounded_incidence_cap`, then delegates the
+    actual exact solve to `observables/capacity_matching.py`'s tested,
+    shared `max_capacity_cardinality` (formulation locked in by
+    `tests/unit/check_capacity_matching.py`'s hand-derived triangle
+    case -- previously only a docstring claim with no committed test,
+    reviewer-flagged 2026-08-18)."""
     if not eligible_edges:
         return 0
-    edges = list(eligible_edges)
-    nodes = sorted({n for e in edges for n in e})
-    degree = {n: int(mask[n].sum()) for n in nodes}
-    caps = {n: bounded_incidence_cap(degree[n], q, d_min) for n in nodes}
-
-    n_edges = len(edges)
-    cost = -np.ones(n_edges)
-    incidence = np.array([[1.0 if node in edge else 0.0 for edge in edges] for node in nodes])
-    upper_bounds = np.array([caps[node] for node in nodes])
-    constraints = LinearConstraint(incidence, -np.inf, upper_bounds)
-    integrality = np.ones(n_edges, dtype=np.intp)
-    bounds = Bounds(0, 1)
-
-    result = milp(cost, constraints=constraints, integrality=integrality, bounds=bounds)
-    if result.status != 0:
-        raise RuntimeError(f"max_capacity_cardinality: milp failed, status={result.status}")
-    return int(round(-result.fun))
+    nodes = sorted({n for e in eligible_edges for n in e})
+    caps = {n: bounded_incidence_cap(int(mask[n].sum()), q, d_min) for n in nodes}
+    return _solve_max_capacity_cardinality(eligible_edges, caps)
 
 
 class _CapacityAuditRule:

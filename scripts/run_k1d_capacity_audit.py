@@ -23,7 +23,6 @@ independent, established `[A57]`-`[A59]`).
 import sys
 
 import numpy as np
-from scipy.optimize import Bounds, LinearConstraint, milp
 
 from boyko_benchmark.dynamics.adaptive import HebbianAdaptation, StateTrajectory
 from boyko_benchmark.dynamics.backend import ClosedUnitaryBackend
@@ -35,8 +34,9 @@ from boyko_benchmark.dynamics.topology_v4 import (
 from boyko_benchmark.experiment.runner import localized_psi0
 from boyko_benchmark.experiment.seed_manager import SeedManager
 from boyko_benchmark.experiment.v4_topology_pilot import run_adaptive_dynamics_v4
-from boyko_benchmark.graphs.damage import Edge, corrupt_lattice_edges
+from boyko_benchmark.graphs.damage import corrupt_lattice_edges
 from boyko_benchmark.graphs.lattice import generate_periodic_cubic_lattice, lattice_coordinates
+from boyko_benchmark.observables.capacity_matching import max_capacity_cardinality
 from boyko_benchmark.types import WeightedGraph
 
 N_SIDE_LENGTH = 8  # N = 512
@@ -55,32 +55,6 @@ MASTER_SEED = 20260818  # identical to K1/K1c/K1d -- SAME damaged lattices
 _K1_DAMAGE_STREAM = 0
 _K1_TIEBREAK_STREAM = 1
 _K1_REGROWTH_STREAM = 2
-
-
-def max_capacity_cardinality(eligible_edges: frozenset[Edge], caps: dict[int, int]) -> int:
-    """Exact `M* = max |S|, S subset of eligible_edges, s.t. deg_S(i) <=
-    caps[i]` -- same ILP formulation as `run_k1c_capacity_audit.py`'s
-    version (sanity-checked there on a hand-worked triangle example),
-    generalized to take `caps` directly rather than recomputing from a
-    mask -- K1d's caps are FIXED (reference-degree), not recomputed
-    from the current graph each window."""
-    if not eligible_edges:
-        return 0
-    edges = list(eligible_edges)
-    nodes = sorted({n for e in edges for n in e})
-
-    n_edges = len(edges)
-    cost = -np.ones(n_edges)
-    incidence = np.array([[1.0 if node in edge else 0.0 for edge in edges] for node in nodes])
-    upper_bounds = np.array([caps[node] for node in nodes])
-    constraints = LinearConstraint(incidence, -np.inf, upper_bounds)
-    integrality = np.ones(n_edges, dtype=np.intp)
-    bounds = Bounds(0, 1)
-
-    result = milp(cost, constraints=constraints, integrality=integrality, bounds=bounds)
-    if result.status != 0:
-        raise RuntimeError(f"max_capacity_cardinality: milp failed, status={result.status}")
-    return int(round(-result.fun))
 
 
 class _CapacityAuditRule:
