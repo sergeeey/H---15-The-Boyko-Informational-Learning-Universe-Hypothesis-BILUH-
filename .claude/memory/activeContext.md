@@ -823,6 +823,8 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 11:33] `2685edc`: fix(v4): extract max_capacity_cardinality to a tested shared module
+- [2026-08-18 11:23] `7780192`: feat(v4): V4-K1d -- reference-degree cap + exact capacity audits; H-A structural incompatibility confirmed twice, INVALID again
 - [2026-08-18 10:59] `d93b1d4`: docs(v4): explain BoundedIncidenceTopologyRule's dead-code break guard, matching RateBasedTopologyRule's own pattern
 - [2026-08-18 10:52] `4143bf3`: docs: fix missing Prior SESSION HANDOFF section headers in activeContext.md
 - [2026-08-18 10:51] `3d8d8ef`: feat(v4): V4-K1c -- bounded-incidence structural plasticity, pre-registered per user spec; ran INVALID (cap delays but does not prevent disconnection)
