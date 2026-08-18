@@ -363,6 +363,11 @@ class BoundedIncidenceTopologyRule:
 
         to_prune: list[Edge] = []
         for i, j in eligible_sorted:
+            # WHY this break is dead code, same as RateBasedTopologyRule's
+            # analogous comment: eligible is always a subset of low_set
+            # (size <= n_target), so len(to_prune) can never reach
+            # n_target before eligible_sorted itself is exhausted. Kept
+            # as an explicit invariant guard, not because it's reachable.
             if len(to_prune) >= n_target:
                 break
             if selected_count[i] < caps[i] and selected_count[j] < caps[j]:
