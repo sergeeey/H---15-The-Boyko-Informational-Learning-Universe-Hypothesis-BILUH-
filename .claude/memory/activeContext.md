@@ -37,6 +37,10 @@ named in `[A60]` for the user to choose among (cap regrowth too; compute
 `b_i` from ORIGINAL damage-time degree instead of current; smaller `q`)
 — none chosen or run. M3-M6 remain blocked.
 
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — K1 concentration mechanism identified + CONFIRMED GENUINE; awaiting user sign-off on `q`)
+
 **Repo state:** on `main`, HEAD `0505cfc`, working tree has two new
 uncommitted diagnostic scripts (`scripts/run_k1_feasibility_audit.py`,
 `scripts/run_k1_concentration_audit.py`) plus `[A58]`/`[A59]` in
@@ -83,6 +87,10 @@ incidence relaxation: `n_i^prune <= b_i = max(1, floor(q*d_i))`. **Still
 needs the user's sign-off on the specific `q`** — calibrated via an
 independent exposure/survival criterion, explicitly NOT by searching
 for whatever passes K1 (anti-fishing). No `q` has been chosen yet.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V4 M2 ran: grid INVALID, 100% ICE)
 
 **M2 ran at spec-frozen scale and found the grid INVALID, not a K1
 verdict.** `scripts/run_k1_gate.py` (N=512, rho=0.01, m=3, damage=10%,
@@ -763,6 +771,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 10:51] `3d8d8ef`: feat(v4): V4-K1c -- bounded-incidence structural plasticity, pre-registered per user spec; ran INVALID (cap delays but does not prevent disconnection)
 - [2026-08-18 10:12] `2701090`: feat(v4): K1 disconnection mechanism identified -- diagnosis, not fix
 - [2026-08-18 09:30] `75cc3b5`: fix(v4): address M2 reviewer finding -- seed-pairing scope overclaim, tie-case coverage
 - [2026-08-18 09:23] `0e05f8e`: feat(v4): M2 -- K1 damaged-lattice gate infrastructure + while-active ICE truncation; grid INVALID at spec params (100% disconnection)
