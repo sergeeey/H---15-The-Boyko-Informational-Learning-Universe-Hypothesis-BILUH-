@@ -771,6 +771,8 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 10:59] `d93b1d4`: docs(v4): explain BoundedIncidenceTopologyRule's dead-code break guard, matching RateBasedTopologyRule's own pattern
+- [2026-08-18 10:52] `4143bf3`: docs: fix missing Prior SESSION HANDOFF section headers in activeContext.md
 - [2026-08-18 10:51] `3d8d8ef`: feat(v4): V4-K1c -- bounded-incidence structural plasticity, pre-registered per user spec; ran INVALID (cap delays but does not prevent disconnection)
 - [2026-08-18 10:12] `2701090`: feat(v4): K1 disconnection mechanism identified -- diagnosis, not fix
 - [2026-08-18 09:30] `75cc3b5`: fix(v4): address M2 reviewer finding -- seed-pairing scope overclaim, tie-case coverage
