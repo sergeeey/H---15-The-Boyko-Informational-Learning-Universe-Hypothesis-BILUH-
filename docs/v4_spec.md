@@ -478,9 +478,16 @@ evidence about V4.
 Stated before any V4 run exists, so the verdict is a comparison against
 a pre-committed target rather than a post-hoc narrative.
 
-**P1 — exposure.** `N_topology_events ≈ ρ·|E|·K` per arm (rounded to the
-nearest integer per window), matching the rate rule's own definition. If
-not satisfied, that is an **implementation bug**, not a scientific
+**P1 — exposure.** `N_topology_events ≈ ρ·|E|·dtau_steps` per arm, summed
+over all windows (`round(ρ·|E|)` per window, matching the rate rule's own
+definition — corrected 2026-08-14 during M1 implementation: the original
+draft wrote `K` here, this section's own fast-dynamics-substep count,
+which is unrelated to how many *adaptation windows* the topology rule
+fires in; `dtau_steps` is the correct multiplier). Lower than this target
+during the first `m` windows is expected, not a violation — no edge can
+have `m` consecutive windows of persistence before window `m`, §4's own
+persistence requirement. If the post-warmup rate departs from
+`round(ρ·|E|)`, that is an **implementation bug**, not a scientific
 finding — fix and re-verify before M4.
 
 **P2 — K1 recovery.** `R_edge(A3) > R_edge(A4)` (§7's K1). If false:

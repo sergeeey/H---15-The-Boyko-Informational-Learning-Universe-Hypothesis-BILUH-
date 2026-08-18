@@ -45,6 +45,15 @@ def _time_averaged_correlation(trajectory: StateTrajectory) -> NDArray[np.floati
     return result
 
 
+def time_averaged_correlation(trajectory: StateTrajectory) -> NDArray[np.floating]:
+    """Public export of `_time_averaged_correlation`, for V4's regrow
+    scorers (`dynamics/topology_v4.py`), which need the same `C_ij`
+    matrix `HebbianAdaptation` computes internally, without duplicating
+    the computation or importing a private name across the module
+    boundary."""
+    return _time_averaged_correlation(trajectory)
+
+
 def _time_averaged_density(trajectory: StateTrajectory) -> NDArray[np.floating]:
     """<p_i>_K -- linear time-average, for the classical carrier's decay
     term ONLY. NOT interchangeable with the correlation matrix's diagonal:
