@@ -3959,6 +3959,15 @@ never silently replacing one with the other.
 | 25 | 0.5210 | 0.0446 | 0.0101 |
 | 49 (final) | 0.4875 | 0.0039 | 0.0209 |
 
+**Table values round-identical across all 10 trials at each window —
+reviewer-checked (2026-08-18), not a staleness bug:** unrounded floats
+differ at the 5th-6th decimal between trials (e.g. `0.5098993761` vs
+`0.5098852554`), consistent with the periodic torus's near-exact
+translation symmetry (AUROC, a rank statistic, is translation-invariant
+up to floating-point noise regardless of which node the excitation
+starts from); `recall_mag` visibly varies per trial in the raw log,
+confirming each trial is genuinely independently computed.
+
 **The corrected metric ALSO shows no meaningful geometric signal —
 `AUROC_mag` stays within `[0.4875, 0.5210]` of chance at every
 checkpoint, and `Recall@D_mag` at the final checkpoint (`0.0039`) is
