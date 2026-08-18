@@ -3250,6 +3250,144 @@ this session's transcript; [VERIFIED-pytest] 310/310 tests, ruff clean,
 mypy `--strict` clean on the K1c infrastructure that produced this
 result.
 
+### A61 — V4-K1c exact capacity audit: exposure failure is STRUCTURAL (H-A), not algorithmic (H-B) — the greedy selector achieves ~98% of the true mathematical optimum, so a better selector would not fix it (2026-08-18)
+
+**User-directed, before choosing among `[A60]`'s three candidate
+relaxations**: is `ICE-1`'s low exposure (0.254) a weakness of the
+greedy constrained-selection heuristic, or a genuine incompatibility
+between persistence-gating, the per-node incidence cap, and `ρ`? Answered
+by computing, per window, the EXACT maximum-cardinality capacitated
+selection `M*` (a small binary integer program — each window's eligible
+set is <=~20 edges — solved via `scipy.optimize.milp`, formulation
+sanity-checked on a hand-worked triangle example, `b_i=1` for all 3
+nodes -> `M*=1`, the correct max-matching answer, before trusting it on
+real data) and comparing against the greedy's actual count, on the
+IDENTICAL 5 seeds/damaged lattices/windows as `[A60]`'s own run
+(`scripts/run_k1c_capacity_audit.py`, arm A3 only — pruning selection is
+scorer-independent, established `[A57]`-`[A59]`).
+
+**Result: `CR* = M*/m = 0.3013`, `CR_greedy = 0.2949` — the greedy
+selector reaches ~98% of the true achievable maximum (`0.2949/0.3013`).**
+Even the mathematically OPTIMAL selection cannot come close to 0.95
+exposure. `ECR` (eligible/target) `= 0.4821`, `CCR` (M*/eligible)
+`= 0.6250` — the eligible pool itself is already less than half of
+target on average (persistence gating + concentration leave too few
+edges eligible in the first place), and even among those, per-node caps
+prevent selecting more than ~62.5% of them.
+
+**Note on the small numeric difference from `[A60]`'s own `ICE-1=0.254`:**
+this audit ran arm A3 alone (`CR_greedy=0.2949`), while `[A60]`'s ICE-1
+pooled BOTH A3 and A4 across their own (sometimes different-length,
+since disconnection windows differ between arms) trajectories. Not a
+discrepancy requiring investigation — pruning selection is identical
+between arms by construction, the two numbers differ only because they
+aggregate over different window counts per arm.
+
+**Verdict: `H-A` (structural incompatibility), `H-B` (algorithmic
+weakness) REJECTED.** Per the user's own decision tree, this licenses
+`V4-K1d` — a reference-degree incidence cap — without needing to try a
+different selector or a different `q` first. Matches the user's own
+prior stated before this audit ran (`P(H_A) > P(H_B)`), now confirmed by
+exact computation rather than assumed.
+
+**What this means, stated at the level the user named:** the Hebbian
+signal driving pruning (`ψ → C → W → A`) is structurally MORE
+concentrated than the viable local topology-turnover rate this specific
+cap formulation allows — a property of the `ψ→C→W` coupling under this
+project's dynamics, not an engineering defect in K1c's selection
+algorithm.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1c_capacity_audit.py` full
+stdout, this session's transcript; [VERIFIED-pytest/ruff/mypy] full gate
+suite clean before this script ran.
+
+### A62 — V4-K1d (`docs/v4_spec.md` Sec7e, reference-degree cap, `q=1/2` unchanged) ran at spec scale: degree-drift eliminated exactly as designed, but STILL `INVALID` — exposure improved (0.254→0.487) yet disconnection got WORSE (80%→100%, window 2-17 -> uniformly window 3) (2026-08-18)
+
+**What ran:** `scripts/run_k1d_gate.py`, `BoundedIncidenceTopologyRule`
+with `reference_degrees` captured once immediately after lattice damage
+(`docs/v4_spec.md` Sec7e). Identical everything else to K1c/K1: N=512,
+damage=10%, ρ=0.01, m=3, `q=0.5` unchanged (no new calibration, per the
+user's own instruction that smaller `q` was the worst candidate given
+`[A61]`'s structural finding), 5 seeds, master_seed=20260818 — SAME
+damaged lattices as K1/K1c.
+
+**P5 sanity check now holds EXACTLY, on every seed, every window:
+`max_i n_i^prune = 3`, never more.** Confirms the reference-degree fix
+works precisely as designed — `[A60]`'s degree-drift feedback loop
+(`regrow → d_i↑ → b_i↑ → more prune allowed`) is eliminated by
+construction; a node's allowance can no longer inflate through
+regrowth.
+
+**Still `INVALID`, not `FAIL`.** `ICE-1` (exposure) = **0.487** — nearly
+DOUBLE K1c's 0.254, but still far short of the 0.95 threshold. `ICE-2`
+(disconnection) = **100%** (5/5 seeds, both arms) — WORSE than K1c's
+80%, and every disconnection now happens uniformly at **window 3** (not
+K1c's spread windows 10-17) — i.e. faster and more reliable, not slower.
+
+**Mechanistic reading, not merely a coincidence:** removing the
+"loosening" that degree drift occasionally provided (some nodes'
+allowances growing over time in K1c, which incidentally sometimes
+postponed their collapse) means the SAME small set of concentrated,
+under-propagated nodes now get reliably chipped down to zero degree
+within just 2 consecutive eligible windows (window 2: prune up to the
+fixed cap; window 3: the SAME node, still lowest-weight, still
+eligible, loses its remaining edges) — a hard, unchanging per-window
+ceiling does not prevent REPEATED consecutive targeting of the same
+node across windows from achieving full isolation quickly. This is
+exactly `[A60]`'s own warning realized in a different form: "delaying a
+failure is not the same as removing its cause" — K1d removed the
+degree-drift CAUSE of one failure mode, but the underlying
+concentration mechanism (`[A57]`-`[A59]`) simply routes around it via
+repetition instead of a single window.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1d_gate.py` full stdout,
+this session's transcript; [VERIFIED-pytest/ruff/mypy] 313/313 tests,
+ruff clean, mypy `--strict` clean on the K1d infrastructure.
+
+### A63 — V4-K1d exact capacity audit: exposure failure is AGAIN structural (H-A), not algorithmic — greedy reaches ~94% of the true optimum, and even the exact optimum caps out at 52% exposure (2026-08-18)
+
+**Per `docs/v4_spec.md` Sec7e's own pre-registered instruction**
+("if even the exact optimum ... cannot reach 0.95 exposure under the
+reference-degree cap, that is a new finding requiring the same
+`[A61]`-style capacity audit before any further pre-registration"):
+`scripts/run_k1d_capacity_audit.py` re-solved the exact maximum-
+cardinality capacitated selection `M*` per window, this time under
+K1d's FIXED reference-degree caps (not recomputed from current degree
+each window, unlike `[A61]`'s K1c version).
+
+**Result: `CR* = M*/m = 0.5200`, `CR_greedy = 0.4867` — greedy reaches
+~93.6% of the true optimum.** `H-B` (algorithmic weakness) rejected
+again, same as `[A61]`. `H-A` (structural incompatibility) confirmed
+again: even the mathematically OPTIMAL selection under K1d's own fixed
+caps cannot reach 0.95 exposure — it caps out at 52%. `ECR` (eligible/
+target) `= 0.6600`, higher than K1c's 0.4821 (the reference-degree fix
+did genuinely widen the eligible pool somewhat), but still well short
+of what 95% exposure would require. `CCR` (M*/eligible) `= 0.7879`.
+
+**Taken together with `[A62]`: the reference-degree relaxation is a
+real, measurable improvement (exposure ceiling roughly doubled, 0.30 →
+0.52) but does not resolve the core incompatibility, and — because it
+also removed the "occasional loosening" that used to buy some nodes
+extra time — makes the connectivity failure MORE reliable and faster,
+not less.** This is now the second independently-motivated relaxation
+(K1c: bounded current-degree cap; K1d: bounded reference-degree cap)
+that hits the same structural wall at the capacity-audit level. Per the
+Minimal Relaxation Rule and this project's anti-fishing discipline,
+this pattern itself is informative: the bottleneck is not well modeled
+as "which specific cap formula," and continuing to iterate on cap
+variants (K1e, K1f, ...) without a different kind of change risks
+becoming exactly the unbounded search for a passing variant this
+project's own rules forbid.
+
+**STOPPED HERE — this is past what the user's own pre-registered
+decision tree (before `[A62]`/`[A63]` ran) explicitly covered.** Their
+own stated K1e (symmetric regrowth cap) was conditioned on K1d PASSING
+feasibility, which it did not. No further relaxation is proposed or
+implemented here; this needs the user's direction.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1d_capacity_audit.py` full
+stdout, this session's transcript.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

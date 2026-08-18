@@ -1,6 +1,58 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V4-K1c ran at spec scale (q=1/2, pre-registered): still INVALID, not FAIL — cap delays disconnection but doesn't prevent it; awaiting user decision on next relaxation)
+## SESSION HANDOFF (updated 2026-08-18 — V4-K1d (reference-degree cap) ran: still INVALID via structural incompatibility (exact capacity audit, H-A confirmed twice now); past the user's pre-planned decision tree, awaiting direction)
+
+**Repo state:** `main` HEAD `d949ec0` plus uncommitted V4-K1d work
+(`BoundedIncidenceTopologyRule.reference_degrees` param, `k1c_damage_
+gate.py`'s `use_reference_degrees` threading, `scripts/run_k1d_gate.py`,
+`scripts/run_k1c_capacity_audit.py` + `run_k1d_capacity_audit.py` (exact
+ILP-based capacity audits via `scipy.optimize.milp`), `docs/v4_spec.md`
+Revision 3/Sec7e, `docs/assumptions.md` `[A61]`-`[A63]`) — about to be
+committed. 313/313 tests, ruff clean, mypy `--strict` clean.
+
+**Sequence this turn, all user-directed [VERIFIED-bash, this turn's own tool output]:**
+1. **`[A61]` exact capacity audit on K1c** (user asked for this BEFORE
+   picking among 3 candidate relaxations): solved the true max-
+   cardinality capacitated selection `M*` per window via a small ILP
+   (`scipy.optimize.milp`, sanity-checked on a hand-worked triangle
+   example first). Result: `CR*=0.30`, greedy reaches ~98% of it —
+   `H-B` (algorithmic weakness) REJECTED, `H-A` (structural
+   incompatibility) CONFIRMED. Licensed `V4-K1d` per the user's own
+   pre-specified decision tree.
+2. **`V4-K1d` implemented + pre-registered** (`docs/v4_spec.md` Sec7e,
+   Revision 3): `b_i` computed from each node's REFERENCE degree
+   (captured once at damage time), not current degree — breaks
+   `[A60]`'s degree-drift feedback loop. Same `q=1/2`, no new
+   calibration (user's own instruction: smaller `q` is the worst
+   candidate given `H-A`). TDD: hand-derived test confirms the cap uses
+   the reference value even when actual degree differs.
+3. **`[A62]` K1d ran at spec scale**: `P5` sanity now holds EXACTLY
+   (`max_i n_i^prune=3` always — degree-drift genuinely eliminated).
+   Exposure improved (`0.254→0.487`, nearly doubled) but STILL
+   `INVALID`. **Disconnection got WORSE** (`80%→100%`) and FASTER
+   (window 2-17 → uniformly window 3) — removing degree-drift's
+   "occasional loosening" let the same concentrated nodes get reliably
+   drained via 2 consecutive windows instead of 1.
+4. **`[A63]` exact capacity audit on K1d** (per Sec7e's own
+   pre-registered instruction, since K1d also failed `ICE-1`): `CR*=
+   0.52` (real improvement over K1c's 0.30, genuine but insufficient),
+   greedy reaches ~94% of it. `H-A` confirmed AGAIN.
+
+**STOPPED HERE — past the user's own pre-planned tree.** Their stated
+`K1e` (symmetric regrowth cap) was conditioned on K1d PASSING
+feasibility, which it did not. Two independently-motivated cap variants
+(current-degree, reference-degree) have now both hit the same
+structural wall at the capacity-audit level — continuing to iterate
+cap formulas risks becoming the unbounded fishing search this project's
+own discipline forbids. No further relaxation proposed or implemented.
+**Needs the user's direction on how to proceed** — including whether to
+step back from cap-tuning entirely and reconsider the mechanism (their
+own words: "V4 нуждается не просто в cap, а в механизме, который
+разрешает конфликт: state preference vs topological viability").
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V4-K1c ran: still INVALID, cap delays but doesn't prevent disconnection; awaiting user decision on next relaxation)
 
 **Repo state:** on `main` at `d226d47`, working tree has uncommitted
 V4-K1c work (`BoundedIncidenceTopologyRule` in `dynamics/topology_v4.py`,

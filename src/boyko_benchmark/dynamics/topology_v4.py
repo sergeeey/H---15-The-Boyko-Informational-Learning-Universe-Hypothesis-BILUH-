@@ -309,11 +309,22 @@ class BoundedIncidenceTopologyRule:
         topology_tiebreak_seed: int,
         control_regrowth_seed: int,
         d_min: int = 1,
+        reference_degrees: dict[int, int] | None = None,
     ) -> None:
+        """`reference_degrees` (V4-K1d, `docs/v4_spec.md` Sec7e, Revision
+        3): if given, `b_i` is computed from this FIXED per-node degree
+        snapshot (e.g. captured immediately after lattice damage, before
+        any dynamics run) instead of the node's CURRENT degree each
+        window -- breaks the feedback loop `[A60]` diagnosed (uncapped
+        regrowth inflating a node's degree, which inflated its own
+        future cap, re-admitting the star-collapse failure). `None`
+        (the default) reproduces K1c's original current-degree
+        behavior unchanged."""
         self._rho = rho
         self._m = m
         self._q = q
         self._d_min = d_min
+        self._reference_degrees = reference_degrees
         self._regrow_scorer = regrow_scorer
         self._tiebreak_rng = np.random.default_rng(topology_tiebreak_seed)
         self._regrow_rng = np.random.default_rng(control_regrowth_seed)
@@ -352,12 +363,14 @@ class BoundedIncidenceTopologyRule:
         # -- fixed, reproducible ordering for the greedy walk.
         eligible_sorted = sorted(eligible, key=lambda e: graph.weights[e[0], e[1]])
 
-        current_degree = {
-            node: int(graph.mask[node].sum()) for node in {n for e in eligible_sorted for n in e}
-        }
+        nodes_in_play = {n for e in eligible_sorted for n in e}
+        if self._reference_degrees is not None:
+            cap_degree = {node: self._reference_degrees[node] for node in nodes_in_play}
+        else:
+            cap_degree = {node: int(graph.mask[node].sum()) for node in nodes_in_play}
         caps = {
             node: bounded_incidence_cap(degree, self._q, self._d_min)
-            for node, degree in current_degree.items()
+            for node, degree in cap_degree.items()
         }
         selected_count: dict[int, int] = dict.fromkeys(caps, 0)
 

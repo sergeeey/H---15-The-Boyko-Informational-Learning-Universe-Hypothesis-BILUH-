@@ -64,6 +64,28 @@ def test_r_edge_values_are_valid_fractions() -> None:
     assert 0.0 <= result.arm_a4.r_edge <= 1.0
 
 
+def test_use_reference_degrees_runs_without_error_and_still_conserves_edges() -> None:
+    """V4-K1d (docs/v4_spec.md Sec7e) wiring check: use_reference_degrees=True
+    must run end-to-end without error, on a real (small-scale) simulation,
+    not just the hand-derived unit fixture."""
+    result = run_k1c_gate_one_seed(
+        side_length=3,
+        damage_fraction=0.2,
+        rho=0.2,
+        m=1,
+        q=0.5,
+        eta=0.1,
+        dt=0.05,
+        k=5,
+        dtau_steps=4,
+        seed_index=4,
+        use_reference_degrees=True,
+    )
+
+    assert 0.0 <= result.arm_a3.r_edge <= 1.0
+    assert 0.0 <= result.arm_a4.r_edge <= 1.0
+
+
 def test_cap_enforcement_holds_on_a_real_run_not_just_the_unit_fixture() -> None:
     """P5 sanity check (docs/v4_spec.md Sec7b), stated as a robust
     degree-RELATIVE invariant rather than a hardcoded "degree is always

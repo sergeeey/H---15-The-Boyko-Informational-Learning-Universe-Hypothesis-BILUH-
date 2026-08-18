@@ -137,6 +137,7 @@ def _run_one_arm(
     dt: float,
     k: int,
     dtau_steps: int,
+    reference_degrees: dict[int, int] | None = None,
 ) -> K1cArmResult:
     rule = BoundedIncidenceTopologyRule(
         rho=rho,
@@ -145,6 +146,7 @@ def _run_one_arm(
         regrow_scorer=regrow_scorer,
         topology_tiebreak_seed=tiebreak_seed,
         control_regrowth_seed=regrowth_seed,
+        reference_degrees=reference_degrees,
     )
     instrumented = _InstrumentedBoundedRule(rule, rho)
     result = run_adaptive_dynamics_v4(
@@ -181,7 +183,14 @@ def run_k1c_gate_one_seed(
     dtau_steps: int,
     seed_index: int,
     master_seed: int = 0,
+    use_reference_degrees: bool = False,
 ) -> K1cSeedResult:
+    """`use_reference_degrees` (V4-K1d, `docs/v4_spec.md` Sec7e): when
+    True, each node's damage-time degree is captured ONCE (from
+    `damaged_graph.mask`, before any dynamics run) and passed as a fixed
+    `reference_degrees` snapshot to both arms' `BoundedIncidenceTopology
+    Rule`. `False` (default) reproduces K1c's original current-degree
+    cap unchanged."""
     seed_manager = SeedManager(master_seed)
     graph = generate_periodic_cubic_lattice(side_length)
     original_edges = frozenset((int(i), int(j)) for i, j in np.argwhere(np.triu(graph.mask)))
@@ -190,6 +199,12 @@ def run_k1c_gate_one_seed(
 
     damage_rng = seed_manager.child_generator(seed_index, _K1_DAMAGE_STREAM)
     damaged_graph, damaged_out = corrupt_lattice_edges(graph, damage_rng, damage_fraction)
+
+    reference_degrees: dict[int, int] | None = None
+    if use_reference_degrees:
+        reference_degrees = {
+            node: int(damaged_graph.mask[node].sum()) for node in range(damaged_graph.n_nodes)
+        }
 
     tiebreak_seed = int(
         seed_manager.child_seed(seed_index, _K1_TIEBREAK_STREAM).generate_state(1)[0]
@@ -213,6 +228,7 @@ def run_k1c_gate_one_seed(
         dt,
         k,
         dtau_steps,
+        reference_degrees,
     )
     arm_a4 = _run_one_arm(
         damaged_graph,
@@ -229,6 +245,7 @@ def run_k1c_gate_one_seed(
         dt,
         k,
         dtau_steps,
+        reference_degrees,
     )
 
     return K1cSeedResult(

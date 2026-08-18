@@ -114,6 +114,59 @@ by construction rather than by tuning `ρ` until K1 happens to pass.**
    to close V4 before M3, not propose K1d/K1e — the Minimal Relaxation
    Rule does not license an unbounded search for a variant that passes.
 
+**Revision 3 (2026-08-18, after `[A60]`-`[A61]`) — K1c ran `INVALID`
+(`ICE-1=0.254`, `ICE-2=80%`); an exact capacity audit (`[A61]`)
+determined the low exposure is STRUCTURAL, not a weakness of the greedy
+selector, and V4-K1d is pre-registered here as the user's own specified
+next step.**
+
+1. **Priority order changed, permanently, not just for this revision.**
+   Before trusting `ICE-2` (connectivity) or `R_edge` at all, `ICE-1`
+   (exposure) must pass — an intervention that cannot even physically
+   realize its own intended rate of structural change tests nothing,
+   regardless of whether the lattice happens to stay connected. §7d's
+   ICE gates are evaluated in this order in `k1c_gate_verdict.py`
+   already (exposure checked first); this revision makes the ordering
+   an explicit, permanent methodological commitment, not an
+   implementation detail.
+2. **Diagnosis, not guesswork: `[A61]`'s exact audit rules out `H-B`
+   (algorithmic weakness).** Computing the true maximum-cardinality
+   capacitated selection `M*` per window (a small integer program,
+   solved exactly, not approximated) showed the greedy selector already
+   achieves ~98% of the mathematical optimum (`CR_greedy/CR* ≈ 0.979`).
+   A better selector would not materially change K1c's result. The
+   bottleneck is `H-A`: persistence-gating + the per-node incidence cap
+   + `ρ` are jointly incompatible with 95% exposure at this scale,
+   regardless of selection quality.
+3. **V4-K1d: reference-degree incidence cap (§7e, new).** The SAME cap
+   formula and constrained-selection machinery as K1c, with exactly ONE
+   change: `b_i` is computed from each node's degree at a FIXED
+   reference point — immediately after lattice damage, before any V4
+   dynamics runs — rather than from its CURRENT (possibly regrowth-
+   inflated) degree. This directly targets `[A60]`'s diagnosed feedback
+   loop (`regrow → d_i↑ → b_i↑ → more prune allowed → star failure
+   returns`) by construction: `d_i(τ)↑` can no longer inflate `b_i`.
+4. **Same `q=1/2`, no new calibration.** Per the user's own explicit
+   instruction: smaller `q` is the worst candidate here (`q↓` only
+   worsens exposure further, moving further from `H-A`'s already-tight
+   constraint), so it is not tried. `q=1/2` carries over unchanged from
+   K1c.
+5. **Symmetric regrowth cap explicitly deferred, not bundled.** Even if
+   `[A60]`'s degree-drift feedback loop is the mechanism, regrowth
+   concentration (`max_i n_i^regrow = 6-10`, observed in K1c) may be an
+   independent pathology in its own right (hub formation). Per the
+   user's own reasoning, capping it now — before K1d's own feasibility
+   is known — would prevent learning which relaxation was actually
+   necessary. If K1d passes `ICE-1`/`ICE-2` and only THEN a further
+   robustness question arises, a symmetric regrowth cap becomes `V4-K1e`
+   — a separate, later, independently-justified variant, never bundled
+   into K1d itself.
+6. **`capacity_ratio` (`CR`) becomes a standing diagnostic, not a
+   one-off.** `[A61]`'s `CR = M*/m`, `ECR = |E_eligible|/m`, `CCR =
+   M*/|E_eligible|` decomposition (candidate shortage vs. capacity
+   shortage) is adopted as a reusable feasibility check for any future
+   K1 variant, not re-derived ad hoc each time.
+
 This document is a pre-registration: written and committed BEFORE any V4
 measurement, so its pass/fail predicates cannot be reshaped to fit
 results (`~/.claude/rules/estimand-ops.md`, "estimand defined after data
@@ -723,6 +776,85 @@ be fixing a problem that has not been demonstrated to exist.
   disconnection persists even under the cap). Must not be conflated
   with FAIL, per the same Substrate-Gate discipline `[A57]` already
   applied once.
+
+---
+
+## 7e. V4-K1d — reference-degree incidence cap (Revision 3, pre-registered 2026-08-18, before this variant has ever run)
+
+**Motivation.** `[A60]` found K1c's cap delays disconnection (window 2
+→ windows 10-17) but does not prevent it, and severely under-exposes
+pruning (`ICE-1=0.254`). `[A61]`'s exact capacity audit determined this
+is a STRUCTURAL incompatibility (`H-A`), not a selector weakness
+(`H-B` rejected, greedy already reaches ~98% of the true optimum) —
+and traced the mechanism to a specific feedback loop: `b_i` is computed
+from each node's CURRENT degree, which uncapped regrowth can inflate
+over time, which inflates that same node's future `b_i`, re-admitting
+the star-collapse failure `[A57]`-`[A59]` diagnosed, just later. K1d
+breaks this loop by construction.
+
+**The one change from K1c, everything else held fixed:**
+
+```
+b_i = max(0, min(floor(q * d_i^ref), d_i^ref - d_min))    where q = 1/2, d_min = 1
+```
+
+`d_i^ref` is node `i`'s degree captured ONCE, immediately after lattice
+damage (`corrupt_lattice_edges`'s output), BEFORE any V4 dynamics
+(adaptation or topology updates) runs. Unlike K1c's `d_i`, `d_i^ref`
+NEVER changes during the run — a node's allowance is fixed at what it
+started with, so `d_i(τ)↑` via regrowth cannot inflate `b_i` at any
+later `τ`. On the T7/`[A32]` lattice, degree-preserving damage leaves
+every node at `d_i^ref = 6`, so `b_i = max(0, min(3, 5)) = 3` for every
+node at `τ=0` — identical to K1c's INITIAL caps, diverging only once
+degree drift would have changed K1c's (but not K1d's) values.
+
+**`q=1/2` carries over unchanged — no new calibration.** Per the user's
+explicit instruction: a smaller `q` is the worst candidate given `[A61]`
+confirmed a structural (not selector) bottleneck — `q↓` only tightens
+the same binding constraint further, moving CR further from feasibility,
+not closer. Testing a smaller `q` here would conflate two independent
+questions (does fixing the reference point help? does a smaller q help?)
+in one run, violating the Minimal Relaxation Rule.
+
+**Constrained selection, ICE gates, arm-symmetry — identical to K1c
+(§7d), substituting `d_i^ref` for `d_i` in the cap computation only.**
+`ICE-1` (exposure ≥0.95), `ICE-2` (disconnection ≤20%, reusing the
+existing while-active truncation), `ICE-3` (cap activity, reported not
+gated) all apply unchanged. `[A61]`'s `CR`/`ECR`/`CCR` decomposition is
+computed and reported alongside, as a standing diagnostic (Revision 3
+changelog item 6) — if K1d's `CR*` (exact optimum under the NEW,
+non-inflating cap) still cannot reach 0.95, that is informative on its
+own: it would mean even a non-drifting incidence cap is structurally
+too tight for this `ρ`/`q` pair, pointing toward `q` or `ρ` themselves
+as the next AOG-5-compliant candidate — not toward K1e.
+
+**Regrowth remains uncapped and logged, not bundled.** `max_i
+n_i^regrow`, its Gini, and degree evolution continue to be recorded.
+`V4-K1e` (adding a symmetric regrowth cap) is explicitly deferred —
+per the user's own reasoning, bundling it into K1d now would prevent
+learning which relaxation was actually necessary. K1e is considered
+ONLY if K1d passes `ICE-1`/`ICE-2` and a further robustness question
+remains open at that point.
+
+**Priority order for interpreting the result (Revision 3 changelog item
+1, now a permanent standing rule):** `ICE-1` (feasible exposure) →
+`ICE-2` (connectivity) → `R_edge(A3)` vs `R_edge(A4)`. Do not read
+`R_edge` if either ICE gate fails.
+
+**Verdict semantics — identical trichotomy to K1c:**
+
+- **PASS** — `R_edge(A3) > R_edge(A4)`, `ICE-1`/`ICE-2` both satisfied.
+  Licenses proceeding to M3.
+- **FAIL** — substrate valid, `A3` does not beat `A4`. Per the user's
+  standing instruction (Revision 2 changelog item 8, unchanged): close
+  V4 before M3, do not propose a further variant.
+- **INVALID** — `ICE-1` or `ICE-2` fails even under the reference-degree
+  cap. Per Revision 3 changelog item 6's own note: if `CR*` itself
+  (not just the greedy) still cannot reach 0.95 under K1d, that is a
+  new, different finding from K1c's — a non-drifting cap that is
+  STILL too tight structurally — and should be diagnosed via `[A61]`'s
+  same audit methodology before any further pre-registration, not
+  assumed to need "yet another cap variant."
 
 ---
 

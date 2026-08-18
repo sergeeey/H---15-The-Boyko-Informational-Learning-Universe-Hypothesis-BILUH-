@@ -146,6 +146,49 @@ def test_cap_formula_never_allows_pruning_the_last_edge() -> None:
     assert bounded_incidence_cap(degree=2, q=0.5) == 1
 
 
+def test_reference_degrees_override_current_degree_for_the_cap() -> None:
+    """V4-K1d (docs/v4_spec.md Sec7e): when `reference_degrees` is
+    supplied, the cap uses THAT fixed value, not the node's current
+    (possibly-inflated) degree. Node 0's ACTUAL degree in the hub graph
+    is 4 (cap would be 2), but a reference degree of 2 gives cap=1 --
+    only ONE of node 0's 4 eligible edges should be pruned, not two."""
+    graph = _hub_graph()
+    trajectory = _dummy_trajectory(graph.n_nodes)
+    rule = BoundedIncidenceTopologyRule(
+        rho=0.5,
+        m=1,
+        q=0.5,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=1,
+        control_regrowth_seed=1,
+        reference_degrees={0: 2, 1: 3, 2: 3, 3: 3, 4: 3},
+    )
+
+    rule.update(graph, trajectory, dtau=1.0)
+
+    assert rule.last_pruned == frozenset({(0, 1)})
+
+
+def test_reference_degrees_none_reproduces_current_degree_behavior() -> None:
+    """Default (reference_degrees=None) must reproduce the original
+    current-degree cap exactly -- same fixture, same seeds, same result
+    as test_cap_rejects_edges_beyond_the_hub_node_budget's {(0,1),(0,2)}."""
+    graph = _hub_graph()
+    trajectory = _dummy_trajectory(graph.n_nodes)
+    rule = BoundedIncidenceTopologyRule(
+        rho=0.5,
+        m=1,
+        q=0.5,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=1,
+        control_regrowth_seed=1,
+    )
+
+    rule.update(graph, trajectory, dtau=1.0)
+
+    assert rule.last_pruned == frozenset({(0, 1), (0, 2)})
+
+
 def test_correlation_scorer_still_used_for_regrow_ranking() -> None:
     """Wiring check: BoundedIncidenceTopologyRule still delegates regrow
     ranking to whatever RegrowScorer it's given, same as RateBased
