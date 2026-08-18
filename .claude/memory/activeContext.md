@@ -1,41 +1,56 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-14 — PROJECT FROZEN as a finished cycle; start here on a new machine)
+## SESSION HANDOFF (updated 2026-08-18 — V4 M0+M1 complete, on `main`; M2 next)
 
-**Read `docs/final_knowledge_map.md` first if resuming this project.**
-That is the one-page summary this handoff points to — четыре блока
-(отвергнуто / установлено / неизвестно / что может изменить вывод).
-This entry is the pointer + sync confirmation, not a duplicate of it.
+**Repo state:** HEAD `d6a57c3` = `origin/main`. Working tree clean except
+this handoff file. 277/277 tests, ruff clean, mypy `--strict` clean
+(re-verified on `main` post-merge, not assumed from the feature branch).
 
-**Repo state:** HEAD `f4fb2be` = `origin/main`. Working tree clean.
-266/266 tests, ruff clean, mypy `--strict` clean. `.venv/` exists locally
-(not committed, standard) — on a new machine, recreate via
-`pip install -e ".[dev]"` or equivalent from `pyproject.toml`, then use
-`.venv/Scripts/python.exe` for all gate checks (the bare `python` on
-PATH lacks `types-PyYAML`/`scipy-stubs` and gives false mypy errors —
-learned the hard way earlier this session).
+**V4 is live** (`docs/v4_spec.md` Revision 1, committed `707cf1b`) — user
+said "го все по очереди": proceed through M0-M6 in order without
+stopping to ask at each milestone.
 
-**What this session did, top to bottom:**
-1. Phase 11 (Milestones 1-7): open-system backend, T1-T10, factorial
-   grid at N=512+1024 — 80/80 points, `[A38]` connectivity bug found
-   and fixed.
-2. Phase 12 (pre-registered `docs/phase12_spec.md`): systematically
-   killed Phase 11's headline modularity finding (`[A40]`-`[A41]`),
-   found and explained a real infra edge case (`[A42]`), found a
-   curvature signal (`[A43]`) that survived one control (`[A44]`) but
-   reversed sign against the hypothesis on the decisive H0 test
-   (`[A45]`) → **REJECT**, recorded in `null_results/20260814-open-
-   system-geometrogenesis.md`.
-3. Post-REJECT Relaxation Map, AOG-5-compliant: `[A47]` proved a
-   theorem (`W=1` absorbing barrier) that gave V1/V1b independent
-   motivation; both ran and closed decisively (`[A49]`, `[A50]`). V3/V3b
-   (topology pruning) ran but stayed `UNDEREXPOSED` (`[A51]`, `[A52]`)
-   — the prune rule almost never fires at this budget, not disproven.
-4. `[A45]` disassembly (4 rounds, `[A53]`-`[A56]`): four cheap
-   mechanistic explanations for the H0-beats-H1 reversal, ALL refuted
-   (two empirically, one by exact algebra — Forman-Ricci is
-   scale-invariant, `[A55]`). Stopped per a pre-registered stop
-   condition rather than chase a 5th scalar. `[A45]` itself stands as a
+- **M0** (`da2dc59`): `docs/mathematical_contract.md` §3.3 Addendum 3 —
+  dated, scoped authorization for `StatefulTopologyRule` to ADD edges,
+  explicitly limited to V4's own A2/A3/A4 arms only.
+- **M1** (`e86ee92` + fix `d6a57c3`, squashed into `main` via `git merge
+  --ff-only` from `feat/v4-m1-stateful-topology`, branch deleted after
+  merge): `StatefulTopologyRule` infrastructure —
+  `dynamics/topology_v4.py` (`RateBasedTopologyRule`, persistence-counter
+  pruning, deterministic seeded Top-K regrow, three `RegrowScorer`s:
+  `UniformRandomScorer`/A2, `CorrelationScorer`/A3,
+  `DistanceStratifiedShuffleScorer`/A4), `experiment/v4_topology_pilot.py`
+  (`run_adaptive_dynamics_v4`, trajectory-aware loop), 9 unit tests.
+  **Independent reviewer-agent pass found 4 issues, all fixed via TDD
+  (RED-then-GREEN) before merge**, per `audit-verification-gate.md`
+  (agent `[VERIFIED]` = orchestrator's `[INFERRED]` until re-checked):
+  disconnected-pair silently misclassified into distance-2 stratum (now
+  raises `ValueError`), Top-K tiebreak was positional not seeded (now two
+  independent seed streams, `topology_tiebreak_seed`/`control_regrowth_
+  seed`, via `np.lexsort`), dead sort code (removed), unguarded candidate
+  exhaustion (now raises `ValueError`). Review verdict recorded in
+  `.claude/memory/verdict_log.jsonl` (git_head `e86ee92`, pre-fix).
+
+**Next: M2** — the K1 kill gate (`docs/v4_spec.md` §7/§8, §392-396
+[DOCS]). Damaged-lattice edge-recovery test: corrupt a periodic cubic
+lattice by randomly rewiring exactly 10% of its edges (spec's own fixed
+value, not a placeholder), run A3 (`CorrelationScorer`) vs A4
+(`DistanceStratifiedShuffleScorer`)
+regrowth via `RateBasedTopologyRule`, compute `R_edge = |E_recovered ∩
+E*| / |E_damaged_out ∩ E*|` for each, verify P2 (`R_edge(A3) >
+R_edge(A4)`). **This is a pre-registered kill gate** — a fail here stops
+V4 before M3-M6 per the spec, not a soft checkpoint. New infrastructure
+needed: lattice corruption/rewire helper, `R_edge` computation — neither
+exists yet, write tests first (TDD, per this project's CLAUDE.md).
+
+M3 (null recalibration) → M4 (main campaign, A0-A4, N=512, ≥10 seeds) →
+M5 (carrier-irrelevance, Arm CD) → M6 (analysis freeze) remain queued
+after M2, in order.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-14, superseded — PROJECT FROZEN as a finished cycle before V4 opened)
+[summarized] **Read `docs/final_knowledge_map.md` first if resuming this project.**
    real, reproducible, currently-unexplained anomaly — frozen as an
    open problem, not resolved.
 5. Harvest (`docs/harvest_report.md`) + Final Knowledge Map
@@ -58,27 +73,7 @@ project, not a continuation.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded — pre-registered Relaxation Map exploration CLOSED, [A52])
-
-**The pre-registered post-REJECT exploration is now closed.** HEAD
-`c55e908`, 266/266 tests, ruff/mypy clean.
-
-**`[A52]` V3b (`PruneBelowThresholdTopologyUpdate(threshold=0.01)`,
-`[A51]`'s own pre-registered next variant) RAN — result numerically
-identical to `[A51]` to 5 decimal places.** Suspicious enough to verify
-before writing up: measured the actual final weight distribution's
-lower tail across the same 5 seeds with NO pruning at all. Zero mass in
-`(0, 0.01)` on every seed — weights sit at 0.05-0.14 or land exactly at
-0.0 (`[A42]`'s clamp), nothing between. `threshold=0.01` is
-mathematically equivalent to exact-zero pruning at this exact budget —
-not a bug, the targeted gap is simply empty.
-
-**A larger threshold (~0.05-0.15, near the observed minimums) would
-prune much more, but was NOT run** — it would shift the intervention
-from "formalize where the existing clamp already drives weights"
-(`[A42]`'s original motivation) to "artificially force-prune
-moderately-weighted edges", a qualitatively different and less
-mechanistically-motivated manipulation that risks crossing into
-parameter-fishing without independent justification.
+[summarized] **The pre-registered post-REJECT exploration is now closed.** HEAD
 
 **Final honest state of the pre-registered exploration:**
 
@@ -101,34 +96,7 @@ the authoritative REJECT verdict for the original Phase 11/12 claim.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded — all three Relaxation Map branches tested, [A47]-[A51])
-
-**Post-REJECT revival exploration is complete for the original
-Relaxation Map.** HEAD `2738d24`, 263/263 tests, ruff/mypy clean.
-
-**`[A47]` THEOREM (unprompted deep-dive, not requested but load-bearing
-for everything after):** `W=1` is an absorbing upper barrier for
-`HebbianAdaptation` — proven algebraically (Cauchy-Schwarz + AM-GM on
-the update rule), verified numerically (violation exactly `0.000e+00`
-across 3 initial states). No weight can ever exceed 1.0 under any
-budget. This is why organization was mechanically unavailable in Phase
-11/12: the rule can only differentiate edges by DECAY from the uniform
-start, never growth.
-
-**`[A48]` cheapest differentiating test, THEN CORRECTED FOR A REAL
-BUG:** screened 3 initial-state regimes for `W*` (the rule's fixed
-point) spread via a single-trajectory computation. **A computation bug
-was caught mid-session** (a script computed `2*C/denom` where `denom`
-already carried `/2`, doubling the true value, and briefly looked like a
-refutation of `[A47]`'s own just-proven theorem — diagnosed via the
-diagonal, which must equal exactly 1.0). Corrected result: random-phase
-delocalization gives the most `W*` spread (std≈0.53) of the three
-regimes tested, more than the currently-used localized state (std≈0.41).
-
-**`[A49]` V1b RAN: zero structural excess.** The `[A48]` screening
-prediction did NOT survive an actual 50-window run — closed, not merely
-untested.
-
-**`[A50]` V1 RAN (`AlternativeObjective`, chosen over `AntiHebbian
+[summarized] **Post-REJECT revival exploration is complete for the original
 Adaptation` since that rule's own docstring already documents it as a
 pre-characterized decay pathology): zero structural excess.** Third
 independently-motivated variant with no organization.
@@ -151,31 +119,7 @@ the authoritative REJECT verdict for the original Phase 11/12 claim.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded — Phase 12 COMPLETE, verdict REJECT, null_results recorded)
-
-**[VERIFIED] Phase 12 ran to completion and terminated the open-system
-geometrogenesis line with a REJECT verdict.** Recorded per the global
-protocol in `null_results/20260814-open-system-geometrogenesis.md` +
-`null_results/INDEX.md` (both new — the directory did not exist before).
-HEAD `f072cfc`, 257/257 tests, ruff/mypy clean.
-
-**[VERIFIED-bash] The decisive result (`[A45]`): the sign is the
-finding.** Running the
-identical budget with `CorrelationShuffleAdaptation` (`[A31]`'s H0)
-produces ~2× MORE Forman-Ricci structural excess than real Hebbian
-correlations — `d=-2.907` (global null), `d=-2.936` (strength null),
-MCID met, CIs disjoint in both. Real dynamical correlations produce
-LESS structure than randomly shuffled ones. Not "no difference"
-(Milestone 5's ambiguous `d=-0.735`) — a large reproducible difference
-pointing AGAINST the hypothesis.
-
-**The chain that got there, each step killing one explanation:**
-`[A40]` partition isn't a stable object (detector sound, graphs
-degenerate; confirmed detector-independent via Louvain) → `[A41]`
-modularity effect has zero structural excess, fully reproduced by a
-structure-destroying null → `[A42]` weight-zeroing means
-`NoTopologyUpdate` doesn't guarantee constant *effective* topology
-(`[A41]`'s "if wrong" clause explicitly corrected, not silently edited)
-→ `[A43]` curvature is the first signal to survive the null, marked
+[summarized] **[VERIFIED] Phase 12 ran to completion and terminated the open-system
 `[HYPOTHESIS]` with its mundane explanation named → `[A44]` that
 explanation (node strengths) EXCLUDED, 68% retained, but the next one
 named → `[A45]` decisive reversal.
@@ -198,34 +142,7 @@ explicitly NOT a revival condition.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded — Phase 12 mid-flight, [A40]-[A43])
-
-**Phase 12 pre-registered (`docs/phase12_spec.md`, `e19657c`) and then
-executed in full. All merged+pushed to `main` (HEAD `8b3fa29`).
-257/257 tests, ruff/mypy clean.**
-
-**The headline outcome: Phase 11's `Cσ` modularity finding survives as a
-NUMBER but its interpretation is dead.**
-
-- `[A40]` **[VERIFIED-bash/pytest]** Stage 0 substrate gate: the community
-  partition is not a stable
-  object on this project's graphs. 1% weight perturbation → ARI 0.13 on
-  ER, 0.25 on the cubic lattice, but 0.997 on an SBM with planted
-  communities. The detector is sound (SBM positive control proves it);
-  the graphs have a degenerate modularity landscape (Good/de Montjoye/
-  Clauset 2010). Verdict PASSED, not BLOCKED → admissible evidence.
-  Named falsification condition (greedy-specific?) was TESTED with
-  Louvain: ER 0.138 / SBM 1.000, detector-independent.
-- `[A41]` Decisive weight-shuffle null model: structural excess
-  (Q_real − Q_shuffled) has a 95% CI containing zero in BOTH cells;
-  d(Cσ vs C0) on structural excess = 0.207 against 7.658 on raw Q and
-  40.751 on weight std. The entire effect is distributional — noise
-  widens the weight distribution ~24×, and Q is sensitive to that width
-  on a degenerate landscape. Full Kill Analysis in `[A41]`.
-- `[A42]` Found by investigating a divide-by-zero rather than patching
-  it: the non-negativity clamp can zero an edge weight, so
-  `NoTopologyUpdate` does NOT guarantee constant EFFECTIVE topology.
-  Rare (1/1536 edges, 1/5 seeds) so `[A41]` is unaffected, but the
-  inference "mask fixed ⇒ topology fixed" is invalid in general.
+[summarized] **Phase 12 pre-registered (`docs/phase12_spec.md`, `e19657c`) and then
   `[A41]`'s "If wrong" clause was explicitly CORRECTED, not silently
   edited.
 - `[A43]` Stage 3 Forman-Ricci: the FIRST signal to survive the null
@@ -248,12 +165,7 @@ Stage 4 was gated on a Stage 2 signal.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded — Milestone 7 approved and running)
-**User approved Milestone 7 scope explicitly**: N=512 AND N=1024,
-`seeds_per_cell=10`. Timed a single N=1024 seed before committing to the
-full grid (366s/seed vs N=512's 159s/seed -- closer to N^2 than N^3,
-likely because the fast-dynamics loop does repeated matrix-vector
-propagation per k-step rather than one dense expm per window). Estimated
-total: ~87 min for the full 2-size x 10-seed x 4-cell = 80-point grid.
+[summarized] **User approved Milestone 7 scope explicitly**: N=512 AND N=1024,
 `configs/open_pilot.yaml`/`tests/unit/check_open_config.py` updated,
 committed `d012ef7`, merged+pushed to `main`.
 
@@ -276,39 +188,7 @@ are actually read -- follow the same discipline as Milestone 3.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history, Milestones 3-6 DONE, Milestone 7 needed user go-ahead)
-**Phase 11 Milestones 1-6 are all complete and pushed to `main`.**
-Sequence this session: `[A35]` resolved by explicit user choice (option
-c) -> Milestone 3 factorial pilot ran clean (N=512, 20/20 points,
-`c78f9d5`/`1035cc2`) -> Milestone 4 (Cσ vs H5 via conductance/modularity,
-`d3f55cc`) -> Milestone 5 (H0 shuffle-correlation control, triggered by
-Milestone 4's signal per the ТЗ's own gate, same commit) -> Milestone 6
-(Analysis Freeze doc, `3e544e1`, `docs/phase11_milestone6_analysis_freeze.md`).
-
-**The headline finding, Kill-Analysis'd not spun:** `Cσ`'s modularity
-increase is real (clears the raw-ER-graph negative-control floor,
-`d=7.73`) but is NOT specific to the real Hebbian correlation structure
-— a shuffled-correlation H0 control is statistically indistinguishable
-(`d=-0.735`, CI overlap). What survived: noise-driven reinforcement
-(structured or not) moves modularity off the random floor. What got
-killed: "the SPECIFIC correlations the dynamics builds matter" — full
-Kill Analysis with what-survived/what-didn't in `docs/assumptions.md
-[A37]`. G1 (spectral dimension) never converged for any of the 20 open-
-system Active pilot points — no Gate-A verdict is reachable from Phase
-11's data; this remains exploratory pilot work.
-
-**Deliberately stopped before Milestone 7 (extended FSS)**: that's a
-materially larger compute campaign (multiple N, more seeds, likely new
-`(γ̃,σ̃)` pairs for a real H0-vs-H1 power analysis — the `d=-0.735` null
-result is close enough to the `0.8` MCID threshold that 5 seeds may be
-underpowered, flagged explicitly in `[A37]`'s own "if wrong" clause) —
-needs the user's explicit scope/compute-budget go-ahead per `docs/
-phase11_milestone6_analysis_freeze.md`'s closing section, not a silent
-continuation. All work is committed, merged to `main`, and pushed
-(`git log` confirms `3e544e1` is `origin/main`'s HEAD).
-
-244/244 tests, ruff/mypy clean throughout (verified via `.venv/Scripts/
-python.exe`, not the bare `python` on PATH).
-**[A35] resolved by explicit user decision, not silently**: user chose
+[summarized] **Phase 11 Milestones 1-6 are all complete and pushed to `main`.**
 option (c) -- proceed with γ̃=0.05 AS IS, treat near-zero D_W as itself
 informative (`OPEN_DYNAMICS_NO_EFFECT`), and run Milestone 3 at N=512
 (per `[A36]`). Addendum appended to `docs/assumptions.md [A35]`, commit
@@ -331,28 +211,7 @@ until the run finishes and results are actually read).
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history, ТЗ §21 config/script layer COMPLETE)
-[summarized] (empty section)
-**[VERIFIED, this session] conductance/modularity (ТЗ §12.6-12.7) AND the
-open-pilot config/script layer (ТЗ §21) both implemented, merged to
-`main`, and pushed.** `conductance.py` merged as `b6b539b`. Config layer
-(`dynamics/open_config.py`'s `OpenPilotConfig`, `configs/open_pilot.yaml`,
-`scripts/run_open_pilot.py`, `tests/unit/check_open_config.py`) committed
-`6347801` on `feat/phase11-open-pilot-config`, merged+pushed to `main`.
-244/244 tests, ruff/mypy clean (verified via `.venv` -- the bare `python`
-on PATH lacks `types-PyYAML`/`scipy-stubs`, gave false mypy errors on
-files unrelated to this session's changes; always use `.venv/Scripts/
-python.exe` for gate checks in this repo).
-
-**All ТЗ §21-listed infra is now built.** `run_open_pilot.py` defaults to
-`--dry-run` (prints the full cell/size/seed plan + the `[A35]` warning,
-executes nothing); `--run` is required to actually compute. Smoke-tested
-end-to-end with a tiny throwaway config (N=16, dtau_steps=5, not
-committed -- `results/` is gitignored).
-
-**[INFERRED] This closes Milestones 1 and 2 completely** (all ТЗ §21-listed
-files exist and pass the gate suite; no remaining unimplemented item is
-named in the ТЗ for these two milestones). The ONLY thing blocking
-Milestone 3 (the C0/Cγ/Cσ/Cγσ factorial pilot on Active) is now the
+[summarized] [summarized] (empty section)
 `[A35]` decision itself -- not missing infrastructure. `[A35]`: at
 γ̃=0.05 (the only nonzero pilot level validated so far, in both T7's
 lattice test and this config's default), Hebbian weight movement nearly
@@ -375,7 +234,7 @@ instead of guessing a value.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, 2026-08-14] ТЗ §13's mandatory detect_plateau recalibration
+[summarized] [summarized] **[VERIFIED, 2026-08-14] ТЗ §13's mandatory detect_plateau recalibration
 **Consequence, stated plainly: G1 verdicts at N<512 should be treated as
 uninformative-by-construction, not merely statistically weak.** `[A30]`'s
 own N=512 Active result (`d_s_hat=5.26`, still climbing, no plateau) is
@@ -398,7 +257,7 @@ User instructed to keep executing without stopping to ask at each step.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, this session] T10 (provenance tuple, ТЗ §22/§26) done —
+[summarized] [summarized] **[VERIFIED, this session] T10 (provenance tuple, ТЗ §22/§26) done —
 every mandatory regression test in ТЗ §22's list (T1-T10) is now
 implemented and green.** `experiment/open_provenance.py::
 OpenPilotProvenance` extends `EnvironmentProvenance` with dirty_flag
@@ -433,8 +292,9 @@ asked to keep executing without stopping to ask ("продолжай пока в
 ---
 
 
+
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, 2026-08-14] `D_W`/`D_OC` (ТЗ §12.1-12.2) implemented and
+[summarized] [summarized] **[VERIFIED, 2026-08-14] `D_W`/`D_OC` (ТЗ §12.1-12.2) implemented and
 branch `feat/phase11-dw-doc-confirmed-on-active`, not yet merged/pushed.
 
 **Blocking decision flagged for the user, NOT resolved unilaterally**
@@ -457,7 +317,7 @@ to keep executing the full ТЗ without stopping to ask at each step
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, 2026-08-14] Milestone 2 gate met: T7 (lattice positive
+[summarized] [summarized] **[VERIFIED, 2026-08-14] Milestone 2 gate met: T7 (lattice positive
 - 212/212 tests (was 202 at session start), ruff/mypy clean.
 - ADR for the `DynamicsBackend` architecture: `.claude/memory/decisions.md`.
 
@@ -480,7 +340,7 @@ meaningfully.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, 2026-08-14] User provided a detailed Phase 11 ТЗ (open-system
+[summarized] [summarized] **[VERIFIED, 2026-08-14] User provided a detailed Phase 11 ТЗ (open-system
 **Explicitly NOT done yet:** T4-T7, T10 (seed reproducibility across the
 5 independent seed spaces ТЗ §8 requires, NaN checks across pilot
 configs, symmetry invariants, positive-control lattice repeat, full
@@ -503,7 +363,7 @@ one nonzero `(γ,σ)` regime must not destroy lattice geometry").
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **[VERIFIED, 2026-08-14] `[A32]` — cheapest differentiating test run
+[summarized] [summarized] **[VERIFIED, 2026-08-14] `[A32]` — cheapest differentiating test run
 provenance question below, still unresolved). n=1 seed/point, caveat:
 even the unadapted lattice fails `[A30]`'s gates on the standard grid.
 Committed `c03f1ec`, not yet merged/pushed at time of writing.
@@ -526,7 +386,7 @@ significant rework, not a small patch.
 ---
 
 ## Prior SESSION HANDOFF (2026-08-14, superseded by the above — kept for history)
-[summarized] **Everything is committed, merged to `main`, and pushed to `origin/main`.
+[summarized] [summarized] **Everything is committed, merged to `main`, and pushed to `origin/main`.
 1. **`[A9]`'s `(K,η)` sweep was only tested at pilot scale** (N∈{64,125},
    `dtau_steps=50`) — not yet re-run at `dtau_steps=200`/full FSS grid.
 2. **G5's resolution-limitation question** (coarse integer-hop-count
@@ -549,7 +409,7 @@ covers the rest — G1/G5 investigation chain, `[A9]` sweep,
 ---
 
 ## Current Focus (2026-08-13, continued — G1 t_values investigated, MAJOR finding)
-[summarized] **[VERIFIED, this session] Widened G1's t_values grid to [0.01,1000] (30
+[summarized] [summarized] **[VERIFIED, this session] Widened G1's t_values grid to [0.01,1000] (30
 large `t` on any finite connected graph, so `d_s(t)→0` for large enough
 `t` -- trivially flat, was accepted as a false `d_s_hat≈0.003-0.03`
 "plateau." Added `min_d_s_hat=0.5` (provisional). Re-ran N=64/125/512
@@ -572,7 +432,7 @@ below) also remains open.
 ---
 
 ## Focus (2026-08-13, earlier — G5 uniform-v_eff resolved)
-[summarized] **[VERIFIED, this session] Investigated why post-G1-fix `v_eff` was still
+[summarized] [summarized] **[VERIFIED, this session] Investigated why post-G1-fix `v_eff` was still
    trim only the flat lead-in/trail, keep the whole rise. On real data:
    `v_eff` 20.0 -> 0.573 (a genuine 59-point average). 201/201 tests
    (was 200), all 4 prior tests unchanged/still passing.
@@ -595,7 +455,7 @@ before a real plateau can be found (from the prior focus entry below).
 ---
 
 ## Focus (2026-08-13, earlier — G1 N=125 asymmetry resolved)
-[summarized] **[VERIFIED, this session] The [A9] sweep's own G1 100%/0% (N=64/N=125)
+[summarized] [summarized] **[VERIFIED, this session] The [A9] sweep's own G1 100%/0% (N=64/N=125)
 `[0.1,10]` grid) then declines -- not a plateau. A rise-then-fall window
 can have near-zero AGGREGATE linear-regression slope purely because the
 rise and fall cancel (N=64 witness: window `[1.97,2.60,3.14,3.27,2.61,
@@ -618,7 +478,7 @@ question also remains open.
 ---
 
 ## Focus (2026-08-13, earlier — [A9] sweep executed)
-[summarized] **[A9]'s frozen 25-point `(K, η)` sweep executed twice** using the new
+[summarized] [summarized] **[A9]'s frozen 25-point `(K, η)` sweep executed twice** using the new
 - `any_nonfinite`: 0/25 -- no divergence/NaN anywhere in the tested range.
 - G1-G4: broad stability plateau, values vary only in the 3rd-4th
   significant figure across the full grid. Matches [A9]'s hoped-for
@@ -641,7 +501,7 @@ before trusting it in `development-v2`.
 ---
 
 ## Focus (2026-08-13, earlier this session — [A28]-[A31] defects + docs)
-[summarized] **First-ever `development.yaml` full-grid run executed (5 sizes x 5
+[summarized] [summarized] **First-ever `development.yaml` full-grid run executed (5 sizes x 5
 written while this run was already executing in the background --
 Python doesn't hot-reload). G5/G1 numbers from that specific run are not
 informative; G2/G3/G4/G6 reflect only fixes #1-2.
@@ -664,7 +524,7 @@ contract.md:622-626` still unmet); mutation testing.
 ---
 
 ## Phase 0-10 history (2026-08-11/12, historical — see Current Focus above for what has changed since)
-[summarized] **ALL 10 PHASES CLOSED, ZERO KNOWN DEFECTS REMAIN** (2026-08-11 to
+[summarized] [summarized] **ALL 10 PHASES CLOSED, ZERO KNOWN DEFECTS REMAIN** (2026-08-11 to
   first time (`experiment/runner.py`, `arms_runner.py`,
   `operator_independence.py`, `orchestrator.py`). `[A24]` fixes the
   adaptation step size `dτ=1.0` (degenerate with `η`). `[A25]` keeps Arm
@@ -704,8 +564,9 @@ new test modules as `check_*.py` instead. Existing `test_*.py` files
 both run under pytest.
 
 
+
 ## What exists (by module)
-[summarized] [CODE, this session's Phases 1-9, cross-checked against pytest/mypy passing on each — not re-verified line-by-line here,...
+[summarized] [summarized] [CODE, this session's Phases 1-9, cross-checked against pytest/mypy passing on each — not re-verified line-...
 - `experiment/phase_runner.py` — `run_phase(config, t_values, q) ->
   PhaseResult`: the TOP-LEVEL entry point, ties sweep + cell aggregation +
   G1-G6 + verdict into one call. Documented simplifications: G2/G3/G4
@@ -740,9 +601,12 @@ both run under pytest.
   Gate B (physical spacetime) is explicitly out of scope everywhere.
 
 
+
 ## Everything in the original CLAUDE.md roadmap (Phases 0-10) is DONE.
 
+
 ## Zero known defects. Genuinely open items for whoever picks this up next
+
 
 ## (extensions, not gaps):
 
@@ -767,6 +631,7 @@ both run under pytest.
    required from the start, still never run.
 
 
+
 ## Honesty checkpoint for whoever reads this next (including future me)
 
 Every phase above was completed with the SAME rigor as the supervised
@@ -786,11 +651,11 @@ project's own CLAUDE.md and should be treated as seriously as a
 fabricated result.
 
 
+
 ## Auto-commit log
-- [2026-08-17 17:42] `f4fb2be`: chore: commit local permission allowlist for cross-machine continuity
-- [2026-08-14 18:32] `3e544e1`: docs(phase11): Milestone 6 Analysis Freeze вЂ” fixes the Milestone 1-5 interpretation
-- [2026-08-14 16:43] `6347801`: feat(phase11): open-system pilot config/script layer (TZ Section 21)
-[summarized] - [2026-08-14 16:33] `31b8c33`: feat: Phase 11 conductance/modularity observables (РўР— В§12.6-12.7)
+- [2026-08-18 08:57] `d6a57c3`: fix(v4): address reviewer findings — disconnected-pair misclassification, unseeded tiebreak, dead code, unguarded candidate exhaustion
+- [2026-08-18 08:46] `e86ee92`: feat(v4): M1 — StatefulTopologyRule infrastructure, full TDD
+[summarized] - [2026-08-17 17:42] `f4fb2be`: chore: commit local permission allowlist for cross-machine continuity
   assumed without asking).
 - [2026-08-12 08:27] `e20d9cc`: feat: boyko-benchmark — falsification-first geometric-phase benchmark (Phases 0-10)
   — WHAT: first-ever commit to this repo (91 files, everything from Phase 0
