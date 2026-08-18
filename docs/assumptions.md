@@ -3820,6 +3820,79 @@ clean. Reviewer: `NEEDS_WORK`→addressed (all 3 P2 findings fixed:
 `AUPRC` baseline formula, `m<=1` guard, tie-break test coverage), no
 P0/P1 at any point.
 
+### A70 — Geometry Signal Audit ran: World A — no detectable geometric distance signal in `C_ij` at all, on the UNDAMAGED positive-control lattice (2026-08-18)
+
+**Ran exactly as pre-registered** (`docs/v5_spec.md` Sec15):
+`scripts/run_geometry_signal_audit.py`, N=512, UNDAMAGED T7/`[A32]`
+lattice (no damage step, no swap operator — topology frozen via
+`IdentityStatefulTopology`), 10 trials varying the excitation source
+node (deterministic, per Sec15.1's explicit reasoning for why "seed"
+would be the wrong word here), checkpoints `{10,25,49}` matching
+`K1'`/`K1'-Exposure` for scale continuity. `[VERIFIED-bash]`, full
+stdout in `.claude/scratch/geometry_signal_audit_run.log`.
+
+**Result, final checkpoint (window 49), mean across 10 trials:**
+
+| Metric | Value | Chance |
+|---|---|---|
+| `AUROC` (d*=1 vs d*>1) | **0.4859** | 0.5 |
+| `Recall@D` | **0.0000** | ~0.0118 |
+| `AUPRC` | 0.0103 | 0.0118 (exact) |
+| Spearman `rho(C, -d*)` | **0.0192** | 0 |
+
+**`AUROC≈0.49` is essentially chance (if anything fractionally
+below).** `Recall@D=0.0000` at EVERY SINGLE checkpoint across ALL 10
+trials (30/30) — not one of the top-1536-by-`C_ij` candidates was ever
+a true nearest-neighbor pair, in any trial. `AUPRC` sits slightly
+BELOW its own exact chance baseline. `Spearman rho` is ~0.02 at best,
+even flips sign at the middle checkpoint (`-0.003`) — no meaningful
+monotone relationship between correlation strength and distance.
+
+**Distance shells (illustrative, trial 0, final checkpoint): mean
+`C_ij` is ~`1e-5` to `1e-6` in magnitude at EVERY distance value
+`d*=1` through `d*=12` (the lattice's full diameter), with no
+systematic decay trend** — values fluctuate around zero regardless of
+distance.
+
+**Per `docs/v5_spec.md` Sec15.3's pre-registered two-world
+interpretation, this is unambiguously World A: no detectable
+geometric distance signal in `C_ij` at all**, at this `N`/`eta`/window
+schedule — not even the much weaker "coarse locality, not exact
+adjacency" (World B) that `[A69]`'s framing left open. This is a
+MORE upstream, more decisive negative finding than either `[A68]`
+(operator FAIL) or `[A69]` (H1, exact-identity signal FAIL): the
+problem is not in the swap operator, and not even narrowly in "exact
+edge identity" — the `psi → C_ij` pipeline itself, at this
+configuration, does not appear to produce geometric information of
+ANY grain that a simple correlation-magnitude ranking can extract.
+
+**Pearl Registry candidate, not chased further here:** the top-`D`
+distance distribution shows a striking, reproducible pattern — `P(d*=r
+| top-D)=0` for EVERY ODD `r` (1,3,5,7,9,11) and nonzero only at even
+`r` (2,4,6,8,10,12), in every trial. `[HYPOTHESIS]`, not verified:
+plausibly a bipartite-lattice parity effect (a periodic cubic lattice
+is bipartite by coordinate-sum parity; nearest-neighbor-only coupling
+under coherent unitary evolution may impose a parity structure on
+which pairs achieve high `|C_ij|`). This is a real, systematic,
+non-random pattern — not evidence of a bug — but pursuing WHY is a
+separate question from this audit's own (Recall@D/AUROC/Spearman
+already answer the geometric-signal question on their own, regardless
+of this parity structure's cause).
+
+**What this does NOT mean:** does not retroactively change `[A68]`'s
+FAIL or `[A69]`'s H1 finding (both stand independently — this is a
+different, more upstream question). Does not test any damaged
+lattice, restoration, or the swap mechanism. Does not test a different
+`N`, `eta`, or window count — only this one configuration. Does not
+rule out that a DIFFERENT observable (not raw time-averaged `C_ij`
+magnitude — e.g. a phase-based, higher-moment, or frequency-domain
+functional of `psi`) might encode geometry where this one does not.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_geometry_signal_audit.py`
+full stdout, `.claude/scratch/geometry_signal_audit_run.log`, this
+session's transcript; [VERIFIED-pytest] 364/364 tests, ruff clean,
+mypy `--strict` clean.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

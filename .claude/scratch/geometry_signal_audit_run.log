@@ -1,0 +1,69 @@
+=== Geometry Signal Audit (docs/v5_spec.md Sec15) ===
+N=512 (UNDAMAGED), checkpoints=(10, 25, 49), eta=0.1, dt=0.05, K=50, 10 trials, master_seed=20260818
+
+trial source  window   AUROC  recall@D   AUPRC AUPRC_base  spearman
+    0     79      10  0.4638    0.0000  0.0099     0.0118    0.0167
+    0     79      25  0.4802    0.0000  0.0102     0.0118   -0.0038
+    0     79      49  0.4814    0.0000  0.0102     0.0118    0.0186
+    1    476      10  0.4802    0.0000  0.0102     0.0118    0.0172
+    1    476      25  0.4993    0.0000  0.0106     0.0118   -0.0026
+    1    476      49  0.4938    0.0000  0.0105     0.0118    0.0207
+    2     71      10  0.4647    0.0000  0.0100     0.0118    0.0173
+    2     71      25  0.4835    0.0000  0.0103     0.0118   -0.0030
+    2     71      49  0.4858    0.0000  0.0103     0.0118    0.0188
+    3    288      10  0.4670    0.0000  0.0100     0.0118    0.0169
+    3    288      25  0.4784    0.0000  0.0102     0.0118   -0.0029
+    3    288      49  0.4875    0.0000  0.0103     0.0118    0.0204
+    4    299      10  0.4684    0.0000  0.0100     0.0118    0.0182
+    4    299      25  0.4791    0.0000  0.0102     0.0118   -0.0024
+    4    299      49  0.4856    0.0000  0.0103     0.0118    0.0203
+    5    145      10  0.4637    0.0000  0.0099     0.0118    0.0155
+    5    145      25  0.4829    0.0000  0.0103     0.0118   -0.0041
+    5    145      49  0.4851    0.0000  0.0103     0.0118    0.0167
+    6    296      10  0.4673    0.0000  0.0100     0.0118    0.0178
+    6    296      25  0.4790    0.0000  0.0102     0.0118   -0.0024
+    6    296      49  0.4862    0.0000  0.0103     0.0118    0.0207
+    7    423      10  0.4731    0.0000  0.0101     0.0118    0.0173
+    7    423      25  0.4839    0.0000  0.0103     0.0118   -0.0023
+    7    423      49  0.4891    0.0000  0.0104     0.0118    0.0192
+    8    128      10  0.4639    0.0000  0.0099     0.0118    0.0148
+    8    128      25  0.4823    0.0000  0.0102     0.0118   -0.0039
+    8    128      49  0.4856    0.0000  0.0103     0.0118    0.0171
+    9     41      10  0.4638    0.0000  0.0099     0.0118    0.0173
+    9     41      25  0.4722    0.0000  0.0101     0.0118   -0.0022
+    9     41      49  0.4788    0.0000  0.0102     0.0118    0.0193
+
+=== Aggregate, per checkpoint (mean across trials) ===
+window= 10  mean AUROC=0.4676  mean Recall@D=0.0000  mean AUPRC=0.0100  mean AUPRC_baseline=0.0118  mean Spearman=0.0169
+window= 25  mean AUROC=0.4821  mean Recall@D=0.0000  mean AUPRC=0.0103  mean AUPRC_baseline=0.0118  mean Spearman=-0.0030
+window= 49  mean AUROC=0.4859  mean Recall@D=0.0000  mean AUPRC=0.0103  mean AUPRC_baseline=0.0118  mean Spearman=0.0192
+
+=== Distance shells, final checkpoint, trial 0 (illustrative) ===
+  d= 1  mean_C= -0.000000  n_pairs=1536
+  d= 2  mean_C= -0.000039  n_pairs=4608
+  d= 3  mean_C=  0.000000  n_pairs=9728
+  d= 4  mean_C=  0.000014  n_pairs=16128
+  d= 5  mean_C=  0.000000  n_pairs=21504
+  d= 6  mean_C= -0.000002  n_pairs=23552
+  d= 7  mean_C=  0.000000  n_pairs=21504
+  d= 8  mean_C= -0.000000  n_pairs=16128
+  d= 9  mean_C= -0.000000  n_pairs=9728
+  d=10  mean_C= -0.000001  n_pairs=4608
+  d=11  mean_C=  0.000000  n_pairs=1536
+  d=12  mean_C= -0.000022  n_pairs=256
+
+=== Top-D distance distribution, final checkpoint, trial 0 (illustrative) ===
+  P(d*= 1 | top-D) = 0.0000
+  P(d*= 2 | top-D) = 0.1022
+  P(d*= 3 | top-D) = 0.0000
+  P(d*= 4 | top-D) = 0.2546
+  P(d*= 5 | top-D) = 0.0000
+  P(d*= 6 | top-D) = 0.2969
+  P(d*= 7 | top-D) = 0.0000
+  P(d*= 8 | top-D) = 0.2539
+  P(d*= 9 | top-D) = 0.0000
+  P(d*=10 | top-D) = 0.0820
+  P(d*=11 | top-D) = 0.0000
+  P(d*=12 | top-D) = 0.0104
+
+Interpretation (docs/v5_spec.md Sec15.3): World A (no signal: AUROC~0.5, Spearman~0, shells indistinguishable) means the problem is upstream of topology learning. World B (Spearman meaningfully positive, top-D enriched for low distance, but [A69]'s exact-edge AUPRC stays at chance) means C_ij encodes locality, not exact adjacency -- reframe future work toward coarse distance/neighborhood learning.

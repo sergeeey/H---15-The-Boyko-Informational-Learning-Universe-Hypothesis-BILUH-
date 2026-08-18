@@ -21,6 +21,18 @@ appear to encode
 which specific edges were removed strongly enough for ANY selection
 rule to exploit, at this `N`/damage level/adaptation rate.**
 
+**§15 (Geometry Signal Audit) RAN 2026-08-18: World A — `[A70]`.**
+`AUROC≈0.49` (chance), `Recall@D=0.0000` at every checkpoint across
+all 10 trials, `AUPRC` below its own chance baseline, `Spearman
+rho≈0.02` (sign-unstable) — no detectable geometric distance signal in
+`C_ij` at all, even decoupled entirely from damage/restoration on the
+clean UNDAMAGED lattice. More upstream and more decisive than `[A68]`/
+`[A69]`: the `psi → C_ij` pipeline itself does not appear to encode
+geometry a correlation-magnitude ranking can extract, at this
+`N`/`eta`/window schedule. See `[A70]` for a reproducible distance-
+parity side-finding (Pearl Registry, `pearl_registry/INDEX.md`) not
+chased further here.
+
 **Status (as originally written, kept for history): PROPOSED, 2026-08-18.
 Not approved. Nothing implemented, nothing run.**
 
@@ -597,6 +609,17 @@ not resurrect V4's independent-deletion mechanism, and would not by
 itself be evidence for or against `[A45]`'s still-open Phase 11-12
 anomaly.
 
+### 13.6 What is already established independent of this follow-up
+
+Regardless of `V5-K1'-Exposure`'s result, `[A66]`'s clean-substrate
+finding stands on its own: **balanced, degree-preserving structural
+moves resolve the feasibility conflict that `V4`'s independent edge
+deletion could not** (`K_skip=0%` across 300 real swap-slot operations,
+vs. `V4`'s `K1`/`K1c`/`K1d`, none of which ever produced a clean
+substrate). This is a concrete adaptive-topology design principle, not
+contingent on whether the state-specific advantage this follow-up tests
+turns out to be strong, null, or absent.
+
 ---
 
 ## 14. `C_ij` Recall@D Signal Diagnostic — pre-registered before any of it runs (Revision 2, after `[A68]`'s FAIL)
@@ -698,13 +721,120 @@ adaptation rate; a signal-favors-H2 result does not by itself specify
 what the better operator or endpoint should be — only that it is worth
 looking for one.
 
-### 13.6 What is already established independent of this follow-up
+---
 
-Regardless of `V5-K1'-Exposure`'s result, `[A66]`'s clean-substrate
-finding stands on its own: **balanced, degree-preserving structural
-moves resolve the feasibility conflict that `V4`'s independent edge
-deletion could not** (`K_skip=0%` across 300 real swap-slot operations,
-vs. `V4`'s `K1`/`K1c`/`K1d`, none of which ever produced a clean
-substrate). This is a concrete adaptive-topology design principle, not
-contingent on whether the state-specific advantage this follow-up tests
-turns out to be strong, null, or absent.
+## 15. Geometry Signal Audit — pre-registered before any of it runs (Revision 3, after `[A69]`'s H1 finding)
+
+**RAN 2026-08-18: `[A70]`.** World A — no detectable geometric
+distance signal, at any of the four levels below, on the clean
+UNDAMAGED lattice. See `[A70]` for the full per-checkpoint table and
+the distance-parity Pearl Registry entry.
+
+**Motivation.** `[A69]` found `C_ij` does not encode EXACT damaged-edge
+identity — but that is a narrower claim than "`C_ij` carries no
+geometric information at all." The user's own reframing: exact
+single-edge recovery may simply be the wrong target. A network could
+fail to identify "node 37 must connect to node 91" while still
+encoding coarser locality ("37 and 91 are close," "same neighborhood,"
+"distance ~1, not ~7"). This audit tests THAT question directly,
+decoupled from damage/restoration entirely — the most upstream
+possible check of whether `psi → C_ij` produces any detectable
+geometric signal at all.
+
+**L0 gate:** **Predictive**, not causal — same status as §14. "Does
+`C_ij`, computed on the clean positive-control lattice, discriminate
+pairs by their TRUE graph distance?" is a discrimination/correlation
+question about an already-computed quantity; no intervention.
+
+**Not a duplicate of `[A69]` or of `V4`'s `FEASIBILITY REJECT`** — this
+runs on the UNDAMAGED lattice (no damage step, no restoration, no swap
+operator at all), asking a strictly upstream question. `null-results-
+pre-check`'s keyword match against `v4-prune-regrow-feasibility` is a
+false positive: nothing here touches independent edge pruning.
+
+### 15.1 Population and procedure
+
+Same T7/`[A32]` N=512 lattice, but **UNDAMAGED** — the clean positive
+control itself, with EXACTLY known ground-truth distances
+`d*(i,j)` (`graph_distance_matrix`, already used for this project's own
+G1-G6 gates elsewhere). No damage seed, no swap operator — topology
+held frozen via the same `IdentityStatefulTopology` §14 introduced.
+
+**"Trials," not "seeds" — a deliberate naming break, stated explicitly
+rather than silently reusing "seed" to mean something else.** Nothing
+in this loop is stochastic once the topology is undamaged and frozen:
+`HebbianAdaptation` has no RNG, and `ClosedUnitaryBackend` with
+`noise_seed=None`/`gamma=sigma=0` is deterministic. Ten identical
+"seeds" would silently produce ONE identical result. Instead, 10 trials
+vary the excitation SOURCE NODE (`localized_psi0`'s `source_node`),
+drawn deterministically via `SeedManager(master_seed=20260818)` — a
+genuine robustness check (does any geometric signal appear regardless
+of where the excitation starts), not a cosmetic seed count.
+
+Same checkpoints `{10,25,49}`, same `eta=0.1`/`dt=0.05`/`K=50` as §13/
+§14, for continuity — not because they are optimal for this new
+question, but so results are directly comparable in scale.
+
+### 15.2 Four diagnostic levels, all computed per checkpoint per trial
+
+Candidate universe here is EVERY pair `(i,j)`, `i<j` (not just
+non-edges — unlike §14, the positive class below mostly IS existing
+edges, which is the point: does correlation strength track adjacency).
+
+1. **Nearest-neighbor discrimination.** Positive = `d*(i,j)=1`
+   (true lattice edges), negative = `d*(i,j)>1`. `AUROC` (Mann-Whitney
+   U, `scipy.stats.mannwhitneyu` — a trusted library implementation,
+   not a re-derived formula, learning from `[A69]`'s own baseline-
+   formula error), plus `Recall@D`/`AUPRC` and their EXACT chance
+   baselines, reusing `signal_diagnostic.py`'s reviewer-verified
+   `compute_rank_metrics` core directly (not a second, independently
+   -written copy of the same math).
+2. **Distance ordering.** Spearman `rho(C_ij, -d*(i,j))`
+   (`scipy.stats.spearmanr`). `rho≈0` ⇒ no ordinal locality at all;
+   `rho>0` and meaningfully large ⇒ closer pairs systematically score
+   higher, independent of exact-edge questions.
+3. **Distance shells.** Mean `C_ij` at each true distance value
+   `d*=1,2,3,...` — a strong geometric encoding should show a
+   systematic (not necessarily perfectly monotonic) decline.
+4. **Top-D distance distribution.** Among the top-`D` (`D`=count of
+   true `d*=1` pairs) candidates ranked by `C_ij`, the empirical
+   distribution of TRUE distances — `P(d*=r | top-D)` for every `r`
+   present, cumulative sum gives `P(d*≤r | top-D)`.
+
+### 15.3 Interpretation, pre-registered before data — two worlds
+
+**World A — no geometric signal at all.** `AUROC≈0.5`, `AUPRC≈`chance,
+`rho≈0`, distance shells indistinguishable, top-`D` distribution
+matches the base rate. Conclusion: **the problem is upstream of
+topology learning entirely** — `psi → C_ij` itself does not produce
+detectable geometric information at this `N`/adaptation rate, and no
+future topology operator (swap-based or otherwise) can be expected to
+recover geometry from a signal that isn't there. This would be a
+materially stronger negative result than `[A68]`/`[A69]` — it would
+argue against the fast-dynamics/correlation-functional/timescale
+choices themselves, not just the restoration mechanism built on top of
+them.
+
+**World B — coarse geometry present, exact identity is not.**
+`rho(C,-d*)` meaningfully positive, top-`D` candidates enriched for
+low true distance, distance shells show a real trend — while `[A69]`'s
+exact-edge `AUPRC` stays at chance. Conclusion: **`C_ij` encodes
+locality but not exact adjacency** — the earlier target (recover the
+specific missing edge) was too strict; a future mechanism should learn
+a coarse distance/neighborhood metric, not a specific edge set.
+
+**No MCID, no PASS/FAIL gate — diagnostic, matching §14's own
+discipline.** The two worlds above are the pre-registered interpretive
+buckets; a result landing between them is reported as such, honestly,
+not forced into one bucket.
+
+### 15.4 What this does NOT mean, regardless of outcome
+
+Does not retroactively change `[A68]`'s FAIL or `[A69]`'s H1 finding
+(both stand on their own evidence — this is a different, upstream
+question). Does not test any damaged lattice, restoration, or swap
+mechanism. A World-B result does not by itself specify what a coarse-
+locality-learning mechanism should look like — only that one might be
+worth designing. Does not license any claim about physical spacetime,
+BILUH, or geometrogenesis regardless of outcome, per this project's
+standing `CLAUDE.md` scope discipline.

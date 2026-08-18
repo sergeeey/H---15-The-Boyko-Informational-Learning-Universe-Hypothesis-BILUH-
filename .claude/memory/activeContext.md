@@ -1,6 +1,77 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — C_ij Signal Diagnostic RAN + reviewer-caught AUPRC-baseline error fixed same-day; H1 confirmed decisively (Recall@D 1.19x, AUPRC 0.98x its OWN corrected baseline); [A69] recorded, merged to main, awaiting user direction on next step)
+## SESSION HANDOFF (updated 2026-08-18 — Geometry Signal Audit RAN: World A, no detectable geometric distance signal in C_ij at all, on the UNDAMAGED lattice; [A70] recorded, most upstream/decisive negative finding of the whole V5 line, pending commit/reviewer/merge)
+
+**Result [VERIFIED-bash, this session's transcript]:** ran the user's
+proposed follow-up to `[A69]` -- decoupled from damage/restoration
+entirely, tests whether `psi -> C_ij` encodes ANY geometric distance
+information on the clean, UNDAMAGED T7 lattice. 10 trials (varying
+excitation source node, since nothing else in this frozen-topology,
+no-noise loop is stochastic -- "seed" would have been the wrong word,
+stated explicitly in `docs/v5_spec.md` Sec15.1). Even cheaper than
+`[A69]`'s diagnostic (0.21s/window, ~1.7 min for the full campaign).
+
+**Final checkpoint (window 49), mean across 10 trials: AUROC=0.4859
+(chance=0.5), Recall@D=0.0000 -- literally zero at EVERY checkpoint,
+EVERY trial (30/30) -- AUPRC=0.0103 (slightly BELOW its own exact
+chance baseline 0.0118), Spearman rho(C,-d*)=0.0192 (sign-unstable
+across checkpoints).** Distance shells: mean C_ij ~1e-5 to 1e-6 at
+EVERY true distance 1 through 12, no decay trend at all.
+
+**Per the pre-registered two-world interpretation (`docs/v5_spec.md`
+Sec15.3): unambiguously World A -- no detectable geometric signal,
+not even the weaker "coarse locality, not exact adjacency" (World B)
+that [A69] left open.** This is now the MOST upstream negative
+finding in the whole V5 line: not the swap operator ([A68]), not even
+narrowly "exact edge identity" ([A69]) -- the raw psi -> C_ij pipeline
+itself, at this N/eta/window schedule, does not appear to produce
+geometric information a correlation-magnitude ranking can extract.
+
+**Pearl Registry entry created** (`pearl_registry/INDEX.md`, new file
+-- didn't exist in this project before): a reproducible, structured
+side-finding -- top-D-by-C_ij candidates show P(d*=r|top-D)=0 for
+EVERY ODD true distance, nonzero only at even distances, in all 10
+trials. [HYPOTHESIS] bipartite-lattice parity effect, NOT chased
+further here -- falsifiable prediction recorded (restrict "near"
+class to an even distance, e.g. d*=2, and check if AUROC/Recall@D
+clear chance where the d*=1 framing showed none).
+
+**Recorded:** `docs/assumptions.md` [A70] (full table, per-checkpoint
+detail, Kill-Analysis-style "what this does NOT mean"); `docs/v5_spec.
+md` status header + Sec15 header both updated. Also fixed, same
+session: a structural bug from an EARLIER edit this session had split
+Sec13 -- Sec14 got inserted in the middle of Sec13, stranding Sec13.6
+at the end of the file. Found via `grep "^## [0-9]"` showing Sec14
+before Sec13.6 in line order; fixed by moving Sec13.6 back before
+Sec14 (Checkpoint Fidelity: this is a structural fix, not a content
+edit -- no addendum needed, just corrected placement).
+
+364/364 tests, ruff clean, mypy --strict clean. **Not yet committed --
+on `main` still (no feature branch created yet for this piece), not
+yet reviewed, not yet merged.** New infra this round: `observables/
+geometry_signal_audit.py` (compute_geometry_signal_audit, AUROC via
+scipy.stats.mannwhitneyu, Spearman via scipy.stats.spearmanr -- reused
+TRUSTED library functions this time, not re-derived formulas, learning
+directly from [A69]'s own baseline-formula mistake), refactored
+`observables/signal_diagnostic.py` to extract a shared `compute_rank_
+metrics` core (regression-tested, both callers verified unchanged
+behavior), `experiment/geometry_signal_audit_gate.py`, `scripts/
+run_geometry_signal_audit.py`.
+
+**Not yet done:** create feature branch, run mandatory reviewer pass
+(3+ files, per this project's own pre-commit checklist -- no
+exceptions), address findings, commit, merge --ff-only to main, push.
+Then report the full result to the user in their own pre-registered
+analysis order (World A/B classification first, then the 4 levels).
+
+**What comes next is the user's call, not decided here** -- World A
+suggests the next question is about the fast-dynamics/correlation-
+functional/timescale choices THEMSELVES (upstream of any topology
+operator), not another swap variant or another edge-recovery attempt.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — C_ij Signal Diagnostic RAN + reviewer-caught AUPRC-baseline error fixed same-day; H1 confirmed decisively (Recall@D 1.19x, AUPRC 0.98x its OWN corrected baseline); [A69] recorded, merged to main, awaiting user direction on next step)
 
 **Reviewer pass on `feat/v5-signal-diagnostic` came back `NEEDS_WORK`
 (3x P2, 0 P0/P1)** -- most important finding: `docs/v5_spec.md`

@@ -48,6 +48,45 @@ def _expected_average_precision(d: int, m: int) -> float:
     return harmonic_m / m + ((d - 1) / (m * (m - 1))) * (m - harmonic_m)
 
 
+def compute_rank_metrics(
+    scores: NDArray[np.floating], is_positive: NDArray[np.bool_]
+) -> SignalDiagnosticResult:
+    """Shared core: given per-candidate scores and positive labels, rank
+    descending by score and compute `Recall@D` (`D=is_positive.sum()`),
+    `AUPRC` (average precision), and their exact chance baselines.
+    Extracted 2026-08-18 (`docs/v5_spec.md` Sec15) so `compute_signal_
+    diagnostic` (exact edge recovery) and `compute_geometry_signal_audit`
+    (nearest-neighbor classification) share ONE reviewer-verified
+    implementation of this math, rather than risking a second
+    independently-derived (and possibly independently-buggy, `[A69]`'s
+    own correction) copy."""
+    d = int(is_positive.sum())
+    m = len(scores)
+    if d == 0:
+        raise ValueError("compute_rank_metrics: no positives -- nothing to rank.")
+    if m <= 1:
+        raise ValueError(f"compute_rank_metrics: only {m} candidate(s) -- need at least 2.")
+
+    order = np.argsort(-scores, kind="stable")
+    is_positive_sorted = is_positive[order]
+
+    recall_at_d = float(is_positive_sorted[:d].sum()) / d
+
+    cum_tp = np.cumsum(is_positive_sorted)
+    ranks = np.arange(1, m + 1)
+    precision_at_k = cum_tp / ranks
+    auprc = float(np.sum(precision_at_k * is_positive_sorted)) / d
+
+    return SignalDiagnosticResult(
+        recall_at_d=recall_at_d,
+        auprc=auprc,
+        baseline_recall=d / m,
+        baseline_auprc=_expected_average_precision(d, m),
+        d=d,
+        n_candidates=m,
+    )
+
+
 def compute_signal_diagnostic(
     mask: NDArray[np.bool_],
     c_ij: NDArray[np.floating],
@@ -73,23 +112,4 @@ def compute_signal_diagnostic(
         [(int(i), int(j)) in damaged_out for i, j in zip(cand_rows, cand_cols, strict=True)]
     )
 
-    d = len(damaged_out)
-    m = len(cand_rows)
-    order = np.argsort(-scores, kind="stable")
-    is_positive_sorted = is_positive[order]
-
-    recall_at_d = float(is_positive_sorted[:d].sum()) / d
-
-    cum_tp = np.cumsum(is_positive_sorted)
-    ranks = np.arange(1, m + 1)
-    precision_at_k = cum_tp / ranks
-    auprc = float(np.sum(precision_at_k * is_positive_sorted)) / d
-
-    return SignalDiagnosticResult(
-        recall_at_d=recall_at_d,
-        auprc=auprc,
-        baseline_recall=d / m,
-        baseline_auprc=_expected_average_precision(d, m),
-        d=d,
-        n_candidates=m,
-    )
+    return compute_rank_metrics(scores, is_positive)
