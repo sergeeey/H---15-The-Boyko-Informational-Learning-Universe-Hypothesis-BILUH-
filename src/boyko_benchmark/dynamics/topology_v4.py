@@ -107,6 +107,19 @@ class DistanceStratifiedShuffleScorer:
         real_scores = self._base_scorer.score(graph, trajectory, candidates, rng)
         distances = graph_distance_matrix(graph.mask)
         candidate_distances = np.array([distances[i, j] for i, j in candidates])
+        if np.any(candidate_distances < 0):
+            # WHY: hop_distances_from_source's own convention (-1 for
+            # unreachable) must be raised at the point of consumption,
+            # matching observables/propagation_front.py's identical
+            # pattern for the same value -- silently folding -1 into
+            # the nearest real stratum would misclassify a disconnected
+            # pair as distance-2 (review finding: -1 <= 2 is True).
+            raise ValueError(
+                "DistanceStratifiedShuffleScorer: candidate pair is unreachable/disconnected "
+                "(hop distance -1) -- the topology's population is restricted to connected "
+                "graphs (docs/v4_spec.md Sec3's while-active ICE strategy handles this at the "
+                "run-loop level, not here)."
+            )
         stratum_of = np.array(
             [self._stratum(d) for d in candidate_distances],
         )
@@ -146,11 +159,31 @@ class RateBasedTopologyRule:
     window's weights.
     """
 
-    def __init__(self, rho: float, m: int, regrow_scorer: RegrowScorer, rng_seed: int) -> None:
+    def __init__(
+        self,
+        rho: float,
+        m: int,
+        regrow_scorer: RegrowScorer,
+        topology_tiebreak_seed: int,
+        control_regrowth_seed: int,
+    ) -> None:
+        """Two independent seed streams (`docs/v4_spec.md` Sec3's six-
+        stream discipline, scoped to what this class owns):
+        `topology_tiebreak_seed` breaks exact numerical ties in the
+        deterministic Top-K regrow selection ONLY (`[A11]`-style
+        independence from the scoring randomness itself); `control_
+        regrowth_seed` drives the scorer's own randomness (A2's uniform
+        draw, A4's within-stratum shuffle -- a no-op for A3's
+        `CorrelationScorer`, which ignores its `rng` argument). Funnelling
+        both through one seed would let the two draws' sequences drift
+        against each other the moment one consumes the stream a
+        different number of times than the other, exactly the failure
+        mode Sec3 names."""
         self._rho = rho
         self._m = m
         self._regrow_scorer = regrow_scorer
-        self._rng = np.random.default_rng(rng_seed)
+        self._tiebreak_rng = np.random.default_rng(topology_tiebreak_seed)
+        self._regrow_rng = np.random.default_rng(control_regrowth_seed)
         self.persistence_counters: dict[frozenset[int], int] = {}
 
     def update(
@@ -170,15 +203,14 @@ class RateBasedTopologyRule:
             else:
                 self.persistence_counters.pop(key, None)
 
+        # WHY no ranking/truncation here: `eligible` is by construction a
+        # subset of `low_set` (size <= n_target), so every eligible edge
+        # is always pruned in full -- there is never an oversupply to
+        # rank among. An earlier version sorted+capped this as if there
+        # could be, which was dead code (review finding 3).
         eligible = [e for e in low_set if self.persistence_counters.get(frozenset(e), 0) >= self._m]
-        eligible.sort(
-            key=lambda e: (
-                -self.persistence_counters[frozenset(e)],
-                graph.weights[e[0], e[1]],
-            )
-        )
-        n_to_prune = min(n_target, len(eligible))
-        to_prune = eligible[:n_to_prune]
+        to_prune = eligible
+        n_to_prune = len(to_prune)
 
         if n_to_prune == 0:
             return graph
@@ -189,8 +221,23 @@ class RateBasedTopologyRule:
             for j in range(i + 1, graph.n_nodes)
             if not graph.mask[i, j]
         ]
-        scores = self._regrow_scorer.score(graph, trajectory, candidates, self._rng)
-        order = np.argsort(-scores, kind="stable")  # deterministic Top-K, stable tie-break
+        if len(candidates) < n_to_prune:
+            # WHY: at this project's real budgets (N=512, mean degree 6,
+            # ~129k non-edges vs ~15 pruned/window) this cannot occur --
+            # asserted rather than silently letting the edge-budget
+            # invariant (|E| constant, central to A3-vs-A4 comparability)
+            # break with no error (review finding 4).
+            raise ValueError(
+                f"RateBasedTopologyRule: only {len(candidates)} regrow candidates available "
+                f"for {n_to_prune} pruned edges -- graph is too dense for this rho."
+            )
+        scores = self._regrow_scorer.score(graph, trajectory, candidates, self._regrow_rng)
+        # WHY: deterministic Top-K primary-sorted by score; exact ties
+        # broken by an independent seeded stream (topology_tiebreak_seed),
+        # not by candidate list position -- np.lexsort sorts by the LAST
+        # key first, so (-scores) is primary and tiebreak is secondary.
+        tiebreak = self._tiebreak_rng.random(len(candidates))
+        order = np.lexsort((tiebreak, -scores))
         to_regrow = [candidates[k] for k in order[:n_to_prune]]
 
         new_mask = graph.mask.copy()

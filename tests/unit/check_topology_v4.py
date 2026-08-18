@@ -57,7 +57,13 @@ def test_persistence_counter_requires_m_consecutive_low_windows() -> None:
     edge (2,3) is always the lowest-weight edge, its persistence counter
     must read 1 after window 1 and 2 after window 2 -- not eligible for
     pruning until it reaches m."""
-    rule = RateBasedTopologyRule(rho=0.25, m=2, regrow_scorer=UniformRandomScorer(), rng_seed=1)
+    rule = RateBasedTopologyRule(
+        rho=0.25,
+        m=2,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=1,
+        control_regrowth_seed=1,
+    )
     graph = _ring4([1.0, 1.0, 0.1, 1.0])
     trajectory = _fake_trajectory(4, seed=1)
 
@@ -75,7 +81,13 @@ def test_edge_count_is_conserved_at_every_window_not_just_the_end() -> None:
     """M1's edge-budget invariant: |E| must be identical before and after
     EVERY window's update call, across several consecutive windows --
     not merely equal at the start and the end of a longer run."""
-    rule = RateBasedTopologyRule(rho=0.25, m=1, regrow_scorer=UniformRandomScorer(), rng_seed=2)
+    rule = RateBasedTopologyRule(
+        rho=0.25,
+        m=1,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=2,
+        control_regrowth_seed=2,
+    )
     graph = _ring4([1.0, 1.0, 0.1, 1.0])
     n_edges_start = int(graph.mask.sum()) // 2
 
@@ -87,7 +99,13 @@ def test_edge_count_is_conserved_at_every_window_not_just_the_end() -> None:
 
 
 def test_rule_never_creates_a_self_loop_or_breaks_symmetry() -> None:
-    rule = RateBasedTopologyRule(rho=0.5, m=1, regrow_scorer=UniformRandomScorer(), rng_seed=3)
+    rule = RateBasedTopologyRule(
+        rho=0.5,
+        m=1,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=3,
+        control_regrowth_seed=3,
+    )
     graph = _ring4([1.0, 1.0, 0.1, 0.2])
 
     for window in range(4):
@@ -102,7 +120,13 @@ def test_new_edges_are_initialized_at_weight_one() -> None:
     """[A19]'s uniform-initial-weight convention extended to regrown
     edges: a newly created edge starts at 1.0, the same convention as
     every edge's original value, not an arbitrary or zero weight."""
-    rule = RateBasedTopologyRule(rho=0.25, m=1, regrow_scorer=UniformRandomScorer(), rng_seed=4)
+    rule = RateBasedTopologyRule(
+        rho=0.25,
+        m=1,
+        regrow_scorer=UniformRandomScorer(),
+        topology_tiebreak_seed=4,
+        control_regrowth_seed=4,
+    )
     graph = _ring4([1.0, 1.0, 0.1, 1.0])
     trajectory = _fake_trajectory(4, seed=1)
 
@@ -134,6 +158,65 @@ def test_deterministic_topk_matches_hand_computation() -> None:
     scores = scorer.score(graph, trajectory, candidates, rng=np.random.default_rng(0))
 
     assert scores[0] > scores[1]  # (0,2) correlation exceeds (1,3)
+
+
+def test_distance_stratified_shuffle_raises_on_disconnected_candidate() -> None:
+    """[Review finding 1] `hop_distances_from_source` returns -1 for
+    unreachable nodes (`observables/propagation_front.py`'s own
+    convention); `_stratum` must not silently fold that into the
+    nearest real stratum -- it must raise, matching
+    `propagation_front.py:54-55`'s own established pattern of raising
+    at the point of CONSUMING a -1, not silently guessing. Two
+    disconnected components: {0,1} and {2,3}, candidate (0,2) is
+    unreachable."""
+    mask = np.zeros((4, 4), dtype=bool)
+    w = np.zeros((4, 4))
+    mask[0, 1] = mask[1, 0] = True
+    w[0, 1] = w[1, 0] = 1.0
+    mask[2, 3] = mask[3, 2] = True
+    w[2, 3] = w[3, 2] = 1.0
+    graph = WeightedGraph(mask=mask, weights=w)
+    trajectory = _fake_trajectory(4, seed=1)
+
+    scorer = DistanceStratifiedShuffleScorer(base_scorer=CorrelationScorer())
+
+    import pytest
+
+    with pytest.raises(ValueError, match="unreachable|disconnected|-1"):
+        scorer.score(graph, trajectory, [(0, 2)], rng=np.random.default_rng(0))
+
+
+def test_topk_tiebreak_is_seeded_not_positional() -> None:
+    """[Review finding 2] Exact score ties must be broken by
+    `topology_tiebreak_seed`, not by candidate list order
+    (`np.argsort(kind='stable')` alone, which is positional and
+    ignores the seed entirely). Two rules with different tiebreak
+    seeds, identical everything else, identical (all-tied) scores must
+    be able to select DIFFERENT edges to regrow; the same seed reused
+    must reproduce the same selection."""
+    graph = _ring4([1.0, 1.0, 0.1, 1.0])
+
+    class _AllTiedScorer:
+        def score(self, graph, trajectory, candidates, rng):  # noqa: ANN001, ANN201
+            return np.ones(len(candidates))
+
+    def regrown_edge(tiebreak_seed: int) -> tuple[int, int]:
+        rule = RateBasedTopologyRule(
+            rho=0.25,
+            m=1,
+            regrow_scorer=_AllTiedScorer(),
+            topology_tiebreak_seed=tiebreak_seed,
+            control_regrowth_seed=0,
+        )
+        trajectory = _fake_trajectory(4, seed=1)
+        result = rule.update(graph, trajectory, dtau=1.0)
+        new_edges = np.argwhere(np.triu(result.mask & ~graph.mask))
+        assert len(new_edges) == 1
+        return int(new_edges[0][0]), int(new_edges[0][1])
+
+    assert regrown_edge(tiebreak_seed=1) == regrown_edge(tiebreak_seed=1)  # reproducible
+    seeds_tried = {regrown_edge(tiebreak_seed=s) for s in range(10)}
+    assert len(seeds_tried) > 1, "tiebreak seed has no effect -- still purely positional"
 
 
 def test_distance_stratified_shuffle_preserves_within_stratum_value_multiset() -> None:

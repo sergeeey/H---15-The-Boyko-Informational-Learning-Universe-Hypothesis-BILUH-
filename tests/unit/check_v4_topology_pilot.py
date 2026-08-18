@@ -74,7 +74,13 @@ def test_real_rate_based_rule_actually_changes_topology_over_a_real_run() -> Non
     rng = np.random.default_rng(11)
     graph = generate_erdos_renyi(n_nodes=20, n_edges=40, rng=rng)
     psi0 = localized_psi0(graph.n_nodes, source_node=0)
-    rule = RateBasedTopologyRule(rho=0.1, m=1, regrow_scorer=CorrelationScorer(), rng_seed=42)
+    rule = RateBasedTopologyRule(
+        rho=0.1,
+        m=1,
+        regrow_scorer=CorrelationScorer(),
+        topology_tiebreak_seed=42,
+        control_regrowth_seed=42,
+    )
 
     result = run_adaptive_dynamics_v4(
         graph,
