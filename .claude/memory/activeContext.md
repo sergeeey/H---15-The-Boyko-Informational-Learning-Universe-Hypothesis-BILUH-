@@ -1,6 +1,57 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V4 prune/regrow CLOSED as FEASIBILITY REJECT ([A64]); V5 "Balanced Support Rewiring" now being pre-registered per user's explicit 7-step directive)
+## SESSION HANDOFF (updated 2026-08-18 — V5 M0-M2 complete: K1' PASSED (bare inequality) but WEAK (d=0.63 < MCID); substrate fully clean (0% K_skip); awaiting user direction on a larger swap budget)
+
+**Repo state:** `main` HEAD `fe990b5` plus uncommitted V5 M1+M2 work
+(`dynamics/topology_v5.py`, `experiment/k1_prime_damage_gate.py`/
+`k1_prime_gate_verdict.py`, `scripts/run_k1_prime_gate.py`, tests,
+`docs/assumptions.md` `[A65]`/`[A66]`, `docs/v5_spec.md` Sec11
+corrected) — about to be committed. 336/336 tests, ruff clean, mypy
+`--strict` clean.
+
+**M1 (swap operation, TDD)** — reviewer LGTM [VERIFIED, reviewer's own
+report read directly] (independently cross-checked the vectorized
+candidate enumeration against a naive reference on 200 random graphs,
+0 mismatches). **Found mid-implementation, not
+assumed (`[A65]`):** candidate enumeration is `O(|E|^2)` — ~2.3M
+candidates at N=512, a naive implementation would take HOURS at
+K1'-scale call counts. Fixed by redesigning `generate_swap_candidates`
+to return NumPy arrays (0.14s vs 6.3s to enumerate), constructing
+`SwapCandidate` objects only for the handful of top-ranked candidates
+actually tried. Residual cost (~1.2-1.3s/swap-slot) is real and
+calibrated the swap budget down (`n_swaps=3`/window, `dtau_steps=10`)
+rather than left as a silent optimistic estimate.
+
+**M2 (`K1'` damaged-lattice gate) ran at that calibrated scale.
+`[A66]`: PASS on the pre-registered bare inequality
+(`R_edge(A3)=0.0014 > R_edge(A4)=0.0000`), but weak — `Cohen's d=0.63`
+is BELOW this project's own standing MCID (`|d|>=0.8`). Only 1 of 5
+seeds recovered any damaged edge at all (1/148).** Stated honestly as
+inconclusive-but-not-negative, not oversold as validation.
+
+**The more decisive finding: `K_skip = 0.0%` — every one of 300
+swap-slot operations across the whole campaign committed successfully,
+zero connectivity failures, zero candidate exhaustion.** This directly
+confirms V5's central design claim: the swap operation removes V4's
+entire `[A57]`-`[A64]` failure mode by construction. There is no
+`INVALID` analog here, and none occurred — unlike V4's K1/K1c/K1d,
+which never once produced a clean substrate.
+
+**Most likely explanation for the weak `R_edge` (`[HYPOTHESIS]`, not
+fact): the compute-calibrated swap budget (30 events/run) is almost
+certainly too small relative to ~146-149 damaged edges** to see a real
+effect either way — an order-of-magnitude-underpowered confirmatory
+run, not evidence the mechanism doesn't work.
+
+**STOPPED HERE — needs the user's direction, not a unilateral re-run:**
+whether to pre-register a materially larger swap budget now that the
+substrate is confirmed clean and real per-swap timing is known
+(`[A65]`). This is a genuine new decision, even though `K1'` itself
+technically passed.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V4 prune/regrow CLOSED as FEASIBILITY REJECT ([A64]); V5 spec pre-registered)
 
 **Repo state:** `main` HEAD `2e90d35` plus one committed-but-not-yet-
 merged branch `docs/v4-close-feasibility-reject` (commit `865b4e8`).
@@ -884,6 +935,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 12:10] `cb47539`: feat(v5): M1 -- degree-preserving connected swap operation, full TDD
 - [2026-08-18 11:46] `865b4e8`: docs(v4): close prune/regrow family as FEASIBILITY REJECT, not BILUH FAIL
 - [2026-08-18 11:33] `2685edc`: fix(v4): extract max_capacity_cardinality to a tested shared module
 - [2026-08-18 11:23] `7780192`: feat(v4): V4-K1d -- reference-degree cap + exact capacity audits; H-A structural incompatibility confirmed twice, INVALID again

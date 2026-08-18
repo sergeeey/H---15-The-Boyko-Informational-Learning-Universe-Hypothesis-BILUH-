@@ -3529,6 +3529,80 @@ itself, since `A3` and `A4` always share the identical budget.
 this session's transcript; [VERIFIED-pytest] 11/11 `check_topology_v5.py`
 tests pass against the array-based API.
 
+### A66 — V5-K1' ran at (compute-calibrated) scale: PASS on the pre-registered bare inequality, but WEAK — effect size below this project's own MCID bar, near-zero absolute recovery, substrate itself fully viable (2026-08-18)
+
+**What ran:** `scripts/run_k1_prime_gate.py`, `BalancedSwapTopologyRule`
+(A3 `CorrelationSwapScorer` vs A4 `DistanceStratifiedSwapScorer`), on
+the SAME damaged lattices as V4's K1/K1c/K1d (N=512, damage=10%,
+`master_seed=20260818`), swap budget calibrated per `[A65]`
+(`n_swaps=3`/window, `dtau_steps=10`, 30 swap-slot operations/run).
+
+**Substrate result, stated first because it is the more decisive
+finding: `K_skip = 0.0%` — every single one of the 300 swap-slot
+operations across the whole campaign (5 seeds x 2 arms x 30) committed
+successfully. No connectivity failure, no candidate exhaustion,
+anywhere.** This directly confirms `docs/v5_spec.md`'s central design
+claim: a degree-preserving, connectivity-checked swap genuinely
+removes V4's `[A57]`-`[A64]` failure mode by construction, not by
+constraint — there is no analog of V4's `INVALID` outcome here, and
+none occurred.
+
+**`R_edge` result: `PASS` per the pre-registered bare inequality
+(`R_edge(A3) > R_edge(A4)`, `docs/v5_spec.md` Sec7), but weak, not
+resounding — stated honestly, not oversold:**
+
+```
+R_edge(A3): mean=0.0014  std=0.0030  CI=(-0.0024, 0.0051)
+R_edge(A4): mean=0.0000  std=0.0000  CI=(0.0000, 0.0000)
+Cohen's d: +0.6325
+```
+
+Only ONE of five seeds (seed 3) recovered any damaged edge at all
+(exactly 1 of 148 damaged-out edges, `R_edge=0.0068`); the other four
+seeds recovered zero in either arm. `Cohen's d = 0.63` is **below**
+this project's own standing MCID threshold (`|d| >= 0.8`,
+`docs/estimand.md` `[A10]`) — this result would NOT clear the MCID bar
+this project uses everywhere else for a "real" effect. `K1'`'s own
+pre-registered PASS condition (`docs/v5_spec.md` Sec7) is deliberately
+a bare inequality, not an MCID gate — matching V4's own original K1
+("cheap and easy to fail") — so `PASS` here is the correct, literal
+verdict per the pre-registered predicate, but it must not be read or
+reported as strong evidence that state-driven swaps meaningfully
+restore damaged geometry better than the matched null. It is evidence
+only that they are not WORSE, at this budget.
+
+**Most likely explanation, stated as [HYPOTHESIS] not fact: the
+calibrated-down swap budget (`[A65]`, 30 events/run) is almost
+certainly too small to meaningfully restore ~146-149 damaged edges out
+of 1536 total** — an order-of-magnitude fewer structural events than
+would plausibly be needed for `R_edge` to move far off the floor,
+regardless of which arm is doing the choosing. This is NOT the same
+finding as V4's `[A61]`/`[A63]` structural-capacity ceiling — nothing
+here suggests the swap operation is STRUCTURALLY incapable of higher
+exposure (`K_skip=0%` argues the opposite); it suggests the confirmatory
+run's budget, chosen for compute-cost reasons before any result was
+seen, was simply too small to see a real effect either way.
+
+**What this does NOT mean:** it does NOT mean V5's mechanism is
+validated as producing meaningful restoration -- the effect is below
+MCID and near the noise floor. It does NOT mean V5 should be closed --
+the substrate (the actual reason a gate could fail) is fully clean,
+unlike every one of V4's K1/K1c/K1d attempts. It does NOT license
+silently re-running with a larger budget without saying so -- per this
+project's pre-registration discipline, a materially larger swap budget
+is a new, dated decision, not an automatic next step, even though the
+`K1'` gate itself technically passed.
+
+**Not decided here, requires the user's direction:** whether to
+pre-register a larger swap budget (informed now by real per-swap
+timing, `[A65]`) to get a properly-powered read on `Δ_specific`, given
+the substrate itself is confirmed viable.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1_prime_gate.py` full
+stdout, this session's transcript; [VERIFIED-pytest] 336/336 tests,
+ruff clean, mypy `--strict` clean on the V5 M1/M2 infrastructure that
+produced this result.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

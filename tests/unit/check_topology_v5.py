@@ -200,10 +200,7 @@ def test_balanced_swap_rule_is_deterministic_given_the_same_seeds() -> None:
     np.testing.assert_array_equal(result_a.mask, result_b.mask)
 
 
-def test_distance_stratified_swap_scorer_preserves_the_value_multiset_within_a_stratum() -> None:
-    """Wiring check for A4: the shuffled scores must be a PERMUTATION of
-    the real scores within each stratum -- same invariant V4's own
-    DistanceStratifiedShuffleScorer test checks."""
+def test_distance_stratified_swap_scorer_preserves_the_value_multiset_globally() -> None:
     rng = np.random.default_rng(11)
     graph = generate_erdos_renyi(n_nodes=20, n_edges=40, rng=rng)
     trajectory = _dummy_trajectory(graph.n_nodes, seed=0)
@@ -215,3 +212,40 @@ def test_distance_stratified_swap_scorer_preserves_the_value_multiset_within_a_s
     shuffled_scores = scorer.score(graph, trajectory, remove, add, np.random.default_rng(0))
 
     np.testing.assert_allclose(sorted(real_scores), sorted(shuffled_scores))
+
+
+def test_distance_stratified_swap_scorer_preserves_the_value_multiset_within_each_stratum() -> None:
+    """Reviewer-flagged gap (2026-08-18, feat/v5-m1-swap-operation):
+    a GLOBAL multiset match alone would still pass even if the shuffle
+    crossed strata (destroying the intended distance-dependence-
+    preserved property, same weakness the docstring noted V4's own
+    DistanceStratifiedShuffleScorer test inherited). Strengthened here
+    by replicating the scorer's own stratum assignment externally and
+    checking each stratum's value multiset independently."""
+    from boyko_benchmark.dynamics.topology_v4 import graph_distance_matrix
+
+    rng = np.random.default_rng(11)
+    graph = generate_erdos_renyi(n_nodes=20, n_edges=40, rng=rng)
+    trajectory = _dummy_trajectory(graph.n_nodes, seed=0)
+    remove, add = generate_swap_candidates(graph.mask)
+    base_scorer = CorrelationSwapScorer()
+    real_scores = base_scorer.score(graph, trajectory, remove, add, np.random.default_rng(0))
+
+    scorer = DistanceStratifiedSwapScorer(base_scorer)
+    shuffled_scores = scorer.score(graph, trajectory, remove, add, np.random.default_rng(0))
+
+    distances = graph_distance_matrix(graph.mask)
+    dist1 = distances[add[:, 0, 0], add[:, 0, 1]]
+    dist2 = distances[add[:, 1, 0], add[:, 1, 1]]
+    min_distance = np.minimum(dist1, dist2)
+
+    def stratum(d: int, bins: tuple[int, ...] = (2, 3)) -> int:
+        for edge_bin in bins:
+            if d <= edge_bin:
+                return edge_bin
+        return bins[-1] + 1
+
+    strata = np.array([stratum(int(d)) for d in min_distance])
+    for s in np.unique(strata):
+        idx = np.flatnonzero(strata == s)
+        np.testing.assert_allclose(sorted(real_scores[idx]), sorted(shuffled_scores[idx]))
