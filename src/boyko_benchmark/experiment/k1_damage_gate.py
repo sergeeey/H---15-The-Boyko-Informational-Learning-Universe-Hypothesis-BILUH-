@@ -9,11 +9,19 @@ Single lattice-center source node ([A25]'s reasoning applies unchanged:
 every lattice node has identical local structure, degree-preserving
 damage does not break that). Seed streams derived via `SeedManager`
 ([A11]): `damage_seed` differs per seed index; `topology_tiebreak_seed`/
-`control_regrowth_seed` are shared between A3 and A4 WITHIN one seed
-index (same regrowth-mechanics randomness applied to both arms --
-isolates the scorer's effect rather than adding independent noise on
-top of it; `CorrelationScorer` ignores its rng argument entirely, so
-sharing costs it nothing).
+`control_regrowth_seed` use the same integer for A3 and A4 within one
+seed index -- but each arm gets its OWN `RateBasedTopologyRule` instance
+(own `Generator` objects), so the pairing only holds byte-for-byte
+through the first window where the two graphs actually diverge (`A4`'s
+`DistanceStratifiedShuffleScorer` consumes its `rng` via `permutation`;
+`A3`'s `CorrelationScorer` never touches its `rng` at all -- [VERIFIED-
+grep, `dynamics/topology_v4.py`] `rng.permutation` at line 131,
+`CorrelationScorer.score`'s body has no `rng.*` call). Once regrowth
+picks different edges, `len(candidates)` differs per arm going forward
+and each arm's `Generator` draws a different amount per window from
+that point on -- reviewer-found (2026-08-18), independently re-verified
+per `audit-verification-gate.md`, corrected here rather than left as an
+overclaimed noise-pairing guarantee.
 """
 
 from dataclasses import dataclass

@@ -11,9 +11,12 @@ Also implements `docs/v4_spec.md` Sec3's `while-active` ICE strategy for
 disconnection ("Pruning disconnects the graph -> truncate the run at
 that window, flag it, report the rate. Never silently reconnect."):
 a topology update is checked for connectivity immediately after it
-runs, and the loop stops there if it disconnected the graph -- one more
-window's fast dynamics would otherwise run on a graph `normalized_
-laplacian` isn't well-posed for.
+runs, and the loop stops there if it disconnected the graph -- the
+spec's own rule is stricter than what `normalized_laplacian` strictly
+requires (a disconnected-but-no-isolated-node graph is still block-
+diagonal-well-defined; the real hazard is an isolated, degree-zero
+node), so this truncates on ANY disconnection, not only on the cases
+that would actually break the Laplacian.
 """
 
 from dataclasses import dataclass

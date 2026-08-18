@@ -66,6 +66,19 @@ def test_raw_samples_are_preserved_per_seed() -> None:
     assert verdict.stats_a4.raw_samples == (0.1, 0.2)
 
 
+def test_exact_tie_fails_since_pass_requires_strict_inequality() -> None:
+    """`docs/v4_spec.md` Sec7's PASS condition is `R_edge(A3) >
+    R_edge(A4)`, strict -- a tie is not a PASS (reviewer-flagged gap,
+    2026-08-18: previously untested, verified correct by inspection but
+    not exercised)."""
+    results = [_make_result(0, 0.5, 0.5), _make_result(1, 0.6, 0.6)]
+
+    verdict = aggregate_k1_results(results)
+
+    assert verdict.stats_a3.mean == verdict.stats_a4.mean
+    assert verdict.passed is False
+
+
 def test_matches_hand_computed_cohens_d() -> None:
     a3 = np.array([0.80, 0.90, 0.70, 0.85, 0.75])
     a4 = np.array([0.30, 0.40, 0.20, 0.35, 0.25])
