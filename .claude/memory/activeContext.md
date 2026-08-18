@@ -1,6 +1,101 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V5 M0-M2 complete: K1' PASSED (bare inequality) but WEAK (d=0.63 < MCID); substrate fully clean (0% K_skip); awaiting user direction on a larger swap budget)
+## SESSION HANDOFF (updated 2026-08-18 — V5-K1'-Exposure RAN: FAIL per frozen criteria; K_skip=0% reconfirmed (substrate not the bottleneck); frozen stop-rule applied, no auto-escalation; [A68] + null_results recorded)
+
+**Result [VERIFIED-bash, this session's transcript]:** 10-seed campaign
+completed. At the primary checkpoint (`B=D=147`): `R_edge(A3)` mean
+`0.0027`, `R_edge(A4)` mean `0.0007`, `ΔR=0.0021>0` but `Cohen's
+d=0.708<0.8` (MCID fails, CIs overlap) and only `3/10` seeds show
+`A3>A4` (not a majority). `ΔR(B)` was flat (identical) between the two
+earlier checkpoints (`B=30,75`) and rose only at the final one. **Most
+important number: absolute recovery is near the floor for BOTH arms**
+— mean `R_edge(A3)=0.27%` at full budget ≈ 0.4 of ~147 damaged edges
+correctly recovered; 6/10 seeds recovered zero correct edges under
+EITHER arm even at `B=D`. `K_skip=0%` throughout, all seeds/checkpoints
+/arms — the substrate remains fully feasible; this specific finding is
+now confirmed TWICE (2x seeds, 5x budget vs `K1'`).
+
+**Verdict: FAIL per `docs/v5_spec.md` §13.4's exact frozen criteria**
+(two of three required conditions failed). Per the pre-registered
+interpretation buckets (§13.5), closest to bucket 2 (Null) — pushing
+budget to `B=D` substantially weakens `[A66]`'s "just starvation"
+explanation. **Frozen stop-rule applied: no automatic `2D`/`5D`/`10D`
+follow-up** — recorded, not silently continued.
+
+**Recorded:** `docs/assumptions.md` `[A68]` (full breakdown: feasibility
+/dose-response/endpoint/replication/absolute-scale/curve-shape, Kill
+Analysis, Relaxation Map, `[HYPOTHESIS]`-marked note that exact-edge
+recovery may be a near-Bernoulli rare event at this scale, not a
+graded process — not independently verified further); `null_results/
+20260818-v5-k1-prime-exposure.md` + `INDEX.md`; `docs/v5_spec.md`
+status header + M3 milestone row both updated (dated addendum, prior
+text kept for history per Checkpoint Fidelity).
+
+**What is explicitly NOT killed by this result** (do not over-read):
+`V5`'s core feasibility/design claim (`K_skip=0%`, reconfirmed);
+any other N/budget-to-damage-ratio/scorer/endpoint — only ONE
+configuration was tested, not a sweep; `V4`'s own separate
+`FEASIBILITY REJECT` and `[A45]`'s open Phase 11-12 anomaly, both
+untouched.
+
+**Not yet done, next step:** commit this documentation + gate re-check
+on `feat/v5-k1-prime-exposure`, merge `--ff-only` to `main`, push. No
+further scientific action pending — the frozen stop-rule means the next
+move (if any) is the user's call, not an automatic continuation.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V5-K1'-Exposure pre-registered + implemented (`a3cdc0b` on `feat/v5-k1-prime-exposure`, reviewer LGTM); real 10-seed campaign running in background, not yet resolved)
+
+**Repo state:** `main` HEAD `a1cf18d` (V5 M1+M2 merged/pushed earlier this
+session). `feat/v5-k1-prime-exposure` HEAD `a3cdc0b`, not yet merged —
+holds the full `V5-K1'-Exposure` follow-up: `docs/v5_spec.md` Sec13
+(frozen pre-registration), `docs/assumptions.md` `[A67]` (10-seed
+decision from a real timing probe), `on_window` checkpoint hook on
+`run_adaptive_dynamics_v4`, `k1_prime_common.py` (shared helpers,
+de-duplicated), `k1_prime_exposure_gate.py`/`_verdict.py`,
+`scripts/run_k1_prime_exposure_gate.py`. 351/351 tests, ruff clean,
+mypy `--strict` clean. Reviewer: LGTM (no HIGH, 2 MEDIUM both fixed —
+`on_window`+truncation interaction test, empty-results ValueError
+guard + seed-count assertion in the campaign script).
+
+**Why this follow-up exists:** prior `K1'` (`[A66]`) PASSED the bare
+inequality but weakly (`d=0.63<0.8` MCID, 1/5 seeds carrying the whole
+effect), while `K_skip=0%` showed the swap substrate itself is fully
+feasible — the user's own diagnosis was that the compute-calibrated
+budget (`[A65]`, ~30 committed swaps) was almost certainly too small
+against ~148 damaged edges. `V5-K1'-Exposure` (`docs/v5_spec.md` Sec13)
+freezes a single, non-reactive dose-response follow-up BEFORE running
+it: `B_total=D≈148`, `n_swaps=3`/window unchanged, checkpoints at
+window counts `{10,25,49}` (nominal `B≈{30,75,147}`), `ΔR(B)` reported
+at all three (never cherry-picked), primary PASS/FAIL decided ONLY at
+`B=D` (`delta_r_mean>0 AND MCID(|d|>=0.8, non-overlapping CI) AND
+majority of paired seeds A3>A4`), frozen stop-rule (no automatic
+`2D`/`5D`/`10D` if this fails — a further budget increase needs a new,
+separately-motivated pre-registration).
+
+**Seed count (`[A67]`):** decided from a real N=512 timing probe
+(`scripts/probe_k1_prime_exposure_timing.py`), not from user preference
+alone — measured `7.08s`/window (materially higher than `[A65]`'s own
+swap-only estimate, which didn't include fast-dynamics/adaptation
+cost). Extrapolated: 5 seeds≈58min, 10 seeds≈116min. **Decision:
+`N_seeds=10`**, made before any `R_edge` from this follow-up existed.
+
+**Currently running:** `scripts/run_k1_prime_exposure_gate.py` (10
+seeds, ~116min estimated) launched in the background — **not yet
+complete, no result to report yet.** When it finishes: read the full
+`ΔR(B)` curve, apply the pre-registered PASS/FAIL criteria (§13.4) and
+the four interpretation buckets (§13.5) exactly as written — do not
+pick a nicer-looking intermediate checkpoint over the primary one, and
+do not silently escalate the budget again if it FAILs (frozen stop-rule
+above). If it PASSes: report honestly, including whether the majority-
+of-seeds condition (not just `d`) held. Record `[A67]`'s continuation
+or a new `[A68]` with the actual result, merge `feat/v5-k1-prime-
+exposure` to `main` (gate suite first), push.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V5 M0-M2 complete: K1' PASSED (bare inequality) but WEAK (d=0.63 < MCID); substrate fully clean (0% K_skip); awaiting user direction on a larger swap budget)
 
 **Repo state:** `main` HEAD `fe990b5` plus uncommitted V5 M1+M2 work
 (`dynamics/topology_v5.py`, `experiment/k1_prime_damage_gate.py`/
@@ -935,6 +1030,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 14:54] `a3cdc0b`: feat(v5): pre-register + implement V5-K1'-Exposure dose-response follow-up
 - [2026-08-18 12:31] `cf7be6a`: feat(v5): M2 -- K1' damaged-lattice gate; PASS on bare inequality but weak, substrate fully clean
 - [2026-08-18 12:10] `cb47539`: feat(v5): M1 -- degree-preserving connected swap operation, full TDD
 - [2026-08-18 11:46] `865b4e8`: docs(v4): close prune/regrow family as FEASIBILITY REJECT, not BILUH FAIL

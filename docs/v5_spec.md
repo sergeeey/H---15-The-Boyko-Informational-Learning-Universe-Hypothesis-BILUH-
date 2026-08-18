@@ -1,6 +1,18 @@
 # V5 — Balanced Support Rewiring: Technical Specification
 
-**Status: PROPOSED, 2026-08-18. Not approved. Nothing implemented, nothing run.**
+**Status: M0-M2 implemented and run (`[A65]`/`[A66]`); M3
+(`V5-K1'-Exposure`, §13) RAN 2026-08-18 and returned `FAIL`
+(`[A68]`, `null_results/20260818-v5-k1-prime-exposure.md`) — per §13.4's
+own frozen stop-rule, no automatic follow-up. This is a result about ONE
+scorer/budget/endpoint combination, NOT a rejection of the swap
+substrate itself: `K_skip=0%` was reconfirmed at 2x the seed count and
+5x the budget of `K1'`, so `V5`'s core feasibility claim (degree-
+preserving connected rewiring avoids `V4`'s collapse) stands
+independently of M3's negative result. See `[A68]`'s "What is NOT
+killed" section before deciding what, if anything, comes next.**
+
+**Status (as originally written, kept for history): PROPOSED, 2026-08-18.
+Not approved. Nothing implemented, nothing run.**
 
 **Revision 1 (2026-08-18, after `[A66]`) — M2's `K1'` result is PASS but
 WEAK (`Cohen's d=0.63 < 0.8` MCID, effect concentrated in 1/5 seeds,
@@ -309,7 +321,7 @@ enumerated legal candidate set).
 | **M0** | Dated Addendum 5 to `mathematical_contract.md` (§4 above, formalized); this spec committed | Contract revised before code, per `CLAUDE.md` |
 | **M1** | Swap-operation infrastructure + TDD: legality checker (simple-graph + connected), candidate generator, `ΔS` scorer, deterministic-argmax-with-tiebreak selector, `A4`'s distance-stratified shuffle reused from V4's `DistanceStratifiedShuffleScorer` logic. Degree-invariance and connectivity-by-construction verified as explicit test invariants, not assumed. | All tests green before any science |
 | **M2** | `K1'` damaged-lattice restoration gate at real scale (N=512, 5 seeds, same `master_seed=20260818` convention) | **KILL GATE** — stop here if `K1'` fails |
-| **M3** | `V5-K1'-Exposure` — frozen dose-response follow-up (§13), pre-registered after `[A66]`'s weak-but-clean `K1'` result | Per §13's own frozen stop-rule — no automatic `M4` |
+| **M3** | `V5-K1'-Exposure` — frozen dose-response follow-up (§13), pre-registered after `[A66]`'s weak-but-clean `K1'` result. **RAN 2026-08-18: `FAIL`** — `[A68]`, `null_results/20260818-v5-k1-prime-exposure.md`. `K_skip=0%` reconfirmed (substrate not the limiting factor); state-specific advantage did not clear MCID/majority even at `B=D`. | Per §13's own frozen stop-rule — no automatic `M4`, applied |
 
 **Before M2 runs:** verify each seed's damaged graph is connected
 BEFORE any swap dynamics start (bounded-retry re-damage if not, same

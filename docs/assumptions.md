@@ -3634,6 +3634,104 @@ before any `R_edge` from this follow-up exists.
 **Evidence:** [VERIFIED-bash] `scripts/probe_k1_prime_exposure_timing.py`
 stdout, this session's transcript.
 
+### A68 — `V5-K1'-Exposure` ran at full pre-registered scale: `FAIL` per the frozen §13.4 criteria; `K_skip=0%` reconfirmed; absolute recovery is near the floor for both arms (2026-08-18)
+
+**Ran exactly as pre-registered** (`docs/v5_spec.md` Sec13, `[A67]`):
+`scripts/run_k1_prime_exposure_gate.py`, N=512, 10% damage, `n_swaps=3`
+/window, checkpoints at window counts `{10,25,49}`, 10 seeds
+(`master_seed=20260818`, seeds 0-4 identical damaged lattices to `K1'`
+itself). Nothing was altered mid-run or after seeing intermediate
+checkpoints — `[VERIFIED-bash]` full stdout captured in
+`.claude/scratch/k1_prime_exposure_run.log`.
+
+**1. Feasibility — `K_skip=0%` throughout, all 10 seeds, both arms, all
+three checkpoints** (`cumulative_skipped=0` at every single row of the
+per-seed table). The swap substrate remains fully feasible at 5x the
+budget and 2x the seed count of `K1'` — this specific finding is now
+confirmed twice, independent of the state-specific result below.
+
+**2. Dose-response `ΔR(B)`:**
+
+| `B` (window) | `R_edge(A3)` mean | `R_edge(A4)` mean | `ΔR` | `d` | MCID | wins A3>A4 |
+|---|---|---|---|---|---|---|
+| 30 (w=10) | 0.0007 | 0.0000 | 0.0007 | 0.447 | False | 1/10 |
+| 75 (w=25) | 0.0007 | 0.0000 | 0.0007 | 0.447 | False | 1/10 |
+| 147 (w=49) | 0.0027 | 0.0007 | 0.0021 | 0.708 | False | 3/10 |
+
+**`ΔR(B)` is monotone non-decreasing but never clears the bar** --
+identical at the two earlier checkpoints (no seed's `R_edge` moved
+between window 10 and window 25 at all), a small rise appears only
+between window 25 and the final window 49.
+
+**3. Endpoint (`B=D`, window 49) -- `FAIL` per the exact frozen
+criterion:** `ΔR_edge=0.0021>0` (condition met) but `Cohen's d=0.708 <
+0.8` (MCID fails) AND CIs overlap (`A3: (0.0002,0.0053)`, `A4:
+(-0.0008,0.0022)` -- overlapping) AND `wins=3/10`, not a majority.
+**All three primary conditions were required (Sec13.4); two of three
+fail.**
+
+**4. Replication across seeds:** only 4/10 seeds show ANY nonzero
+`R_edge(A3)` at the full budget (seeds 3,4,5,6); of those, only 3 beat
+`A4` (seed 5 tied exactly, `0.0067=0.0067`). 6/10 seeds recovered
+literally zero correct edges under EITHER arm even at `B=D`.
+
+**5. Absolute scale -- the more important number than the standardized
+effect:** at `B=D≈147` (as many committed swaps as damaged edges),
+mean `R_edge(A3)=0.27%` -- roughly **0.4 of ~147 damaged edges**
+correctly recovered on average. `[HYPOTHESIS]`, not verified further
+here: the per-seed pattern (each nonzero seed shows almost exactly
+`1/n_damaged`, e.g. `0.0068≈1/147`) suggests genuinely recovering the
+EXACT missing edge is close to a rare, near-Bernoulli event per seed at
+this `N`/budget, not a smoothly graded restoration process -- among
+~2.3 million legal swap candidates each round, landing on the one
+specific pair that reconstructs an originally-damaged edge is
+structurally rare regardless of which arm is choosing, unless `C_ij`
+concentrates very sharply on it.
+
+**6. Curve shape:** monotone non-decreasing, not saturating, not
+non-monotonic/over-rewiring within the tested range -- but this
+matters less given how far both arms remain from any meaningful
+recovery fraction.
+
+**Verdict: `V5-K1'-Exposure FAIL`.** Per the user's own pre-registered
+interpretation buckets (`docs/v5_spec.md` Sec13.5), this is closest to
+bucket 2 (Null): pushing the budget all the way to `B=D` substantially
+weakens the "just not enough swaps" explanation `[A66]` offered as
+`[HYPOTHESIS]` -- exposure was not the bottleneck at this scale.
+**Frozen stop-rule applies (Sec13.4): no automatic `2D`/`5D`/`10D`
+follow-up.** A further budget increase requires a new, separately-
+motivated pre-registration, not a silent continuation.
+
+**Kill Analysis (Perelman-audit / OSA discipline):**
+- **Killed:** state-specific advantage of `CorrelationSwapScorer`
+  (`ΔS=C_added−C_removed` argmax) over `DistanceStratifiedSwapScorer`
+  at N=512, 10% damage, `B_total=D≈148`, `n_swaps=3`/window, THIS
+  specific operationalization -- does not clear this project's own
+  MCID even when given a full damage-count worth of swaps.
+- **NOT killed:** the swap operation's feasibility/substrate cleanliness
+  (`K_skip=0%`, reconfirmed at 2x scale) -- the core `V5` design
+  principle (degree-preserving connected rewiring avoids `V4`'s
+  feasibility collapse) stands independent of this result. Also not
+  killed: any claim about a DIFFERENT `N`, budget-to-`N` scaling,
+  scorer, or adaptation rate -- only this one configuration was tested,
+  not a sweep, per the frozen no-fishing discipline.
+- **Relaxation Map (not auto-triggered, listed for a future,
+  separately-motivated pre-registration only):** larger `N` (more
+  candidate structure to work with), budget scaled to `|E|` rather than
+  to `D` (a categorically different exposure definition), a scorer that
+  targets exact edge reconstruction directly rather than `C_ij` alone,
+  or accepting that exact-edge-match `R_edge` may be the wrong-grained
+  endpoint for this mechanism and an alternative endpoint (e.g. a
+  distance/resistance-based partial-credit metric) may be needed --
+  none of these are licensed by this entry, they are candidates for
+  whoever designs the next follow-up.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_k1_prime_exposure_gate.py`
+full stdout, `.claude/scratch/k1_prime_exposure_run.log`, this
+session's transcript; [VERIFIED-pytest] 351/351 tests, ruff clean,
+mypy `--strict` clean on the infrastructure that produced this result
+(reviewer LGTM before the run, `.claude/memory/verdict_log.jsonl`).
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**
