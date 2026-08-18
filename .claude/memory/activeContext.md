@@ -653,6 +653,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 09:04] `7d70760`: docs: M1 handoff -- V4 topology infra merged to main, M2 (K1 gate) queued
 - [2026-08-18 08:57] `d6a57c3`: fix(v4): address reviewer findings — disconnected-pair misclassification, unseeded tiebreak, dead code, unguarded candidate exhaustion
 - [2026-08-18 08:46] `e86ee92`: feat(v4): M1 — StatefulTopologyRule infrastructure, full TDD
 [summarized] - [2026-08-17 17:42] `f4fb2be`: chore: commit local permission allowlist for cross-machine continuity
