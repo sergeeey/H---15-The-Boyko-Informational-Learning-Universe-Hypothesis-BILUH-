@@ -1,6 +1,42 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — V4 M0+M1 complete, on `main`; M2 next)
+## SESSION HANDOFF (updated 2026-08-18 — V4 M2 ran: grid INVALID, 100% ICE — awaiting user decision on re-pre-registering rho)
+
+**Repo state:** branch `feat/v4-m2-k1-gate` (commits `0e05f8e` + fix
+`75cc3b5`), about to be merged to `main` (`git merge --ff-only`).
+Reviewer pass complete: verdict NEEDS_WORK/P2, no HIGH findings, one
+MEDIUM (docstring overclaimed A3/A4 seed-pairing scope — independently
+re-verified via grep before fixing, per `audit-verification-gate.md`)
++ 3 LOW nits, all addressed in `75cc3b5`. 295/295 tests, ruff clean,
+mypy `--strict` clean on the feature branch.
+
+**M2 ran at spec-frozen scale and found the grid INVALID, not a K1
+verdict.** `scripts/run_k1_gate.py` (N=512, rho=0.01, m=3, damage=10%,
+5 seeds, `docs/v4_spec.md` Sec7/Sec11 exact parameters): **100% of runs
+(10/10) disconnected at the earliest possible pruning window (window
+index 2)**, tripping the spec's own while-active ICE strategy (Sec3)
+before A3 vs A4 could meaningfully diverge — `R_edge` came back
+0.0000 for every cell, which is NOT informative, not a K1 FAIL. Per
+Sec3's own rule ("rate > 20% ... invalid, must be re-pre-registered,
+not patched"), this blocks M3-M6 the same way a K1 FAIL would but for a
+different reason. Full finding + mechanistic hypothesis (rho=0.01's
+15-edges/window batch is calibrated against ER-graph turnover
+intuition, never validated against a uniform-degree-6 LATTICE's much
+thinner connectivity margin) in `docs/assumptions.md` `[A57]`.
+
+**STOPPED HERE, not unilaterally continuing** — `docs/v4_spec.md` Sec4
+[DOCS] says explicitly "Any later rho change requires a new dated
+pre-registration," and this project's AOG-5 discipline requires an
+independently-motivated single-assumption change, not a parameter
+patch chosen after seeing the failure. **This needs the user's
+go-ahead** on which relaxation to pre-register (candidates named in
+`[A57]`: smaller rho, e.g. ~0.002; a K1-specific warm-up before pruning
+starts; or both) before M2 can be re-attempted. M3-M6 remain blocked
+until M2 resolves.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — V4 M0+M1 complete, on `main`; M2 next)
 
 **Repo state:** HEAD `d6a57c3` = `origin/main`. Working tree clean except
 this handoff file. 277/277 tests, ruff clean, mypy `--strict` clean
@@ -653,6 +689,8 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 09:30] `75cc3b5`: fix(v4): address M2 reviewer finding -- seed-pairing scope overclaim, tie-case coverage
+- [2026-08-18 09:23] `0e05f8e`: feat(v4): M2 -- K1 damaged-lattice gate infrastructure + while-active ICE truncation; grid INVALID at spec params (100% disconnection)
 - [2026-08-18 09:04] `7d70760`: docs: M1 handoff -- V4 topology infra merged to main, M2 (K1 gate) queued
 - [2026-08-18 08:57] `d6a57c3`: fix(v4): address reviewer findings — disconnected-pair misclassification, unseeded tiebreak, dead code, unguarded candidate exhaustion
 - [2026-08-18 08:46] `e86ee92`: feat(v4): M1 — StatefulTopologyRule infrastructure, full TDD
