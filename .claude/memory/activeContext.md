@@ -1,6 +1,72 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — Geometry Signal Audit RAN: World A, no detectable geometric distance signal in C_ij at all, on the UNDAMAGED lattice; [A70] recorded, most upstream/decisive negative finding of the whole V5 line, pending commit/reviewer/merge)
+## SESSION HANDOFF (updated 2026-08-18 — Reviewer caught [A70] overclaim: Re(C_ij) analytically degenerate on this bipartite lattice, Recall@D=0/AUROC~0.5 were GUARANTEED regardless of ground truth; independently verified, fixed with magnitude companion metric, re-ran -- World A holds under the corrected metric too, [A71] recorded; pending 2nd reviewer pass + merge)
+
+**What happened, in order:** reported [A70] (World A, no geometric
+signal) to the user as the session's most decisive finding. Launched
+the mandatory 3+-file reviewer pass on `feat/v5-geometry-signal-audit`
+BEFORE merging (per this project's own pre-commit checklist). Reviewer
+came back NEEDS_WORK, P1: `Recall@D=0.0000` at all 30 checkpoint x
+trial combinations wasn't a bug, but it also wasn't informative --
+the T7 lattice (side_length=8, even) is EXACTLY bipartite by
+coordinate-sum parity, every `d*=1` pair is cross-parity, and chiral
+spectral symmetry forces `Re(<psi_i* psi_j>_K)` to cancel to machine
+epsilon for cross-parity pairs REGARDLESS of whether real coupling
+exists. `[A70]`'s "unambiguously World A" verdict was therefore
+UNFALSIFIABLE on its own metric -- it could not have shown anything
+else, so it couldn't tell us anything.
+
+**Did NOT take the reviewer's word for it** (`audit-verification-
+gate.md`: agent [VERIFIED] = orchestrator's [INFERRED] until
+re-checked) -- independently reproduced the mechanism directly
+[VERIFIED-bash]: cross-parity Re(C_ij) std ~6e-17 (machine noise) vs.
+|C_ij| (complex magnitude) std ~1.6e-3, six orders of magnitude
+larger, comparable to same-parity pairs. The information was never
+absent -- invisible to the Re-only convention every scorer in this
+project (`CorrelationScorer`, `CorrelationSwapScorer`,
+`HebbianAdaptation` itself) has used throughout.
+
+**Fix:** added `time_averaged_correlation_magnitude` (`dynamics/
+adaptive.py`, `|mean(z)|` not `mean(|z|)`, hand-derived tests
+including the minimal 2-node/1-snapshot Re=0-but-|.|=1.0 case).
+`geometry_signal_audit_gate.py` now computes BOTH Re and magnitude
+variants at every checkpoint. **Re-ran the real campaign with the
+fix: World A STILL holds** (`AUROC_mag` stays in `[0.4875,0.5210]` of
+chance at every checkpoint, `Recall@D_mag` at the final checkpoint is
+even below its own baseline) -- but now on solid footing, since the
+corrected metric COULD in principle have shown a positive result and
+didn't, unlike the original.
+
+**Recorded as `[A71]`** (docs/assumptions.md), with `[A70]` left
+intact but flagged at its own top with a correction pointer
+(Checkpoint Fidelity: superseded claims keep the reason for the
+version change visible, not silently edited). `docs/v5_spec.md`
+status header + Sec15 header + new Sec15.5 (metric caveat) all
+updated. Pearl Registry entry (`pearl_registry/INDEX.md`) updated:
+mechanism VERIFIED, but the specific rescue prediction (switching
+framing would reveal clear signal) did NOT pan out -- distinguishing
+"mechanism confirmed" from "outcome confirmed," not conflating them.
+
+367/367 tests, ruff clean, mypy --strict clean. **Not yet committed
+-- still uncommitted on `feat/v5-geometry-signal-audit`. A SECOND
+reviewer pass is needed** (new code: `time_averaged_correlation_
+magnitude`, the dual-variant gate, the corrected docs) before
+merging -- the first review's NEEDS_WORK hasn't been formally
+re-cleared yet.
+
+**What comes next:** get 2nd reviewer clearance, commit, merge
+--ff-only to main, push, THEN report this whole correction to the
+user prominently and honestly -- they were already told "World A"
+once; they need to hear the corrected, more rigorous version, not a
+quiet patch. This also has a implication worth surfacing explicitly:
+the SAME Re-only blindness could in principle have affected [A68]/
+[A69]'s own Re(C_ij)-based scorers, though re-testing THOSE with a
+magnitude-based scorer would be a new, separately-motivated
+pre-registration, not something to silently redo.
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — Geometry Signal Audit RAN: World A, no detectable geometric distance signal in C_ij at all, on the UNDAMAGED lattice; [A70] recorded, most upstream/decisive negative finding of the whole V5 line, pending commit/reviewer/merge)
 
 **Result [VERIFIED-bash, this session's transcript]:** ran the user's
 proposed follow-up to `[A69]` -- decoupled from damage/restoration
@@ -1188,6 +1254,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-18 18:17] `7c2e422`: feat(v5): Geometry Signal Audit -- World A, no detectable geometric distance signal in C_ij at all
 - [2026-08-18 17:59] `5223b62`: feat(v5): C_ij Recall@D/AUPRC signal diagnostic -- H1 confirmed, decisively, after review-caught baseline fix
 - [2026-08-18 16:56] `7d595e6`: docs(v5): V5-K1'-Exposure ran -- FAIL per frozen criteria, K_skip=0% reconfirmed
 - [2026-08-18 14:54] `a3cdc0b`: feat(v5): pre-register + implement V5-K1'-Exposure dose-response follow-up

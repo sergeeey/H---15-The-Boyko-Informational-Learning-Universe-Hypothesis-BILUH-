@@ -3822,6 +3822,22 @@ P0/P1 at any point.
 
 ### A70 — Geometry Signal Audit ran: World A — no detectable geometric distance signal in `C_ij` at all, on the UNDAMAGED positive-control lattice (2026-08-18)
 
+**CORRECTION, same day, `[A71]` below — read `[A71]` before trusting
+this entry's "unambiguously World A" language.** An independent
+reviewer pass (before this entry was merged to `main`) found that
+`Re(C_ij)`, the metric used throughout this entry, is analytically
+forced to ~0 for every `d*=1` pair on this project's exactly-bipartite
+lattice, REGARDLESS of whether real coupling information exists —
+`Recall@D=0.0000`/`AUROC≈0.5` were mathematically guaranteed before
+this campaign ever ran, not evidence about the ground truth. `[A71]`
+verifies this independently and re-runs with a magnitude-based
+companion metric that does not share the degeneracy. **The corrected
+result reaches the SAME qualitative conclusion (still no strong
+signal) — but for the right reason this time, not a coincidence of a
+degenerate metric.** This entry is kept below, uncorrected in its own
+body, per Checkpoint Fidelity (superseded claims keep the reason for
+the version change visible) — `[A71]` is the one to cite.
+
 **Ran exactly as pre-registered** (`docs/v5_spec.md` Sec15):
 `scripts/run_geometry_signal_audit.py`, N=512, UNDAMAGED T7/`[A32]`
 lattice (no damage step, no swap operator — topology frozen via
@@ -3892,6 +3908,108 @@ functional of `psi`) might encode geometry where this one does not.
 full stdout, `.claude/scratch/geometry_signal_audit_run.log`, this
 session's transcript; [VERIFIED-pytest] 364/364 tests, ruff clean,
 mypy `--strict` clean.
+
+### A71 — `[A70]`'s "unambiguously World A" was an overclaim: `Re(C_ij)` is analytically degenerate on this bipartite lattice; corrected with a magnitude-based companion metric — conclusion holds, now for the right reason (2026-08-18)
+
+**Reviewer finding (`feat/v5-geometry-signal-audit` review, before
+merge): `[A70]`'s `Recall@D=0.0000`/`AUROC≈0.5` results were
+mathematically GUARANTEED before the campaign ran, independent of
+whether real geometric information exists in `C_ij`.** The T7 periodic
+cubic lattice (`side_length=8`, even) is EXACTLY bipartite by
+coordinate-sum parity, and every `d*=1` pair is, by construction, a
+cross-parity pair. For a real-valued localized `psi0` evolved under
+`H=L_norm` (real-symmetric), the lattice's chiral spectral symmetry
+forces `Re(<psi_i* psi_j>_K)` to cancel to machine epsilon for every
+cross-parity pair — REGARDLESS of ground truth. The positive class in
+`[A70]`'s own AUROC/Recall@D test was therefore pinned near zero by
+construction, not by absence of signal.
+
+**Independently re-verified, not taken on the reviewer's word alone**
+(`audit-verification-gate.md`: agent `[VERIFIED]` = orchestrator's
+`[INFERRED]` until re-checked) `[VERIFIED-bash]`:
+
+```
+cross-parity (d*=1) Re(C_ij):  std ~6.0e-17   (machine noise)
+same-parity  (d*=2,4,...) Re(C_ij): std ~2.0e-3, max ~0.026
+cross-parity (d*=1) |C_ij| (complex magnitude): std ~1.6e-3, max ~0.016
+```
+
+**The information was never absent — only invisible to the REAL-part
+convention `time_averaged_correlation` (and every scorer built on it:
+`CorrelationScorer`, `CorrelationSwapScorer`, `HebbianAdaptation`
+itself) has used throughout this ENTIRE project.** The magnitude of
+the complex correlation for cross-parity pairs is six orders of
+magnitude above the real part's noise floor, comparable in scale to
+same-parity pairs' real part.
+
+**Fix:** added `time_averaged_correlation_magnitude` (`dynamics/
+adaptive.py`) — `|<psi_i* psi_j>_K|`, the magnitude of the
+time-averaged COMPLEX correlation (`|mean(z)|`, not `mean(|z|)` — these
+differ whenever phase varies across snapshots, verified by a dedicated
+hand-derived test). `geometry_signal_audit_gate.py` now computes BOTH
+variants (`audit`/Re, `audit_magnitude`/`|.|`) at every checkpoint,
+never silently replacing one with the other.
+
+**Re-ran the full 10-trial N=512 campaign with the fix
+[VERIFIED-bash]:**
+
+| window | `[Mag]` `AUROC` | `[Mag]` `Recall@D` | `[Mag]` `Spearman` |
+|---|---|---|---|
+| 10 | 0.5099 | 0.0234 | 0.0152 |
+| 25 | 0.5210 | 0.0446 | 0.0101 |
+| 49 (final) | 0.4875 | 0.0039 | 0.0209 |
+
+**The corrected metric ALSO shows no meaningful geometric signal —
+`AUROC_mag` stays within `[0.4875, 0.5210]` of chance at every
+checkpoint, and `Recall@D_mag` at the final checkpoint (`0.0039`) is
+even BELOW its own chance baseline (`~0.0118`).** Distance shells
+(magnitude-based, illustrative trial 0, final checkpoint) are flat
+across every true distance value (`~0.0008-0.0009`, no decay trend,
+d=12's `0.0015` reads as a small-sample diameter-boundary edge effect
+given only 256 pairs contribute there — not treated as a genuine
+signal without further check). A mild elevation in `Recall@D_mag` at
+windows 10/25 (`0.0234`, `0.0446`, roughly 2-4x the ~0.0118 baseline)
+DISSIPATES by the final checkpoint rather than strengthening — read as
+noise/transient, not a stable trend, given it does not survive to the
+primary (largest, most-averaged) checkpoint.
+
+**Corrected verdict: World A still holds, but now on solid footing —
+the degenerate Re-based test could not, in principle, have shown
+otherwise; the magnitude-based test COULD have shown a positive result
+and did not.** This is a materially different epistemic status than
+`[A70]`'s original claim (which was, unknowingly, unfalsifiable by its
+own construction on this exact lattice).
+
+**What this does NOT mean:** does not test a phase-only or
+higher-moment observable beyond magnitude (a genuinely different
+functional of `psi` could still encode geometry where both Re and
+magnitude do not — `[A70]`'s own "what this does NOT mean" section
+already named this, unaffected by this correction). Does not revisit
+`[A68]`/`[A69]` — those used `Re(C_ij)` throughout (matching every
+scorer's actual convention), and whether THEY would show a different
+result under a magnitude-based scorer is a genuinely new, separately-
+motivated question (a magnitude-based `CorrelationSwapScorer` variant
+would need its own pre-registration, not a silent substitution here).
+Does not mean `Re(C_ij)`-based scorers are "wrong" in general — only
+that they are structurally blind to nearest-neighbor-pair information
+on THIS bipartite lattice specifically.
+
+**Process note, worth keeping:** this is exactly the discipline this
+project's own `skeptic-triggers.md` Trigger 3 exists for (`Recall@D=0`
+across ≥5 independent tests, here 30/30, is a mandatory verify
+trigger) — the reviewer did not stop at "confirmed real, not a bug,"
+but asked the harder question ("could this metric have shown a
+positive result under the alternative hypothesis at all?"), which a
+bug-only check would have missed entirely.
+
+**Evidence:** [VERIFIED-bash] direct reproduction of the parity-
+cancellation mechanism (`|C_ij|` vs `Re(C_ij)` std comparison, this
+session's transcript); `scripts/run_geometry_signal_audit.py`
+corrected re-run, `.claude/scratch/geometry_signal_audit_run.log`;
+[VERIFIED-pytest] 367/367 tests (3 new: hand-derived magnitude-vs-
+real-part tests, including the minimal 2-node/1-snapshot case
+demonstrating `Re=0` but `|.|=1.0`), ruff clean, mypy `--strict`
+clean.
 
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 

@@ -24,6 +24,8 @@ def test_checkpoints_land_at_requested_windows() -> None:
     for cp in result.checkpoints:
         assert 0.0 <= cp.audit.auroc_nn <= 1.0
         assert -1.0 <= cp.audit.spearman_rho <= 1.0
+        assert 0.0 <= cp.audit_magnitude.auroc_nn <= 1.0
+        assert -1.0 <= cp.audit_magnitude.spearman_rho <= 1.0
 
 
 def test_different_trials_use_different_deterministic_source_nodes() -> None:

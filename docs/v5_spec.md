@@ -21,17 +21,22 @@ appear to encode
 which specific edges were removed strongly enough for ANY selection
 rule to exploit, at this `N`/damage level/adaptation rate.**
 
-**§15 (Geometry Signal Audit) RAN 2026-08-18: World A — `[A70]`.**
-`AUROC≈0.49` (chance), `Recall@D=0.0000` at every checkpoint across
-all 10 trials, `AUPRC` below its own chance baseline, `Spearman
-rho≈0.02` (sign-unstable) — no detectable geometric distance signal in
-`C_ij` at all, even decoupled entirely from damage/restoration on the
-clean UNDAMAGED lattice. More upstream and more decisive than `[A68]`/
-`[A69]`: the `psi → C_ij` pipeline itself does not appear to encode
-geometry a correlation-magnitude ranking can extract, at this
-`N`/`eta`/window schedule. See `[A70]` for a reproducible distance-
-parity side-finding (Pearl Registry, `pearl_registry/INDEX.md`) not
-chased further here.
+**§15 (Geometry Signal Audit) RAN 2026-08-18: World A, corrected —
+`[A70]`/`[A71]`.** `[A70]`'s original `Re(C_ij)`-based result
+(`AUROC≈0.49`, `Recall@D=0.0000` at every checkpoint) was caught by
+review as analytically DEGENERATE on this exactly-bipartite lattice —
+`Re(C_ij)` is forced to ~0 for every `d*=1` pair regardless of ground
+truth, so that result could not have shown anything else. `[A71]`
+verifies this independently and adds a magnitude-based companion
+metric (`|C_ij|`) that does not share the degeneracy; the corrected
+result STILL shows no meaningful geometric signal (`AUROC` stays within
+`[0.49,0.52]` of chance at every checkpoint), now on solid footing
+rather than a coincidence of a degenerate test. More upstream and more
+decisive than `[A68]`/`[A69]`, with this important caveat: only the
+`Re`/magnitude convention was tested, not a phase-only or higher-moment
+observable. See `[A71]` for the full correction and `[A70]` for the
+reproducible distance-parity side-finding (Pearl Registry,
+`pearl_registry/INDEX.md`) that motivated the fix.
 
 **Status (as originally written, kept for history): PROPOSED, 2026-08-18.
 Not approved. Nothing implemented, nothing run.**
@@ -725,10 +730,14 @@ looking for one.
 
 ## 15. Geometry Signal Audit — pre-registered before any of it runs (Revision 3, after `[A69]`'s H1 finding)
 
-**RAN 2026-08-18: `[A70]`.** World A — no detectable geometric
-distance signal, at any of the four levels below, on the clean
-UNDAMAGED lattice. See `[A70]` for the full per-checkpoint table and
-the distance-parity Pearl Registry entry.
+**RAN 2026-08-18: `[A70]`, CORRECTED same-day by `[A71]`.** `[A70]`'s
+`Re(C_ij)`-only result was analytically degenerate on this exactly-
+bipartite lattice (chiral symmetry forces `Re(C_ij)≈0` for every
+`d*=1` pair regardless of ground truth) — caught by review, verified
+independently, fixed with a magnitude-based companion metric
+(`time_averaged_correlation_magnitude`). World A still holds under the
+corrected metric, now on solid footing. **Read `[A71]` before citing
+this section — `[A70]` alone is not the final word.**
 
 **Motivation.** `[A69]` found `C_ij` does not encode EXACT damaged-edge
 identity — but that is a narrower claim than "`C_ij` carries no
@@ -838,3 +847,21 @@ locality-learning mechanism should look like — only that one might be
 worth designing. Does not license any claim about physical spacetime,
 BILUH, or geometrogenesis regardless of outcome, per this project's
 standing `CLAUDE.md` scope discipline.
+
+### 15.5 Metric caveat, added same-day after `[A70]`'s own result — the `Re(C_ij)` convention is degenerate on THIS lattice
+
+**Reviewer-caught (2026-08-18), independently verified, `[A71]`:** the
+T7 periodic cubic lattice is exactly bipartite by coordinate-sum
+parity, and EVERY `d*=1` pair is a cross-parity pair. For a
+real-valued localized `psi0` evolved under `H=L_norm`, chiral spectral
+symmetry forces `Re(<psi_i* psi_j>_K)` — the SAME convention `§15.2`'s
+levels 1-4 use, and the SAME convention `CorrelationScorer`/
+`CorrelationSwapScorer` use throughout this project — to cancel to
+machine epsilon for cross-parity pairs REGARDLESS of ground truth. A
+World-A verdict on `§15.2`'s `Re`-based metrics alone is therefore
+UNFALSIFIABLE on this specific lattice — it cannot distinguish "no
+signal" from "signal present but phase-encoded." §15.2's levels 1-4
+are run BOTH on `Re(C_ij)` (as originally specified) AND on
+`|C_ij|` (`time_averaged_correlation_magnitude`, `dynamics/
+adaptive.py`) as a mandatory companion, not a substitute — `[A71]`'s
+corrected result used both and reports both.

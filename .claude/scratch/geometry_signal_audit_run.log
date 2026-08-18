@@ -1,69 +1,73 @@
 === Geometry Signal Audit (docs/v5_spec.md Sec15) ===
 N=512 (UNDAMAGED), checkpoints=(10, 25, 49), eta=0.1, dt=0.05, K=50, 10 trials, master_seed=20260818
+Reviewer-caught addendum ([A70]/[A71]): the lattice is exactly bipartite, so Re(C_ij) is analytically forced to ~0 for every cross-parity (d*=1) pair REGARDLESS of real coupling. Every row below reports BOTH the original Re(C_ij)-based audit AND a magnitude |C_ij|-based companion that is not blind to phase-encoded information.
 
-trial source  window   AUROC  recall@D   AUPRC AUPRC_base  spearman
-    0     79      10  0.4638    0.0000  0.0099     0.0118    0.0167
-    0     79      25  0.4802    0.0000  0.0102     0.0118   -0.0038
-    0     79      49  0.4814    0.0000  0.0102     0.0118    0.0186
-    1    476      10  0.4802    0.0000  0.0102     0.0118    0.0172
-    1    476      25  0.4993    0.0000  0.0106     0.0118   -0.0026
-    1    476      49  0.4938    0.0000  0.0105     0.0118    0.0207
-    2     71      10  0.4647    0.0000  0.0100     0.0118    0.0173
-    2     71      25  0.4835    0.0000  0.0103     0.0118   -0.0030
-    2     71      49  0.4858    0.0000  0.0103     0.0118    0.0188
-    3    288      10  0.4670    0.0000  0.0100     0.0118    0.0169
-    3    288      25  0.4784    0.0000  0.0102     0.0118   -0.0029
-    3    288      49  0.4875    0.0000  0.0103     0.0118    0.0204
-    4    299      10  0.4684    0.0000  0.0100     0.0118    0.0182
-    4    299      25  0.4791    0.0000  0.0102     0.0118   -0.0024
-    4    299      49  0.4856    0.0000  0.0103     0.0118    0.0203
-    5    145      10  0.4637    0.0000  0.0099     0.0118    0.0155
-    5    145      25  0.4829    0.0000  0.0103     0.0118   -0.0041
-    5    145      49  0.4851    0.0000  0.0103     0.0118    0.0167
-    6    296      10  0.4673    0.0000  0.0100     0.0118    0.0178
-    6    296      25  0.4790    0.0000  0.0102     0.0118   -0.0024
-    6    296      49  0.4862    0.0000  0.0103     0.0118    0.0207
-    7    423      10  0.4731    0.0000  0.0101     0.0118    0.0173
-    7    423      25  0.4839    0.0000  0.0103     0.0118   -0.0023
-    7    423      49  0.4891    0.0000  0.0104     0.0118    0.0192
-    8    128      10  0.4639    0.0000  0.0099     0.0118    0.0148
-    8    128      25  0.4823    0.0000  0.0102     0.0118   -0.0039
-    8    128      49  0.4856    0.0000  0.0103     0.0118    0.0171
-    9     41      10  0.4638    0.0000  0.0099     0.0118    0.0173
-    9     41      25  0.4722    0.0000  0.0101     0.0118   -0.0022
-    9     41      49  0.4788    0.0000  0.0102     0.0118    0.0193
+trial source  window  AUROC_re  recall_re  spear_re    AUROC_mag  recall_mag  spear_mag
+    0     79      10    0.4638     0.0000    0.0167       0.5099      0.0234     0.0152
+    0     79      25    0.4802     0.0000   -0.0038       0.5210      0.0436     0.0101
+    0     79      49    0.4814     0.0000    0.0186       0.4875      0.0039     0.0209
+    1    476      10    0.4802     0.0000    0.0172       0.5099      0.0234     0.0152
+    1    476      25    0.4993     0.0000   -0.0026       0.5210      0.0456     0.0101
+    1    476      49    0.4938     0.0000    0.0207       0.4875      0.0039     0.0209
+    2     71      10    0.4647     0.0000    0.0173       0.5099      0.0234     0.0152
+    2     71      25    0.4835     0.0000   -0.0030       0.5210      0.0430     0.0101
+    2     71      49    0.4858     0.0000    0.0188       0.4875      0.0039     0.0209
+    3    288      10    0.4670     0.0000    0.0169       0.5099      0.0234     0.0152
+    3    288      25    0.4784     0.0000   -0.0029       0.5210      0.0456     0.0101
+    3    288      49    0.4875     0.0000    0.0204       0.4875      0.0039     0.0209
+    4    299      10    0.4684     0.0000    0.0182       0.5099      0.0234     0.0152
+    4    299      25    0.4791     0.0000   -0.0024       0.5210      0.0456     0.0101
+    4    299      49    0.4856     0.0000    0.0203       0.4875      0.0039     0.0209
+    5    145      10    0.4637     0.0000    0.0155       0.5099      0.0234     0.0152
+    5    145      25    0.4829     0.0000   -0.0041       0.5210      0.0430     0.0101
+    5    145      49    0.4851     0.0000    0.0167       0.4875      0.0039     0.0209
+    6    296      10    0.4673     0.0000    0.0178       0.5099      0.0234     0.0152
+    6    296      25    0.4790     0.0000   -0.0024       0.5210      0.0456     0.0101
+    6    296      49    0.4862     0.0000    0.0207       0.4875      0.0039     0.0209
+    7    423      10    0.4731     0.0000    0.0173       0.5099      0.0234     0.0152
+    7    423      25    0.4839     0.0000   -0.0023       0.5210      0.0456     0.0101
+    7    423      49    0.4891     0.0000    0.0192       0.4875      0.0039     0.0209
+    8    128      10    0.4639     0.0000    0.0148       0.5099      0.0234     0.0152
+    8    128      25    0.4823     0.0000   -0.0039       0.5210      0.0443     0.0101
+    8    128      49    0.4856     0.0000    0.0171       0.4875      0.0039     0.0209
+    9     41      10    0.4638     0.0000    0.0173       0.5099      0.0234     0.0152
+    9     41      25    0.4722     0.0000   -0.0022       0.5210      0.0443     0.0101
+    9     41      49    0.4788     0.0000    0.0193       0.4875      0.0039     0.0209
 
 === Aggregate, per checkpoint (mean across trials) ===
-window= 10  mean AUROC=0.4676  mean Recall@D=0.0000  mean AUPRC=0.0100  mean AUPRC_baseline=0.0118  mean Spearman=0.0169
-window= 25  mean AUROC=0.4821  mean Recall@D=0.0000  mean AUPRC=0.0103  mean AUPRC_baseline=0.0118  mean Spearman=-0.0030
-window= 49  mean AUROC=0.4859  mean Recall@D=0.0000  mean AUPRC=0.0103  mean AUPRC_baseline=0.0118  mean Spearman=0.0192
+window= 10  [Re]  AUROC=0.4676  Recall@D=0.0000  Spearman=0.0169
+window= 10  [Mag] AUROC=0.5099  Recall@D=0.0234  Spearman=0.0152
+window= 25  [Re]  AUROC=0.4821  Recall@D=0.0000  Spearman=-0.0030
+window= 25  [Mag] AUROC=0.5210  Recall@D=0.0446  Spearman=0.0101
+window= 49  [Re]  AUROC=0.4859  Recall@D=0.0000  Spearman=0.0192
+window= 49  [Mag] AUROC=0.4875  Recall@D=0.0039  Spearman=0.0209
 
-=== Distance shells, final checkpoint, trial 0 (illustrative) ===
-  d= 1  mean_C= -0.000000  n_pairs=1536
-  d= 2  mean_C= -0.000039  n_pairs=4608
-  d= 3  mean_C=  0.000000  n_pairs=9728
-  d= 4  mean_C=  0.000014  n_pairs=16128
-  d= 5  mean_C=  0.000000  n_pairs=21504
-  d= 6  mean_C= -0.000002  n_pairs=23552
-  d= 7  mean_C=  0.000000  n_pairs=21504
-  d= 8  mean_C= -0.000000  n_pairs=16128
-  d= 9  mean_C= -0.000000  n_pairs=9728
-  d=10  mean_C= -0.000001  n_pairs=4608
-  d=11  mean_C=  0.000000  n_pairs=1536
-  d=12  mean_C= -0.000022  n_pairs=256
+=== Distance shells, final checkpoint, trial 0 (illustrative, [Mag]) ===
+  d= 1  mean_|C|=  0.000908  n_pairs=1536
+  d= 2  mean_|C|=  0.000965  n_pairs=4608
+  d= 3  mean_|C|=  0.000840  n_pairs=9728
+  d= 4  mean_|C|=  0.000817  n_pairs=16128
+  d= 5  mean_|C|=  0.000794  n_pairs=21504
+  d= 6  mean_|C|=  0.000787  n_pairs=23552
+  d= 7  mean_|C|=  0.000772  n_pairs=21504
+  d= 8  mean_|C|=  0.000803  n_pairs=16128
+  d= 9  mean_|C|=  0.000789  n_pairs=9728
+  d=10  mean_|C|=  0.000873  n_pairs=4608
+  d=11  mean_|C|=  0.000859  n_pairs=1536
+  d=12  mean_|C|=  0.001512  n_pairs=256
 
-=== Top-D distance distribution, final checkpoint, trial 0 (illustrative) ===
-  P(d*= 1 | top-D) = 0.0000
-  P(d*= 2 | top-D) = 0.1022
-  P(d*= 3 | top-D) = 0.0000
-  P(d*= 4 | top-D) = 0.2546
-  P(d*= 5 | top-D) = 0.0000
-  P(d*= 6 | top-D) = 0.2969
-  P(d*= 7 | top-D) = 0.0000
-  P(d*= 8 | top-D) = 0.2539
-  P(d*= 9 | top-D) = 0.0000
-  P(d*=10 | top-D) = 0.0820
+=== Top-D distance distribution, final checkpoint, trial 0 (illustrative, [Mag]) ===
+  P(d*= 1 | top-D) = 0.0039
+  P(d*= 2 | top-D) = 0.0859
+  P(d*= 3 | top-D) = 0.0195
+  P(d*= 4 | top-D) = 0.2148
+  P(d*= 5 | top-D) = 0.0078
+  P(d*= 6 | top-D) = 0.3027
+  P(d*= 7 | top-D) = 0.0156
+  P(d*= 8 | top-D) = 0.2246
+  P(d*= 9 | top-D) = 0.0052
+  P(d*=10 | top-D) = 0.1016
   P(d*=11 | top-D) = 0.0000
-  P(d*=12 | top-D) = 0.0104
+  P(d*=12 | top-D) = 0.0182
 
-Interpretation (docs/v5_spec.md Sec15.3): World A (no signal: AUROC~0.5, Spearman~0, shells indistinguishable) means the problem is upstream of topology learning. World B (Spearman meaningfully positive, top-D enriched for low distance, but [A69]'s exact-edge AUPRC stays at chance) means C_ij encodes locality, not exact adjacency -- reframe future work toward coarse distance/neighborhood learning.
+Interpretation (docs/v5_spec.md Sec15.3, applied to the [Mag] variant, which does not share the Re-variant's bipartite degeneracy): World A (no signal: AUROC~0.5, Spearman~0, shells indistinguishable) means the problem is upstream of topology learning. World B (Spearman meaningfully positive, top-D enriched for low distance) means C_ij encodes locality, not exact adjacency -- reframe future work toward coarse distance/neighborhood learning using a magnitude- or phase-aware observable, not the Re-only convention used throughout this project so far.

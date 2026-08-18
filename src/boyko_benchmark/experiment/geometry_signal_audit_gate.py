@@ -16,6 +16,7 @@ from boyko_benchmark.dynamics.adaptive import (
     HebbianAdaptation,
     StateTrajectory,
     time_averaged_correlation,
+    time_averaged_correlation_magnitude,
 )
 from boyko_benchmark.dynamics.backend import ClosedUnitaryBackend
 from boyko_benchmark.dynamics.topology_v4 import IdentityStatefulTopology, graph_distance_matrix
@@ -36,6 +37,17 @@ SOURCE_NODE_STREAM = 0
 class GeometryAuditCheckpoint:
     window_count: int
     audit: GeometrySignalAuditResult
+    """Based on `Re(<psi_i* psi_j>_K)` -- the SAME convention every
+    scorer in this project uses elsewhere. Degenerate on an exactly-
+    bipartite lattice, see `audit_magnitude`."""
+    audit_magnitude: GeometrySignalAuditResult
+    """Based on `|<psi_i* psi_j>_K|` (`time_averaged_correlation_
+    magnitude`) -- added 2026-08-18 (reviewer-caught, `[A70]`/`[A71]`)
+    specifically because `audit`'s Re-based score is analytically
+    forced to ~0 for every cross-parity (d*=1) pair on this project's
+    bipartite lattice, REGARDLESS of whether real coupling information
+    exists -- not a substitute for `audit`, a companion that isn't
+    blind to phase-encoded information."""
 
 
 @dataclass(frozen=True)
@@ -70,8 +82,14 @@ def run_geometry_signal_audit_one_trial(
         if window_count not in checkpoint_set:
             return
         c_ij = time_averaged_correlation(trajectory)
+        c_ij_mag = time_averaged_correlation_magnitude(trajectory)
         audit = compute_geometry_signal_audit(distances, c_ij)
-        checkpoints.append(GeometryAuditCheckpoint(window_count=window_count, audit=audit))
+        audit_magnitude = compute_geometry_signal_audit(distances, c_ij_mag)
+        checkpoints.append(
+            GeometryAuditCheckpoint(
+                window_count=window_count, audit=audit, audit_magnitude=audit_magnitude
+            )
+        )
 
     run_adaptive_dynamics_v4(
         graph,

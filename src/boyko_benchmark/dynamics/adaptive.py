@@ -54,6 +54,34 @@ def time_averaged_correlation(trajectory: StateTrajectory) -> NDArray[np.floatin
     return _time_averaged_correlation(trajectory)
 
 
+def time_averaged_correlation_magnitude(trajectory: StateTrajectory) -> NDArray[np.floating]:
+    """`|<psi_i* psi_j>_K|` -- the MAGNITUDE of the time-averaged complex
+    correlation, NOT the time-average of the magnitude (those differ;
+    this is `|mean(z)|`, matching `_time_averaged_correlation`'s own
+    `Re(mean(z))` convention exactly except for which part of the
+    complex value is kept).
+
+    Added 2026-08-18 (reviewer-caught, `docs/v5_spec.md` Sec15,
+    `docs/assumptions.md` `[A70]`/`[A71]`): on an exactly-bipartite
+    lattice (e.g. this project's own periodic cubic T7 lattice, `[A32]`
+    -- every edge connects opposite coordinate-sum parity), chiral
+    symmetry forces `Re(<psi_i* psi_j>_K)` to cancel to machine epsilon
+    for every cross-parity pair, for ANY real-valued localized `psi0`
+    evolved under `H=L_norm` -- REGARDLESS of whether real coupling
+    information exists. Independently verified numerically before this
+    function was written: cross-parity `Re(C_ij)` std `~6e-17`
+    (indistinguishable from float noise) vs. `|C_ij|` (this function)
+    std `~1.6e-3`, six orders of magnitude larger and comparable in
+    scale to same-parity pairs -- the information was never absent,
+    only invisible to the REAL-part convention every prior scorer in
+    this project (`CorrelationScorer`, `CorrelationSwapScorer`,
+    `HebbianAdaptation` itself) has used throughout."""
+    states = trajectory.states
+    complex_mean = (np.conj(states)[:, :, None] * states[:, None, :]).mean(axis=0)
+    result: NDArray[np.floating] = np.abs(complex_mean)
+    return result
+
+
 def _time_averaged_density(trajectory: StateTrajectory) -> NDArray[np.floating]:
     """<p_i>_K -- linear time-average, for the classical carrier's decay
     term ONLY. NOT interchangeable with the correlation matrix's diagonal:
