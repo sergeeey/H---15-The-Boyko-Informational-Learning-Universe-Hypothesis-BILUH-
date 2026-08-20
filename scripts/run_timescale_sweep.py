@@ -93,6 +93,34 @@ def main() -> int:
         )
 
     print()
+    print("=== Distance-specific enrichment at early windows, trial 0 (illustrative, [Mag]) ===")
+    print(
+        "Discriminating check (reviewer-requested, docs/assumptions.md [A72] HIGH-1): if "
+        "the top-D enrichment is genuine PAIRWISE ADJACENCY encoding, it should be "
+        "specific to d*=1 -- other distance classes should NOT show comparable "
+        "enrichment over their OWN base rate. If enrichment is comparable across "
+        "d*=1,2,3..., that points to a generic 'near the excitation front at this "
+        "timescale' effect instead, regardless of the PAIR's own mutual distance."
+    )
+    total_candidates = None
+    for window in (1, 2, 3, 5, 8):
+        cp = next(cp for cp in results[0].checkpoints if cp.window_count == window)
+        m = cp.audit_magnitude
+        if total_candidates is None:
+            total_candidates = sum(s.n_pairs for s in m.distance_shells)
+        print(f"--- window={window} ---")
+        for d_val, frac in sorted(m.top_d_distance_fractions.items()):
+            shell = next((s for s in m.distance_shells if s.distance == d_val), None)
+            if shell is None or frac == 0.0:
+                continue
+            base_rate = shell.n_pairs / total_candidates
+            enrichment = frac / base_rate if base_rate > 0 else float("nan")
+            print(
+                f"  d*={d_val:>2}  top-D fraction={frac:.4f}  base_rate={base_rate:.4f}  "
+                f"enrichment={enrichment:.2f}x"
+            )
+
+    print()
     print(
         "Interpretation (docs/v5_spec.md Sec16, pre-registered before this ran): if "
         "AUROC/Spearman stay at chance at EVERY window including window=1, the "

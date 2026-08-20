@@ -94,4 +94,54 @@ window= 10  [Mag] AUROC=0.5099  Recall@D=0.0234  (baseline=0.0117, ratio=2.00x) 
 window= 25  [Mag] AUROC=0.5210  Recall@D=0.0446  (baseline=0.0117, ratio=3.80x)  Spearman=0.0101
 window= 49  [Mag] AUROC=0.4875  Recall@D=0.0039  (baseline=0.0117, ratio=0.33x)  Spearman=0.0209
 
+=== Distance-specific enrichment at early windows, trial 0 (illustrative, [Mag]) ===
+Discriminating check (reviewer-requested, docs/assumptions.md [A72] HIGH-1): if the top-D enrichment is genuine PAIRWISE ADJACENCY encoding, it should be specific to d*=1 -- other distance classes should NOT show comparable enrichment over their OWN base rate. If enrichment is comparable across d*=1,2,3..., that points to a generic 'near the excitation front at this timescale' effect instead, regardless of the PAIR's own mutual distance.
+--- window=1 ---
+  d*= 1  top-D fraction=0.0703  base_rate=0.0117  enrichment=5.99x
+  d*= 2  top-D fraction=0.1270  base_rate=0.0352  enrichment=3.60x
+  d*= 3  top-D fraction=0.2943  base_rate=0.0744  enrichment=3.96x
+  d*= 4  top-D fraction=0.2279  base_rate=0.1233  enrichment=1.85x
+  d*= 5  top-D fraction=0.2656  base_rate=0.1644  enrichment=1.62x
+  d*= 6  top-D fraction=0.0150  base_rate=0.1800  enrichment=0.08x
+--- window=2 ---
+  d*= 1  top-D fraction=0.0547  base_rate=0.0117  enrichment=4.66x
+  d*= 2  top-D fraction=0.1784  base_rate=0.0352  enrichment=5.06x
+  d*= 3  top-D fraction=0.2591  base_rate=0.0744  enrichment=3.48x
+  d*= 4  top-D fraction=0.2845  base_rate=0.1233  enrichment=2.31x
+  d*= 5  top-D fraction=0.1562  base_rate=0.1644  enrichment=0.95x
+  d*= 6  top-D fraction=0.0671  base_rate=0.1800  enrichment=0.37x
+--- window=3 ---
+  d*= 1  top-D fraction=0.0625  base_rate=0.0117  enrichment=5.32x
+  d*= 2  top-D fraction=0.0625  base_rate=0.0352  enrichment=1.77x
+  d*= 3  top-D fraction=0.1615  base_rate=0.0744  enrichment=2.17x
+  d*= 4  top-D fraction=0.1452  base_rate=0.1233  enrichment=1.18x
+  d*= 5  top-D fraction=0.1875  base_rate=0.1644  enrichment=1.14x
+  d*= 6  top-D fraction=0.1400  base_rate=0.1800  enrichment=0.78x
+  d*= 7  top-D fraction=0.1406  base_rate=0.1644  enrichment=0.86x
+  d*= 8  top-D fraction=0.0482  base_rate=0.1233  enrichment=0.39x
+  d*= 9  top-D fraction=0.0521  base_rate=0.0744  enrichment=0.70x
+--- window=5 ---
+  d*= 1  top-D fraction=0.0234  base_rate=0.0117  enrichment=2.00x
+  d*= 2  top-D fraction=0.0781  base_rate=0.0352  enrichment=2.22x
+  d*= 3  top-D fraction=0.0703  base_rate=0.0744  enrichment=0.95x
+  d*= 4  top-D fraction=0.1823  base_rate=0.1233  enrichment=1.48x
+  d*= 5  top-D fraction=0.1250  base_rate=0.1644  enrichment=0.76x
+  d*= 6  top-D fraction=0.2396  base_rate=0.1800  enrichment=1.33x
+  d*= 8  top-D fraction=0.1862  base_rate=0.1233  enrichment=1.51x
+  d*=10  top-D fraction=0.0781  base_rate=0.0352  enrichment=2.22x
+  d*=12  top-D fraction=0.0169  base_rate=0.0020  enrichment=8.65x
+--- window=8 ---
+  d*= 1  top-D fraction=0.0469  base_rate=0.0117  enrichment=3.99x
+  d*= 2  top-D fraction=0.0599  base_rate=0.0352  enrichment=1.70x
+  d*= 3  top-D fraction=0.1302  base_rate=0.0744  enrichment=1.75x
+  d*= 4  top-D fraction=0.1217  base_rate=0.1233  enrichment=0.99x
+  d*= 5  top-D fraction=0.1875  base_rate=0.1644  enrichment=1.14x
+  d*= 6  top-D fraction=0.1354  base_rate=0.1800  enrichment=0.75x
+  d*= 7  top-D fraction=0.1250  base_rate=0.1644  enrichment=0.76x
+  d*= 8  top-D fraction=0.1074  base_rate=0.1233  enrichment=0.87x
+  d*= 9  top-D fraction=0.0365  base_rate=0.0744  enrichment=0.49x
+  d*=10  top-D fraction=0.0312  base_rate=0.0352  enrichment=0.89x
+  d*=11  top-D fraction=0.0156  base_rate=0.0117  enrichment=1.33x
+  d*=12  top-D fraction=0.0026  base_rate=0.0020  enrichment=1.33x
+
 Interpretation (docs/v5_spec.md Sec16, pre-registered before this ran): if AUROC/Spearman stay at chance at EVERY window including window=1, the timescale hypothesis is closed -- eta is the next, separately-motivated candidate. If early windows show clear elevation decaying toward the known near-chance value by window 49, that's a genuine positive finding motivating an early-sampled C_ij scorer design. Non-monotonic/single-spike patterns are reported honestly as such, not cherry-picked.

@@ -38,16 +38,17 @@ observable. See `[A71]` for the full correction and `[A70]` for the
 reproducible distance-parity side-finding (Pearl Registry,
 `pearl_registry/INDEX.md`) that motivated the fix.
 
-**§16 (Early-Time Timescale Sweep) RAN 2026-08-18: `[A72]` — timescale
-hypothesis CLOSED.** `AUROC`/`Spearman` (the robust, full-distribution
-metrics) stay at chance at EVERY checkpoint from window=1 through
-window=49 — no timescale within this mechanism (frozen `eta=0.1`) shows
-geometric encoding. A superficially interesting early-window elevation
-in the sparser `Recall@D` metric was checked directly (not assumed) and
-found to be bit-identical across trials with different source nodes —
-a lattice-translation-symmetry artifact, not a per-node signal, the
-same pattern `[A71]`'s own review already flagged for `AUROC_mag`. Per
-the user's own frozen order (timescale first, `eta` next if unresolved
+**§16 (Early-Time Timescale Sweep) RAN 2026-08-18: `[A72]`, corrected
+same-day (reviewer-caught P1) — timescale hypothesis CLOSED.**
+`AUROC`/`Spearman` stay at chance at EVERY checkpoint from window=1
+through window=49. A superficially interesting early-window elevation
+in the sparser `Recall@D` metric was checked with a direct
+discriminating test (per-distance-class enrichment, not just cross-
+trial invariance, which the reviewer correctly showed doesn't
+distinguish artifact from signal on this symmetric lattice) — `d*=2`/
+`d*=3` show comparable or greater enrichment than `d*=1`, ruling out
+genuine pairwise-adjacency encoding as the explanation. Per the user's
+own frozen order (timescale first, `eta` next if unresolved
 — Minimal Relaxation Rule), `eta` is the next, separately-motivated
 candidate; not launched automatically.
 
@@ -883,10 +884,11 @@ corrected result used both and reports both.
 
 ## 16. Early-Time Timescale Sweep — pre-registered before any of it runs (Revision 4, after `[A71]`'s corrected World A)
 
-**RAN 2026-08-18: `[A72]`.** CLOSED — `AUROC`/`Spearman` at chance at
-every checkpoint `{1,2,3,5,8,10,25,49}`. See `[A72]` for the full
-per-checkpoint table and the cross-trial invariance check that ruled
-out the early `Recall@D` elevation as a genuine signal.
+**RAN 2026-08-18: `[A72]`, corrected same-day.** CLOSED — `AUROC`/
+`Spearman` at chance at every checkpoint `{1,2,3,5,8,10,25,49}`. See
+`[A72]` for the full per-checkpoint table and the per-distance-class
+enrichment check (the actual discriminating test) that ruled out the
+early `Recall@D` elevation as genuine pairwise-adjacency signal.
 
 **Motivation.** `[A71]`'s corrected (magnitude-based) result held World
 A at windows `{10,25,49}`, but the raw numbers contain a weak,
