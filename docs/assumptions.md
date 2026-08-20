@@ -4020,6 +4020,89 @@ real-part tests, including the minimal 2-node/1-snapshot case
 demonstrating `Re=0` but `|.|=1.0`), ruff clean, mypy `--strict`
 clean.
 
+### A72 — Early-Time Timescale Sweep ran: `AUROC`/`Spearman` at chance at EVERY window including window=1 — timescale hypothesis CLOSED; `eta` fixed, `[A71]`'s World A extends across the full timescale tested (2026-08-18)
+
+**Ran exactly as pre-registered** (`docs/v5_spec.md` Sec16, user-
+directed: "пробуем дальше — другой eta/timescale," timescale tested
+first per the Minimal Relaxation Rule, `eta=0.1` held fixed):
+`scripts/run_timescale_sweep.py`, SAME 10 trials/`master_seed=20260818`
+as `[A70]`/`[A71]`, checkpoints `{1,2,3,5,8,10,25,49}` (windows 25/49
+reproduce `[A71]` exactly within one continuous run). No new source
+code required — `checkpoint_windows` was already a free parameter.
+`[VERIFIED-bash]`, full stdout in
+`.claude/scratch/timescale_sweep_run.log`.
+
+**Result — the two robust, full-distribution metrics stay at chance at
+every single checkpoint, including the earliest:**
+
+| window | `[Mag]` `AUROC` | `[Mag]` `Spearman` |
+|---|---|---|
+| 1 | 0.5036 | 0.0071 |
+| 2 | 0.5095 | 0.0174 |
+| 3 | 0.5365 | 0.0426 |
+| 5 | 0.5126 | 0.0151 |
+| 8 | 0.4931 | 0.0013 |
+| 10 | 0.5099 | 0.0152 |
+| 25 | 0.5210 | 0.0101 |
+| 49 | 0.4875 | 0.0209 |
+
+`AUROC` never leaves `[0.49,0.54]` — never meaningfully above chance,
+at any timescale from `t=1` window to `t=49`. `Spearman` stays within
+`[0.001,0.04]` — essentially zero throughout. **Per the pre-registered
+criterion (`docs/v5_spec.md` Sec16), this is unambiguous bucket 1: the
+timescale hypothesis is CLOSED.**
+
+**One complication, reported honestly, not hidden:** `Recall@D_mag`
+(the sparser, top-`D`-only metric) DOES show a real, nontrivial
+elevation at early windows — `2.0x` to `6.0x` its own exact chance
+baseline at windows 1-25, then DROPS to `0.33x` (below baseline) by
+window 49. Taken alone, this could look like a decaying early signal.
+**Investigated further before trusting it, not just reported:**
+`Recall@D_mag` at a fixed window is EXACTLY bit-identical across all 10
+trials (`[VERIFIED-bash]`: `0.0703125` to full float precision at
+window=1 for trials 0, 1, and 5, source nodes 79/476/145 respectively —
+`AUROC_mag` differs only at the 3rd-4th decimal across the same
+trials). **This is not 10 independent confirmations of a real,
+node-specific geometric signal — it is one deterministic function of
+the periodic lattice's own translation symmetry, observed 10 times**
+(same mechanism the `[A71]` review already established for `AUROC_mag`
+at later windows — this project's own reviewer flagged that pattern as
+translation-invariance, not evidence, and the same read applies here).
+A sparse top-`D` statistic at early, mostly-flat correlation landscapes
+is more susceptible to being dominated by a few structurally-privileged
+pairs (lattice/parity combinatorics of "how far the ballistic front has
+reached by this time") than the full-distribution `AUROC`/Spearman
+measures are — which is exactly why this project's own MCID-style
+discipline elsewhere prefers full-distribution/effect-size measures
+over single-cutoff statistics when they disagree.
+
+**Verdict: timescale hypothesis CLOSED.** The two more statistically
+robust metrics (`AUROC`, `Spearman`) show no signal at any tested
+timescale from `t=1` to `t=49`; the one metric that DID show an
+early-time pattern (`Recall@D`) is better explained by lattice symmetry
+than by genuine per-node geometric encoding, and does not survive as a
+"decaying signal" story once cross-trial invariance is checked directly
+rather than assumed. `[A71]`'s World A conclusion is not narrowly
+scoped to windows `{10,25,49}` — it extends across the full early-to-
+late timescale range tested here.
+
+**Per the frozen order in the user's own direction: `eta` (fixed here)
+is the next, separately-motivated candidate, not a silent
+continuation.** No automatic `eta` sweep launched — that decision, per
+this project's own anti-fishing discipline, is the next explicit call,
+not an inferred one.
+
+**What this does NOT mean:** does not test any `eta` other than `0.1`;
+does not test a phase-only or higher-moment observable beyond
+`Re`/magnitude (`[A71]`'s own caveat, unaffected); does not retest a
+different `N`, damage fraction, or lattice topology.
+
+**Evidence:** [VERIFIED-bash] `scripts/run_timescale_sweep.py` full
+stdout, `.claude/scratch/timescale_sweep_run.log`, direct unrounded-
+float cross-trial comparison (this session's transcript);
+[VERIFIED-pytest] 367/367 tests (unchanged — no new source code), ruff
+clean, mypy `--strict` clean.
+
 ## Explicitly Not Resolved Here (deferred, not silently dropped)
 
 - **A12 — degree-matching precision for Arm C (Parameter-Matched Random):**

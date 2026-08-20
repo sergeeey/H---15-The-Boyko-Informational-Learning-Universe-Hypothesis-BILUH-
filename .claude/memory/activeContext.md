@@ -1,6 +1,57 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — Reviewer caught [A70] overclaim: Re(C_ij) analytically degenerate on this bipartite lattice, Recall@D=0/AUROC~0.5 were GUARANTEED regardless of ground truth; independently verified, fixed with magnitude companion metric, re-ran -- World A holds under the corrected metric too, [A71] recorded; pending 2nd reviewer pass + merge)
+## SESSION HANDOFF (updated 2026-08-18 — Early-Time Timescale Sweep RAN: [A72], timescale hypothesis CLOSED -- AUROC/Spearman at chance at every window 1-49; eta is the next, separately-motivated candidate, not launched; pending commit/reviewer/merge)
+
+**User's direction after V4/V5/[A71]'s full arc: "пробуем дальше --
+другой eta/timescale."** Per Minimal Relaxation Rule (falsification-
+ladder.md), tested timescale FIRST (cheaper, better-motivated by
+[A71]'s own data -- Recall@D_mag was higher at window 25 than 49),
+`eta=0.1` held FIXED, unchanged from every prior test.
+
+**Zero new source code needed** -- `checkpoint_windows` was already a
+free parameter of `run_geometry_signal_audit_one_trial`. New pre-
+registration: `docs/v5_spec.md` Sec16. New script: `scripts/run_
+timescale_sweep.py`, checkpoints `{1,2,3,5,8,10,25,49}` (windows
+25/49 reproduce [A71] exactly, same 10 trials/master_seed).
+
+**Result [VERIFIED-bash]: `AUROC`/`Spearman` stay at chance at EVERY
+window, including window=1** (`AUROC` in `[0.49,0.54]`, `Spearman` in
+`[0.001,0.04]`, throughout). **Per the pre-registered criterion:
+timescale hypothesis CLOSED.**
+
+**One complication, investigated rather than either hidden or taken at
+face value:** `Recall@D_mag` (sparser metric) showed a real-looking
+2-6x elevation at early windows, dropping to 0.33x by window 49 --
+could have read as a decaying early signal. **Checked directly:**
+pulled unrounded floats across 3 different trials (different source
+nodes) at window=1 -- `recall_mag` was BIT-IDENTICAL
+(`0.0703125` exactly) across all of them, while `AUROC_mag` varied
+only in the 3rd-4th decimal. This is the SAME translation-invariance
+artifact the reviewer already flagged for `AUROC_mag` in `[A71]` --
+not 10 independent confirmations of a real signal, one deterministic
+lattice-symmetry pattern observed 10 times. Correctly discounted, not
+reported as a positive finding.
+
+**Recorded as `[A72]`.** `docs/v5_spec.md` status header + Sec16
+header updated. 367/367 tests (unchanged, no new source code), ruff
+clean, mypy --strict clean.
+
+**Not yet committed/reviewed/merged.** Given no new source logic (only
+a script + docs + a results log), the mandatory reviewer pass should
+be lighter than the last two rounds, but still required per this
+project's own 3+-files rule -- no exceptions carved out for "just
+docs+script."
+
+**What comes next:** per the user's own stated order, `eta` is the
+next candidate if this doesn't resolve things -- it didn't resolve
+positively (timescale closed), so `eta` is now a live candidate, but
+NOT launched automatically -- that's the next explicit decision point,
+matching this project's anti-fishing discipline (no silent
+continuation from one closed test straight into the next parameter).
+
+---
+
+## Prior SESSION HANDOFF (2026-08-18, superseded — Reviewer caught [A70] overclaim: Re(C_ij) analytically degenerate on this bipartite lattice, Recall@D=0/AUROC~0.5 were GUARANTEED regardless of ground truth; independently verified, fixed with magnitude companion metric, re-ran -- World A holds under the corrected metric too, [A71] recorded; pending 2nd reviewer pass + merge)
 
 **What happened, in order:** reported [A70] (World A, no geometric
 signal) to the user as the session's most decisive finding. Launched

@@ -38,6 +38,19 @@ observable. See `[A71]` for the full correction and `[A70]` for the
 reproducible distance-parity side-finding (Pearl Registry,
 `pearl_registry/INDEX.md`) that motivated the fix.
 
+**§16 (Early-Time Timescale Sweep) RAN 2026-08-18: `[A72]` — timescale
+hypothesis CLOSED.** `AUROC`/`Spearman` (the robust, full-distribution
+metrics) stay at chance at EVERY checkpoint from window=1 through
+window=49 — no timescale within this mechanism (frozen `eta=0.1`) shows
+geometric encoding. A superficially interesting early-window elevation
+in the sparser `Recall@D` metric was checked directly (not assumed) and
+found to be bit-identical across trials with different source nodes —
+a lattice-translation-symmetry artifact, not a per-node signal, the
+same pattern `[A71]`'s own review already flagged for `AUROC_mag`. Per
+the user's own frozen order (timescale first, `eta` next if unresolved
+— Minimal Relaxation Rule), `eta` is the next, separately-motivated
+candidate; not launched automatically.
+
 **Status (as originally written, kept for history): PROPOSED, 2026-08-18.
 Not approved. Nothing implemented, nothing run.**
 
@@ -865,3 +878,83 @@ are run BOTH on `Re(C_ij)` (as originally specified) AND on
 `|C_ij|` (`time_averaged_correlation_magnitude`, `dynamics/
 adaptive.py`) as a mandatory companion, not a substitute — `[A71]`'s
 corrected result used both and reports both.
+
+---
+
+## 16. Early-Time Timescale Sweep — pre-registered before any of it runs (Revision 4, after `[A71]`'s corrected World A)
+
+**RAN 2026-08-18: `[A72]`.** CLOSED — `AUROC`/`Spearman` at chance at
+every checkpoint `{1,2,3,5,8,10,25,49}`. See `[A72]` for the full
+per-checkpoint table and the cross-trial invariance check that ruled
+out the early `Recall@D` elevation as a genuine signal.
+
+**Motivation.** `[A71]`'s corrected (magnitude-based) result held World
+A at windows `{10,25,49}`, but the raw numbers contain a weak,
+un-chased hint: `Recall@D_mag` was higher at window 25 (`0.0446`) than
+at window 49 (`0.0039`) — `[A71]` read this as noise/transient because
+it didn't survive to the largest checkpoint, which remains the correct
+call for THAT pre-registration's own primary-checkpoint discipline. But
+it raises a genuinely new, cheap, well-motivated question `§15`'s
+schedule never tested: **does an EARLIER, less-delocalized/less-adapted
+snapshot of `psi`/`C_ij` show geometric structure that later windows
+wash out?** A localized `psi0` spreads ballistically at first and only
+later approaches a more delocalized, adaptation-mixed regime — `§15`'s
+earliest checkpoint (window 10) may already be past whatever early
+structure exists.
+
+**Per the Minimal Relaxation Rule (falsification-ladder.md): exactly
+ONE assumption changes here — the checkpoint schedule (timescale).
+`eta=0.1` stays FIXED, unchanged from every prior test in this
+project.** The user's own broader direction named both `eta` and
+`timescale` as candidates; timescale is tested first because it is
+cheaper (zero new source code — `checkpoint_windows` was already a
+free parameter of `run_geometry_signal_audit_one_trial`) and better
+motivated by data already in hand. If this sweep does not resolve the
+question, varying `eta` (fixed here) is the natural next, separately-
+motivated follow-up — not bundled into this one.
+
+**L0 gate:** unchanged from `§15` — Predictive, not causal.
+
+**Population and procedure:** identical to `§15.1` — SAME 10 trials
+(SAME `master_seed=20260818`, SAME deterministic source nodes per
+trial — direct continuity, not a new draw), SAME UNDAMAGED T7 N=512
+lattice, SAME `eta=0.1`/`dt=0.05`/`K=50`, topology frozen. The ONLY
+change: checkpoint schedule extends earlier and denser —
+`{1,2,3,5,8,10,25,49}` (the last three reproduce `[A71]`'s own
+checkpoints exactly, for direct comparability within one continuous
+run rather than a second restarted one).
+
+**Endpoint:** identical to `§15.2` — BOTH `Re`-based and `|C_ij|`-based
+(magnitude) `AUROC`/`Recall@D`/`AUPRC`/Spearman/shells/top-D
+distribution at every checkpoint, per `§15.5`'s mandatory-companion
+rule (unchanged, the bipartite degeneracy applies at every timescale,
+not just the ones `§15` originally tested).
+
+**Interpretation, pre-registered before data:**
+
+- **If `AUROC_mag`/`Spearman_mag` stay at chance at EVERY checkpoint,
+  including the earliest (`window=1`):** the timescale hypothesis is
+  closed — no sampling time within this mechanism (Hebbian correlation
+  + frozen topology, this `N`/`eta`) shows geometric encoding. `eta` is
+  then the next, separately-motivated candidate to test, not this
+  mechanism's timescale.
+- **If early windows show `AUROC_mag`/`Recall@D_mag` clearly and
+  consistently above chance, decaying toward the already-known
+  near-chance value by window 49:** a genuine, novel positive finding —
+  early-time `C_ij` encodes something the late-time snapshot loses.
+  This would directly motivate re-examining `K1'`/`K1'-Exposure`'s own
+  scorer, which always samples `C_ij` from the CURRENT (late,
+  post-many-windows) trajectory, never an early one — a real design
+  lead, not just a curiosity.
+- **Non-monotonic or single-checkpoint spikes:** report honestly as
+  such, per this project's own non-monotonic-dose-response discipline
+  (`§13.5`'s pattern) — no cherry-picking the nicest window.
+
+**No MCID, no PASS/FAIL gate — diagnostic, matching `§14`/`§15`'s own
+discipline.**
+
+**What this does NOT mean, regardless of outcome:** does not test
+`eta` (fixed); does not test any damaged lattice or the swap mechanism;
+a positive early-time finding would not by itself validate any
+specific restoration mechanism — only that early-sampled `C_ij` is
+worth designing one around.
