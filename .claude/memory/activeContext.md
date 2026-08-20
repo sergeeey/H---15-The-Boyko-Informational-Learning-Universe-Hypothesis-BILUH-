@@ -1,52 +1,44 @@
 # Active Context — boyko-benchmark (BILUH Stage 1)
 
-## SESSION HANDOFF (updated 2026-08-18 — Reviewer caught [A72] HIGH: cross-trial translation-invariance doesn't distinguish artifact from real signal on this symmetric lattice; fixed with the actual discriminating test (per-distance-class enrichment) -- timescale hypothesis CLOSED on solid footing; pending 2nd reviewer pass + merge)
+## SESSION HANDOFF (updated 2026-08-18 — [A72] review iteration 2: reviewer caught a MEDIUM overclaim IN THE FIX ITSELF -- my own "d*=2/d*=3 comparable or greater at every window" claim held at only 2/5 windows, not "every"; corrected to the accurate mixed/non-monotonic pattern; CLOSED conclusion unchanged, now resting on: d*=1 is not CONSISTENTLY the top-enriched class across windows, which is itself evidence against a stable adjacency signal; pending 3rd reviewer pass -- evaluator-optimizer cap is 3 iterations per CLAUDE.md, watch this)
 
-**What happened:** reported [A72] (timescale hypothesis CLOSED) as
-committed/reviewed. Reviewer came back NEEDS_WORK, P1 -- the
-"Recall@D_mag bit-identical across trials, therefore artifact" argument
-was a non-sequitur: at window=1, before any Hebbian adaptation breaks
-the symmetry, a GENUINE local geometric signal would be JUST AS
-translation-invariant as a pure artifact on this exactly-periodic
-lattice (both the dynamics and the ground-truth distance matrix are
-themselves translation-invariant). Cross-trial invariance answers "is
-this reproducible" (trivially yes), not "is this real."
+**Iteration 1 (prior handoff, superseded below):** reviewer caught that
+"Recall@D_mag bit-identical across trials, therefore artifact" was a
+non-sequitur (translation-invariance doesn't distinguish real signal
+from artifact on this symmetric lattice at window=1). Fixed with the
+reviewer's suggested test: per-distance-class enrichment vs base rate.
 
-**Fixed with the reviewer's own suggested discriminating test, not
-softened language:** printed `top_d_distance_fractions` (already
-computed, never surfaced) at the early windows and computed per-
-distance-class enrichment vs each class's own base rate. Real pairwise-
-adjacency encoding would concentrate enrichment SPECIFICALLY at
-`d*=1`; instead `d*=2`/`d*=3` show COMPARABLE OR GREATER enrichment
-than `d*=1` at every early window (window 1: `d*=1`=5.99x, `d*=2`=3.60x,
-`d*=3`=3.96x) -- ruling out genuine per-pair adjacency encoding,
-consistent instead with a generic "near the excitation front at this
-early timescale" effect that flattens toward ~1x enrichment by window
-8. Re-ran the real campaign with this breakdown captured
-[VERIFIED-bash].
+**Iteration 2 (this update): reviewer caught that iteration 1's OWN
+fix overclaimed too** -- "d*=2/d*=3 show comparable or greater
+enrichment than d*=1 at every early window" is false at 3 of 5 tested
+windows (1, 3, 8: `d*=1` is clearly the LARGEST, 1.5-3x above d*=2/3);
+only windows 2 and 5 show `d*=2` slightly ahead. **Corrected to the
+accurate description: a MIXED, non-monotonic pattern where which
+distance class is "most enriched" flips window-to-window with no
+consistent trend** -- and reframed why this still supports CLOSED: a
+genuine, stable pairwise-adjacency signal should rank `d*=1`
+consistently across windows, not inconsistently. Fixed in both
+`docs/assumptions.md [A72]` and `docs/v5_spec.md` Sec16/status header
+(same claim was duplicated in both, both corrected together). Added
+window=5 to the table (previously omitted, reviewer-flagged).
 
-**Recorded as a same-day correction inside `[A72]`** (Checkpoint
-Fidelity -- superseded reasoning kept visible, not silently edited),
-`docs/v5_spec.md` status header + Sec16 header both updated. Also
-fixed two LOW findings: numeric bound overclaims (`AUROC`/`Spearman`
-ranges stated slightly wrong vs the entry's own table) and a scoped-
-down mypy-clean claim (pre-existing repo-wide mypy errors exist,
-unrelated to this diff -- claim now scoped to "files this change
-touches," not repo-wide).
+**Conclusion UNCHANGED across both iterations** (timescale hypothesis
+CLOSED) -- primary basis has always been AUROC/Spearman staying flat
+at chance across all 8 checkpoints, which iteration 2's reviewer
+explicitly endorsed as the correct evidentiary structure (Pass 3
+Challenge #1: ACCEPT). Only the SECONDARY explanation (why the
+Recall@D anomaly doesn't overturn it) needed two rounds of correction.
+367/367 tests, ruff clean, mypy --strict clean on touched files.
 
-**Conclusion UNCHANGED** (timescale hypothesis CLOSED) but now
-resting on the correct evidence (distance-specific enrichment test)
-rather than an argument that didn't actually discriminate the two
-hypotheses. 367/367 tests (unchanged), ruff clean, mypy --strict
-clean on touched files.
-
-**Not yet committed/re-reviewed/merged.** A second reviewer pass is
-needed on this correction before merging, matching the same pattern as
-`[A70]`->`[A71]` earlier this session.
+**Not yet committed/re-reviewed/merged.** A third reviewer pass is
+needed -- if this comes back NEEDS_WORK again, per `CLAUDE.md`'s
+Evaluator-Optimizer Guard (3-iteration cap), STOP and escalate to the
+user with a diff of what changed and what's still blocked, rather than
+running a 4th cycle silently.
 
 ---
 
-## Prior SESSION HANDOFF (2026-08-18, superseded — Early-Time Timescale Sweep RAN: [A72], timescale hypothesis CLOSED -- AUROC/Spearman at chance at every window 1-49; eta is the next, separately-motivated candidate, not launched; pending commit/reviewer/merge)
+## Prior SESSION HANDOFF (2026-08-18, superseded — Reviewer caught [A72] HIGH: cross-trial translation-invariance doesn't distinguish artifact from real signal on this symmetric lattice; fixed with the actual discriminating test (per-distance-class enrichment) -- timescale hypothesis CLOSED on solid footing; pending 2nd reviewer pass + merge)
 
 **User's direction after V4/V5/[A71]'s full arc: "пробуем дальше --
 другой eta/timescale."** Per Minimal Relaxation Rule (falsification-
@@ -1351,6 +1343,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-20 09:47] `7f46b77`: fix(v5): [A70]->[A71] correction review -- fix [A72] overclaim, translation-invariance doesn't distinguish artifact from signal
 - [2026-08-20 08:35] `aae3a99`: feat(v5): Early-Time Timescale Sweep -- [A72], timescale hypothesis CLOSED
 - [2026-08-18 18:17] `7c2e422`: feat(v5): Geometry Signal Audit -- World A, no detectable geometric distance signal in C_ij at all
 - [2026-08-18 17:59] `5223b62`: feat(v5): C_ij Recall@D/AUPRC signal diagnostic -- H1 confirmed, decisively, after review-caught baseline fix

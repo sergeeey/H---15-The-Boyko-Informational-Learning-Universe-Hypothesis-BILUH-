@@ -4086,17 +4086,29 @@ base rate. Re-ran with this breakdown printed
 | 1 | 5.99x | 3.60x | 3.96x |
 | 2 | 4.66x | 5.06x | 3.48x |
 | 3 | 5.32x | 1.77x | 2.17x |
+| 5 | 2.00x | 2.22x | 0.95x |
 | 8 | 3.99x | 1.70x | 1.75x |
 
-**`d*=2` and `d*=3` show COMPARABLE OR GREATER enrichment than `d*=1`
-at every early window tested — the enrichment is NOT specific to true
-nearest-neighbor pairs.** This is the actual discriminating evidence
-against genuine pairwise adjacency encoding: a real "this specific pair
-is a lattice edge" signal would concentrate at `d*=1` uniquely, not
-spread comparably across `d*=1,2,3`. The observed pattern instead
-matches a generic "which pairs are near the excitation front at this
-early timescale, regardless of their OWN mutual distance" effect — by
-window 8, enrichment values across `d*=2` through `d*=9` have already
+**Correction (reviewer-caught, second pass, MEDIUM): the first
+version of this paragraph claimed `d*=2`/`d*=3` show "comparable or
+greater" enrichment than `d*=1` "at every early window" — that
+overstates the table above. At windows 1, 3, and 8, `d*=1`'s own
+enrichment is clearly the LARGEST of the three (1.5-3x above `d*=2`/
+`d*=3`); only at windows 2 and 5 does `d*=2` edge slightly above
+`d*=1`.** The accurate description is a MIXED, non-monotonic pattern
+across windows, not a consistent "spread evenly" one. **This mixed
+pattern is itself the discriminating evidence, for a different reason
+than first claimed: a genuine, stable pairwise-adjacency signal should
+show `d*=1` CONSISTENTLY and specifically elevated above nearby
+distance classes across windows — instead, which distance class is
+"most enriched" flips between `d*=1` and `d*=2` from window to window
+with no consistent trend.** An inconsistent, window-dependent ranking
+is not what a real, stable "this specific pair is a lattice edge"
+signal would produce; it is consistent with the enrichment being driven
+by something else (candidate-pool composition near the ballistic
+front at each specific timescale) that happens to vary non-
+monotonically rather than tracking true distance reliably. By window
+8, enrichment values across `d*=2` through `d*=9` have already
 flattened toward `~1x` (range `0.49x-1.75x`), consistent with the
 ballistic front simply having spread past any small-distance
 preference. The translation-invariance observation from the first

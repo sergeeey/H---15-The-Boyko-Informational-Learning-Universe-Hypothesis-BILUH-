@@ -39,18 +39,22 @@ reproducible distance-parity side-finding (Pearl Registry,
 `pearl_registry/INDEX.md`) that motivated the fix.
 
 **§16 (Early-Time Timescale Sweep) RAN 2026-08-18: `[A72]`, corrected
-same-day (reviewer-caught P1) — timescale hypothesis CLOSED.**
-`AUROC`/`Spearman` stay at chance at EVERY checkpoint from window=1
-through window=49. A superficially interesting early-window elevation
-in the sparser `Recall@D` metric was checked with a direct
+twice same-day (reviewer-caught P1, then a P2 wording overclaim on the
+P1 fix itself) — timescale hypothesis CLOSED.** `AUROC`/`Spearman`
+(the primary basis for CLOSED) stay at chance at EVERY checkpoint from
+window=1 through window=49. A superficially interesting early-window
+elevation in the sparser `Recall@D` metric was checked with a direct
 discriminating test (per-distance-class enrichment, not just cross-
 trial invariance, which the reviewer correctly showed doesn't
-distinguish artifact from signal on this symmetric lattice) — `d*=2`/
-`d*=3` show comparable or greater enrichment than `d*=1`, ruling out
-genuine pairwise-adjacency encoding as the explanation. Per the user's
-own frozen order (timescale first, `eta` next if unresolved
-— Minimal Relaxation Rule), `eta` is the next, separately-motivated
-candidate; not launched automatically.
+distinguish artifact from signal on this symmetric lattice) — the
+result is a MIXED, non-monotonic pattern (`d*=1` clearly highest at
+3/5 windows, `d*=2` slightly ahead at 2/5), not a clean "spread evenly"
+one as first claimed; a genuine stable adjacency signal should rank
+`d*=1` consistently, not inconsistently, across windows — ruling out
+genuine pairwise-adjacency encoding as the explanation for the
+`Recall@D` pattern. Per the user's own frozen order (timescale first,
+`eta` next if unresolved — Minimal Relaxation Rule), `eta` is the
+next, separately-motivated candidate; not launched automatically.
 
 **Status (as originally written, kept for history): PROPOSED, 2026-08-18.
 Not approved. Nothing implemented, nothing run.**
