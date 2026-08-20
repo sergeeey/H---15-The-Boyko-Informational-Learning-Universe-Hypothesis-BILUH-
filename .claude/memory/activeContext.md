@@ -1343,6 +1343,7 @@ fabricated result.
 
 
 ## Auto-commit log
+- [2026-08-20 10:00] `f6c35c7`: docs(v5): [A72] note explaining AUROC_mag translation-invariance across trials (reviewer P2)
 - [2026-08-20 09:47] `7f46b77`: fix(v5): [A70]->[A71] correction review -- fix [A72] overclaim, translation-invariance doesn't distinguish artifact from signal
 - [2026-08-20 08:35] `aae3a99`: feat(v5): Early-Time Timescale Sweep -- [A72], timescale hypothesis CLOSED
 - [2026-08-18 18:17] `7c2e422`: feat(v5): Geometry Signal Audit -- World A, no detectable geometric distance signal in C_ij at all
